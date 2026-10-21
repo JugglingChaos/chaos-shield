@@ -2,10 +2,10 @@
 /**
  * Cloudflare: blocks at the edge for what a plugin cannot stop on the server.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -20,12 +20,12 @@ defined( 'ABSPATH' ) || exit;
 final class Cloudflare {
 
 	const API    = 'https://api.cloudflare.com/client/v4';
-	const TOKEN  = 'sshield_cf_token';
-	const ZONE   = 'sshield_cf_zone';
-	const RULES  = 'sshield_cf_rules';
-	const STATUS = 'sshield_cf_status';
-	const HOOK   = 'sshield_cf_sync';
-	const NOTE   = 'Sentinel Shield';
+	const TOKEN  = 'cshield_cf_token';
+	const ZONE   = 'cshield_cf_zone';
+	const RULES  = 'cshield_cf_rules';
+	const STATUS = 'cshield_cf_status';
+	const HOOK   = 'cshield_cf_sync';
+	const NOTE   = 'Chaos Shield';
 	const BATCH  = 50;
 
 	/**
@@ -33,9 +33,9 @@ final class Cloudflare {
 	 */
 	public function register() {
 		add_action( self::HOOK, array( __CLASS__, 'sync' ) );
-		add_action( 'sshield_attack_mode', array( __CLASS__, 'attack' ) );
-		add_action( 'sshield_ip_banned', array( __CLASS__, 'soon' ) );
-		add_action( 'sshield_ip_released', array( __CLASS__, 'soon' ) );
+		add_action( 'cshield_attack_mode', array( __CLASS__, 'attack' ) );
+		add_action( 'cshield_ip_banned', array( __CLASS__, 'soon' ) );
+		add_action( 'cshield_ip_released', array( __CLASS__, 'soon' ) );
 		add_action( 'init', array( __CLASS__, 'schedule' ) );
 		// Block list changes reach Cloudflare too.
 		add_action( 'update_option_' . Settings::OPTION, array( __CLASS__, 'soon' ) );
@@ -127,13 +127,13 @@ final class Cloudflare {
 		);
 		if ( is_wp_error( $res ) ) {
 			/* translators: %s: error. */
-			return new \WP_Error( 'sshield_unreachable', sprintf( __( 'Cloudflare could not be reached: %s', 'sentinel-shield' ), $res->get_error_message() ) );
+			return new \WP_Error( 'cshield_unreachable', sprintf( __( 'Cloudflare could not be reached: %s', 'chaos-shield' ), $res->get_error_message() ) );
 		}
 		$data = json_decode( (string) wp_remote_retrieve_body( $res ), true );
 		if ( ! is_array( $data ) || empty( $data['success'] ) ) {
 			$code    = (int) wp_remote_retrieve_response_code( $res );
 			$message = isset( $data['errors'][0]['message'] ) ? (string) $data['errors'][0]['message'] : 'HTTP ' . $code;
-			return new \WP_Error( 403 === $code || 401 === $code ? 'sshield_cf_denied' : 'sshield_cf_error', sanitize_text_field( $message ), array( 'code' => $code ) );
+			return new \WP_Error( 403 === $code || 401 === $code ? 'cshield_cf_denied' : 'cshield_cf_error', sanitize_text_field( $message ), array( 'code' => $code ) );
 		}
 		return $data;
 	}
@@ -151,18 +151,18 @@ final class Cloudflare {
 			$token = self::token();
 		}
 		if ( ! preg_match( '/^[A-Za-z0-9_-]{30,80}$/', $token ) ) {
-			return new \WP_Error( 'sshield_connect', __( 'That does not look like a Cloudflare API token. Copy the token itself, not the Global API Key.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_connect', __( 'That does not look like a Cloudflare API token. Copy the token itself, not the Global API Key.', 'chaos-shield' ) );
 		}
 		$verify = self::call( 'GET', '/user/tokens/verify', array(), $token );
 		if ( is_wp_error( $verify ) ) {
-			if ( 'sshield_unreachable' === $verify->get_error_code() && ! $force ) {
+			if ( 'cshield_unreachable' === $verify->get_error_code() && ! $force ) {
 				return $verify;
 			}
-			if ( 'sshield_unreachable' !== $verify->get_error_code() ) {
-				return new \WP_Error( 'sshield_connect', __( 'Cloudflare does not accept this token. Copy it again, or create a new one.', 'sentinel-shield' ) );
+			if ( 'cshield_unreachable' !== $verify->get_error_code() ) {
+				return new \WP_Error( 'cshield_connect', __( 'Cloudflare does not accept this token. Copy it again, or create a new one.', 'chaos-shield' ) );
 			}
 		} elseif ( isset( $verify['result']['status'] ) && 'active' !== $verify['result']['status'] ) {
-			return new \WP_Error( 'sshield_connect', __( 'This token is not active. Check its start and end dates in Cloudflare.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_connect', __( 'This token is not active. Check its start and end dates in Cloudflare.', 'chaos-shield' ) );
 		}
 		$zone = self::find_zone( $token );
 		if ( is_wp_error( $zone ) ) {
@@ -180,13 +180,13 @@ final class Cloudflare {
 		if ( $missing ) {
 			return sprintf(
 				/* translators: 1: zone name, 2: missing permissions. */
-				__( 'Connected to %1$s. The token is missing some permissions (%2$s), so those parts stay off. You can edit the token in Cloudflare and connect again.', 'sentinel-shield' ),
+				__( 'Connected to %1$s. The token is missing some permissions (%2$s), so those parts stay off. You can edit the token in Cloudflare and connect again.', 'chaos-shield' ),
 				$zone['name'],
 				implode( ', ', array_map( array( __CLASS__, 'permission_name' ), $missing ) )
 			);
 		}
 		/* translators: %s: zone name. */
-		return sprintf( __( 'Connected to %s. Bans now reach Cloudflare, and under attack mode switches on Cloudflare\'s as well.', 'sentinel-shield' ), $zone['name'] );
+		return sprintf( __( 'Connected to %s. Bans now reach Cloudflare, and under attack mode switches on Cloudflare\'s as well.', 'chaos-shield' ), $zone['name'] );
 	}
 
 	/**
@@ -231,7 +231,7 @@ final class Cloudflare {
 		foreach ( $names as $name ) {
 			$zones = self::call( 'GET', '/zones?name=' . rawurlencode( $name ) . '&per_page=1', array(), $token );
 			if ( is_wp_error( $zones ) ) {
-				return 'sshield_unreachable' === $zones->get_error_code() ? $zones : new \WP_Error( 'sshield_connect', __( 'The token cannot list zones. Give it the permission Zone: Read for this site\'s zone.', 'sentinel-shield' ) );
+				return 'cshield_unreachable' === $zones->get_error_code() ? $zones : new \WP_Error( 'cshield_connect', __( 'The token cannot list zones. Give it the permission Zone: Read for this site\'s zone.', 'chaos-shield' ) );
 			}
 			if ( ! empty( $zones['result'][0]['id'] ) ) {
 				$z = $zones['result'][0];
@@ -244,9 +244,9 @@ final class Cloudflare {
 			}
 		}
 		return new \WP_Error(
-			'sshield_connect',
+			'cshield_connect',
 			/* translators: %s: host name. */
-			sprintf( __( 'This token cannot see a Cloudflare zone for %s. Add the site to Cloudflare first, or include its zone under Zone Resources when you create the token.', 'sentinel-shield' ), $host )
+			sprintf( __( 'This token cannot see a Cloudflare zone for %s. Add the site to Cloudflare first, or include its zone under Zone Resources when you create the token.', 'chaos-shield' ), $host )
 		);
 	}
 
@@ -376,7 +376,7 @@ final class Cloudflare {
 	 */
 	public static function sync() {
 		if ( ! self::connected() ) {
-			return new \WP_Error( 'sshield_cf_none', __( 'Cloudflare is not connected.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_cf_none', __( 'Cloudflare is not connected.', 'chaos-shield' ) );
 		}
 		$zone   = self::zone();
 		$rules  = self::rules();
@@ -416,7 +416,7 @@ final class Cloudflare {
 			);
 			if ( is_wp_error( $res ) ) {
 				$errors[] = $res->get_error_message();
-				if ( 'sshield_cf_denied' === $res->get_error_code() || 'sshield_unreachable' === $res->get_error_code() ) {
+				if ( 'cshield_cf_denied' === $res->get_error_code() || 'cshield_unreachable' === $res->get_error_code() ) {
 					break;
 				}
 				continue;
@@ -506,8 +506,8 @@ final class Cloudflare {
 			'system',
 			is_wp_error( $res )
 				/* translators: %s: error. */
-				? sprintf( __( 'Could not change Cloudflare\'s security level: %s', 'sentinel-shield' ), $res->get_error_message() )
-				: ( $on ? __( 'Switched on Cloudflare\'s Under Attack mode.', 'sentinel-shield' ) : __( 'Switched Cloudflare\'s security level back.', 'sentinel-shield' ) ),
+				? sprintf( __( 'Could not change Cloudflare\'s security level: %s', 'chaos-shield' ), $res->get_error_message() )
+				: ( $on ? __( 'Switched on Cloudflare\'s Under Attack mode.', 'chaos-shield' ) : __( 'Switched Cloudflare\'s security level back.', 'chaos-shield' ) ),
 			'',
 			array(
 				'severity' => is_wp_error( $res ) ? Events::NOTICE : Events::INFO,

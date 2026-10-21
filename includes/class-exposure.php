@@ -2,10 +2,10 @@
 /**
  * Exposed files and leaked keys.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -18,8 +18,8 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Exposure {
 
-	const OPTION = 'sshield_exposure';
-	const MARKER = 'Sentinel Shield sensitive files';
+	const OPTION = 'cshield_exposure';
+	const MARKER = 'Chaos Shield sensitive files';
 
 	/**
 	 * What each kind of file starts with.
@@ -28,18 +28,18 @@ final class Exposure {
 	 */
 	private static function kinds() {
 		return array(
-			'env'     => array( __( 'Environment file with passwords and keys', 'sentinel-shield' ), '/^\s*(?:export\s+)?[A-Z][A-Z0-9_]{2,}\s*=/m' ),
-			'git'     => array( __( 'Git repository, with your code and its history', 'sentinel-shield' ), '/^ref:\s*refs\/|\[core\]/m' ),
-			'svn'     => array( __( 'Subversion working copy', 'sentinel-shield' ), '/^SQLite format 3|^\d+\s*\n\s*dir/' ),
-			'config'  => array( __( 'Copy of wp-config.php with the database password', 'sentinel-shield' ), '/DB_PASSWORD|DB_NAME|define\s*\(\s*[\'"]AUTH_KEY/' ),
-			'sql'     => array( __( 'Database dump', 'sentinel-shield' ), '/CREATE TABLE|INSERT INTO|-- MySQL dump|-- MariaDB dump|-- phpMyAdmin SQL Dump/i' ),
-			'archive' => array( __( 'Backup archive of the site', 'sentinel-shield' ), '/^(?:PK\x03\x04|\x1f\x8b|7z\xBC\xAF\x27\x1C|Rar!)/' ),
-			'log'     => array( __( 'Error log with file paths and details', 'sentinel-shield' ), '/PHP (?:Fatal error|Warning|Notice|Parse error|Deprecated)|\[\d{2}-[A-Z][a-z]{2}-\d{4} /' ),
-			'phpinfo' => array( __( 'phpinfo() page listing the server setup', 'sentinel-shield' ), '/phpinfo\(\)|<title>PHP \d|PHP Version \d/i' ),
-			'passwd'  => array( __( 'Password file', 'sentinel-shield' ), '/^[\w.-]+:(?:\$apr1\$|\$2[aby]\$|\{SHA\}|\$[156]\$)/m' ),
-			'dsstore' => array( __( 'Mac folder listing (.DS_Store)', 'sentinel-shield' ), '/^\x00\x00\x00\x01Bud1/' ),
-			'adminer' => array( __( 'Database admin tool', 'sentinel-shield' ), '/adminer|phpMyAdmin/i' ),
-			'listing' => array( __( 'Folder listing that shows every file', 'sentinel-shield' ), '/<title>Index of \//i' ),
+			'env'     => array( __( 'Environment file with passwords and keys', 'chaos-shield' ), '/^\s*(?:export\s+)?[A-Z][A-Z0-9_]{2,}\s*=/m' ),
+			'git'     => array( __( 'Git repository, with your code and its history', 'chaos-shield' ), '/^ref:\s*refs\/|\[core\]/m' ),
+			'svn'     => array( __( 'Subversion working copy', 'chaos-shield' ), '/^SQLite format 3|^\d+\s*\n\s*dir/' ),
+			'config'  => array( __( 'Copy of wp-config.php with the database password', 'chaos-shield' ), '/DB_PASSWORD|DB_NAME|define\s*\(\s*[\'"]AUTH_KEY/' ),
+			'sql'     => array( __( 'Database dump', 'chaos-shield' ), '/CREATE TABLE|INSERT INTO|-- MySQL dump|-- MariaDB dump|-- phpMyAdmin SQL Dump/i' ),
+			'archive' => array( __( 'Backup archive of the site', 'chaos-shield' ), '/^(?:PK\x03\x04|\x1f\x8b|7z\xBC\xAF\x27\x1C|Rar!)/' ),
+			'log'     => array( __( 'Error log with file paths and details', 'chaos-shield' ), '/PHP (?:Fatal error|Warning|Notice|Parse error|Deprecated)|\[\d{2}-[A-Z][a-z]{2}-\d{4} /' ),
+			'phpinfo' => array( __( 'phpinfo() page listing the server setup', 'chaos-shield' ), '/phpinfo\(\)|<title>PHP \d|PHP Version \d/i' ),
+			'passwd'  => array( __( 'Password file', 'chaos-shield' ), '/^[\w.-]+:(?:\$apr1\$|\$2[aby]\$|\{SHA\}|\$[156]\$)/m' ),
+			'dsstore' => array( __( 'Mac folder listing (.DS_Store)', 'chaos-shield' ), '/^\x00\x00\x00\x01Bud1/' ),
+			'adminer' => array( __( 'Database admin tool', 'chaos-shield' ), '/adminer|phpMyAdmin/i' ),
+			'listing' => array( __( 'Folder listing that shows every file', 'chaos-shield' ), '/<title>Index of \//i' ),
 		);
 	}
 
@@ -94,7 +94,7 @@ final class Exposure {
 		 *
 		 * @param array $paths Path relative to the site root => kind (env, git, config, sql, archive, log, phpinfo, ...).
 		 */
-		return (array) apply_filters( 'sshield_exposure_paths', $paths );
+		return (array) apply_filters( 'cshield_exposure_paths', $paths );
 	}
 
 	/**
@@ -227,10 +227,10 @@ final class Exposure {
 		if ( $new ) {
 			Alerts::send(
 				'alert_exposure',
-				__( 'Private files or keys can be downloaded from your site', 'sentinel-shield' ),
+				__( 'Private files or keys can be downloaded from your site', 'chaos-shield' ),
 				sprintf(
 					/* translators: 1: site address, 2: list. */
-					__( "Anyone can download these from %1\$s:\n\n%2\$s\n\nDelete the files or block them on the Edge tab. A key that was public should be replaced with a new one by the service that issued it, as it may already have been copied.", 'sentinel-shield' ),
+					__( "Anyone can download these from %1\$s:\n\n%2\$s\n\nDelete the files or block them on the Edge tab. A key that was public should be replaced with a new one by the service that issued it, as it may already have been copied.", 'chaos-shield' ),
 					home_url(),
 					implode( "\n", $new )
 				),
@@ -239,7 +239,7 @@ final class Exposure {
 			Events::add(
 				'scan',
 				/* translators: %d: number of findings. */
-				sprintf( _n( '%d private file or key is publicly reachable.', '%d private files or keys are publicly reachable.', count( $new ), 'sentinel-shield' ), count( $new ) ),
+				sprintf( _n( '%d private file or key is publicly reachable.', '%d private files or keys are publicly reachable.', count( $new ), 'chaos-shield' ), count( $new ) ),
 				'',
 				array(
 					'severity' => Events::CRITICAL,
@@ -355,25 +355,25 @@ final class Exposure {
 	public static function delete( $id ) {
 		$state = self::state();
 		if ( ! isset( $state['files'][ $id ] ) ) {
-			return new \WP_Error( 'sshield_exposure', __( 'That file is no longer listed. Check again.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_exposure', __( 'That file is no longer listed. Check again.', 'chaos-shield' ) );
 		}
 		$f    = $state['files'][ $id ];
 		$path = wp_normalize_path( ABSPATH . $f['path'] );
 		$real = realpath( $path );
 		// Only plain files the check itself found by name, and never the live config.
 		if ( ! $real || ! is_file( $real ) || 0 !== strpos( wp_normalize_path( $real ), wp_normalize_path( realpath( ABSPATH ) ) ) || in_array( basename( $real ), array( 'wp-config.php', '.htaccess', 'index.php' ), true ) || ! isset( self::local()[ $f['path'] ] ) ) {
-			return new \WP_Error( 'sshield_exposure', __( 'This one cannot be deleted from here. Remove it with your host\'s file manager, or block it.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_exposure', __( 'This one cannot be deleted from here. Remove it with your host\'s file manager, or block it.', 'chaos-shield' ) );
 		}
 		wp_delete_file( $real );
 		if ( file_exists( $real ) ) {
-			return new \WP_Error( 'sshield_exposure', __( 'The file could not be deleted. Check its permissions, or remove it with your host\'s file manager.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_exposure', __( 'The file could not be deleted. Check its permissions, or remove it with your host\'s file manager.', 'chaos-shield' ) );
 		}
 		unset( $state['files'][ $id ] );
 		Network::update_option( self::OPTION, $state, false );
 		Events::add(
 			'scan',
 			/* translators: %s: file path. */
-			sprintf( __( 'Deleted the exposed file %s.', 'sentinel-shield' ), $f['path'] ),
+			sprintf( __( 'Deleted the exposed file %s.', 'chaos-shield' ), $f['path'] ),
 			Request::ip(),
 			array(
 				'severity' => Events::NOTICE,
@@ -444,12 +444,12 @@ final class Exposure {
 	public static function protect( $on ) {
 		$file = ABSPATH . '.htaccess';
 		if ( ( file_exists( $file ) && ! wp_is_writable( $file ) ) || ( ! file_exists( $file ) && ! wp_is_writable( ABSPATH ) ) ) {
-			return new \WP_Error( 'sshield_exposure', __( 'The .htaccess file in the site root cannot be written. Add the rules by hand, or ask your host.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_exposure', __( 'The .htaccess file in the site root cannot be written. Add the rules by hand, or ask your host.', 'chaos-shield' ) );
 		}
 		require_once ABSPATH . 'wp-admin/includes/misc.php';
 		Integrity::expect( '.htaccess' );
 		if ( ! insert_with_markers( $file, self::MARKER, $on ? self::rules() : array() ) ) {
-			return new \WP_Error( 'sshield_exposure', __( 'The rules could not be saved to .htaccess.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_exposure', __( 'The rules could not be saved to .htaccess.', 'chaos-shield' ) );
 		}
 		if ( ! $on ) {
 			// insert_with_markers leaves empty markers behind; take them out.
@@ -460,12 +460,12 @@ final class Exposure {
 		if ( $on && self::broken() ) {
 			// The server refused the rules: put the file back as it was.
 			self::protect( false );
-			return new \WP_Error( 'sshield_exposure', __( 'The server did not accept the rules, so they were taken out again. Your host may not allow these settings in .htaccess.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_exposure', __( 'The server did not accept the rules, so they were taken out again. Your host may not allow these settings in .htaccess.', 'chaos-shield' ) );
 		}
 		Integrity::accept( '.htaccess' );
 		Events::add(
 			'settings',
-			$on ? __( 'Blocked downloads of backups, logs and hidden files in .htaccess.', 'sentinel-shield' ) : __( 'Removed the block on backups, logs and hidden files from .htaccess.', 'sentinel-shield' ),
+			$on ? __( 'Blocked downloads of backups, logs and hidden files in .htaccess.', 'chaos-shield' ) : __( 'Removed the block on backups, logs and hidden files from .htaccess.', 'chaos-shield' ),
 			Request::ip(),
 			array( 'action' => 'settings.exposure' )
 		);

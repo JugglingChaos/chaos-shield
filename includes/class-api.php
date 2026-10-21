@@ -2,30 +2,30 @@
 /**
  * REST API.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Routes under /wp-json/sentinel-shield/v1.
+ * Routes under /wp-json/chaos-shield/v1.
  *
  * Read routes accept an administrator (cookie with nonce, or an application
- * password) or this site's hub key in the X-Sentinel-Key header. Routes that
+ * password) or this site's hub key in the X-Chaos-Key header. Routes that
  * change anything need an administrator.
  */
 final class Api {
 
-	const NS         = 'sentinel-shield/v1';
-	const KEY_OPTION = 'sshield_hub_key';
-	const KEY_HEADER = 'X-Sentinel-Key';
-	const SCOPE      = 'sshield_hub_key_scope';
-	const SEALED     = 'sshield_hub_key_sealed';
-	const TIME_HDR   = 'X-Sentinel-Time';
-	const SIG_HDR    = 'X-Sentinel-Signature';
-	const NONCE_HDR  = 'X-Sentinel-Nonce';
+	const NS         = 'chaos-shield/v1';
+	const KEY_OPTION = 'cshield_hub_key';
+	const KEY_HEADER = 'X-Chaos-Key';
+	const SCOPE      = 'cshield_hub_key_scope';
+	const SEALED     = 'cshield_hub_key_sealed';
+	const TIME_HDR   = 'X-Chaos-Time';
+	const SIG_HDR    = 'X-Chaos-Signature';
+	const NONCE_HDR  = 'X-Chaos-Nonce';
 	const SKEW       = 300;
 
 	/**
@@ -192,12 +192,12 @@ final class Api {
 		$key    = (string) $request->get_header( self::KEY_HEADER );
 		$signed = '' !== (string) $request->get_header( self::SIG_HDR );
 		if ( '' === $key && ! $signed ) {
-			return new \WP_Error( 'rest_forbidden', __( 'Authentication required.', 'sentinel-shield' ), array( 'status' => rest_authorization_required_code() ) );
+			return new \WP_Error( 'rest_forbidden', __( 'Authentication required.', 'chaos-shield' ), array( 'status' => rest_authorization_required_code() ) );
 		}
 
 		$ip = Request::ip();
 		if ( $ip && ! Firewall::allowlisted() && Login_Guard::locked_until( $ip ) ) {
-			return new \WP_Error( 'sshield_locked_out', __( 'Too many failed attempts. Try again later.', 'sentinel-shield' ), array( 'status' => 429 ) );
+			return new \WP_Error( 'cshield_locked_out', __( 'Too many failed attempts. Try again later.', 'chaos-shield' ), array( 'status' => 429 ) );
 		}
 		// Hubs from 1.6.2 sign reads with the key's hash, so the key itself never travels.
 		$stored = (string) Network::get_option( self::KEY_OPTION, '' );
@@ -206,7 +206,7 @@ final class Api {
 			if ( true === $check ) {
 				return true;
 			}
-			if ( is_wp_error( $check ) && 'sshield_hub_replay' === $check->get_error_code() ) {
+			if ( is_wp_error( $check ) && 'cshield_hub_replay' === $check->get_error_code() ) {
 				return $check;
 			}
 		} elseif ( '' !== $key && self::key_valid( $key ) ) {
@@ -217,7 +217,7 @@ final class Api {
 		if ( Settings::enabled( 'limit_login' ) ) {
 			( new Login_Guard() )->record_failure( 'hub key' );
 		}
-		return new \WP_Error( 'rest_forbidden', __( 'Invalid hub key.', 'sentinel-shield' ), array( 'status' => 403 ) );
+		return new \WP_Error( 'rest_forbidden', __( 'Invalid hub key.', 'chaos-shield' ), array( 'status' => 403 ) );
 	}
 
 	/**
@@ -232,10 +232,10 @@ final class Api {
 	public function can_manage_hub( $request ) {
 		$ip = Request::ip();
 		if ( $ip && ! Firewall::allowlisted() && Login_Guard::locked_until( $ip ) ) {
-			return new \WP_Error( 'sshield_locked_out', __( 'Too many failed attempts. Try again later.', 'sentinel-shield' ), array( 'status' => 429 ) );
+			return new \WP_Error( 'cshield_locked_out', __( 'Too many failed attempts. Try again later.', 'chaos-shield' ), array( 'status' => 429 ) );
 		}
 		if ( 'manage' !== self::key_scope() ) {
-			return new \WP_Error( 'sshield_hub_read_only', __( 'This site only allows the hub to read its status. Create a key that allows actions on its Hub tab.', 'sentinel-shield' ), array( 'status' => 403 ) );
+			return new \WP_Error( 'cshield_hub_read_only', __( 'This site only allows the hub to read its status. Create a key that allows actions on its Hub tab.', 'chaos-shield' ), array( 'status' => 403 ) );
 		}
 		$key   = Totp::open( Network::get_option( self::SEALED, '' ) );
 		$check = $key ? self::verify_signature( $request, $key ) : false;
@@ -246,7 +246,7 @@ final class Api {
 			if ( Settings::enabled( 'limit_login' ) ) {
 				( new Login_Guard() )->record_failure( 'hub action' );
 			}
-			return new \WP_Error( 'rest_forbidden', __( 'The hub signature is not valid. Check the clocks of both servers, or connect the site again with its current key.', 'sentinel-shield' ), array( 'status' => 403 ) );
+			return new \WP_Error( 'rest_forbidden', __( 'The hub signature is not valid. Check the clocks of both servers, or connect the site again with its current key.', 'chaos-shield' ), array( 'status' => 403 ) );
 		}
 		return true;
 	}
@@ -270,9 +270,9 @@ final class Api {
 			return false;
 		}
 		// Each request works once.
-		$seen = 'sshield_hub_sig_' . md5( $nonce . $sig );
+		$seen = 'cshield_hub_sig_' . md5( $nonce . $sig );
 		if ( Network::get_transient( $seen ) ) {
-			return new \WP_Error( 'sshield_hub_replay', __( 'This hub request was already used.', 'sentinel-shield' ), array( 'status' => 403 ) );
+			return new \WP_Error( 'cshield_hub_replay', __( 'This hub request was already used.', 'chaos-shield' ), array( 'status' => 403 ) );
 		}
 		Network::set_transient( $seen, 1, 2 * self::SKEW );
 		return true;
@@ -285,7 +285,7 @@ final class Api {
 	 * @param int    $time   Unix time.
 	 * @param string $nonce  Random value unique to the request.
 	 * @param string $method HTTP method.
-	 * @param string $route  REST route, such as /sentinel-shield/v1/hub/scan.
+	 * @param string $route  REST route, such as /chaos-shield/v1/hub/scan.
 	 * @param string $body   Raw body.
 	 * @return string Hex HMAC-SHA256.
 	 */
@@ -314,7 +314,7 @@ final class Api {
 		if ( ! Scanner::running() ) {
 			Scanner::start( 'hub' );
 		}
-		Events::add( 'scan', __( 'Scan started from the hub.', 'sentinel-shield' ), Request::ip() );
+		Events::add( 'scan', __( 'Scan started from the hub.', 'chaos-shield' ), Request::ip() );
 		return rest_ensure_response( array( 'started' => true ) );
 	}
 
@@ -328,7 +328,7 @@ final class Api {
 		Login_Guard::release();
 		Bans::release();
 		/* translators: %d: number of lockouts and bans. */
-		Events::add( 'settings', sprintf( __( 'All lockouts and bans released from the hub (%d).', 'sentinel-shield' ), $count ), Request::ip(), array( 'severity' => Events::NOTICE ) );
+		Events::add( 'settings', sprintf( __( 'All lockouts and bans released from the hub (%d).', 'chaos-shield' ), $count ), Request::ip(), array( 'severity' => Events::NOTICE ) );
 		return rest_ensure_response( array( 'released' => $count ) );
 	}
 
@@ -341,7 +341,7 @@ final class Api {
 	public function hub_settings( $request ) {
 		$pushed = $request->get_param( 'settings' );
 		if ( ! is_array( $pushed ) ) {
-			return new \WP_Error( 'sshield_bad_request', __( 'Send a "settings" object.', 'sentinel-shield' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'cshield_bad_request', __( 'Send a "settings" object.', 'chaos-shield' ), array( 'status' => 400 ) );
 		}
 		$input   = Settings::all();
 		$applied = array();
@@ -355,7 +355,7 @@ final class Api {
 		Events::add(
 			'settings',
 			/* translators: %d: number of settings. */
-			sprintf( __( 'Hardening settings pushed from the hub (%d values).', 'sentinel-shield' ), count( $applied ) ),
+			sprintf( __( 'Hardening settings pushed from the hub (%d values).', 'chaos-shield' ), count( $applied ) ),
 			Request::ip(),
 			array(
 				'severity' => Events::NOTICE,
@@ -374,7 +374,7 @@ final class Api {
 		if ( current_user_can( Network::cap() ) ) {
 			return true;
 		}
-		return new \WP_Error( 'rest_forbidden', __( 'Only administrators can do this.', 'sentinel-shield' ), array( 'status' => rest_authorization_required_code() ) );
+		return new \WP_Error( 'rest_forbidden', __( 'Only administrators can do this.', 'chaos-shield' ), array( 'status' => rest_authorization_required_code() ) );
 	}
 
 	/**
@@ -467,7 +467,7 @@ final class Api {
 				'name' => wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES ),
 				'url'  => home_url( '/' ),
 			),
-			'plugin'    => SSHIELD_VERSION,
+			'plugin'    => CSHIELD_VERSION,
 			'wordpress' => $wp_version,
 			'php'       => PHP_VERSION,
 			'score'     => $score,
@@ -591,11 +591,11 @@ final class Api {
 	public function delete_lockout( $request ) {
 		$ip = (string) $request['ip'];
 		if ( ! filter_var( $ip, FILTER_VALIDATE_IP ) ) {
-			return new \WP_Error( 'sshield_bad_ip', __( 'Not a valid IP address.', 'sentinel-shield' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'cshield_bad_ip', __( 'Not a valid IP address.', 'chaos-shield' ), array( 'status' => 400 ) );
 		}
 		Login_Guard::release( $ip );
 		/* translators: %s: IP address. */
-		Events::add( 'settings', sprintf( __( 'Lockout released for %s through the API.', 'sentinel-shield' ), $ip ), Request::ip() );
+		Events::add( 'settings', sprintf( __( 'Lockout released for %s through the API.', 'chaos-shield' ), $ip ), Request::ip() );
 		return rest_ensure_response( array( 'released' => $ip ) );
 	}
 
@@ -608,15 +608,15 @@ final class Api {
 	public function block_ip( $request ) {
 		$ip = (string) $request['ip'];
 		if ( ! filter_var( $ip, FILTER_VALIDATE_IP ) ) {
-			return new \WP_Error( 'sshield_bad_ip', __( 'Not a valid IP address.', 'sentinel-shield' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'cshield_bad_ip', __( 'Not a valid IP address.', 'chaos-shield' ), array( 'status' => 400 ) );
 		}
 		if ( Request::ip() === $ip ) {
-			return new \WP_Error( 'sshield_self_block', __( 'You cannot block your own IP address.', 'sentinel-shield' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'cshield_self_block', __( 'You cannot block your own IP address.', 'chaos-shield' ), array( 'status' => 400 ) );
 		}
 		Settings::block_ip( $ip );
 		Login_Guard::release( $ip );
 		/* translators: %s: IP address. */
-		Events::add( 'settings', sprintf( __( '%s added to the block list through the API.', 'sentinel-shield' ), $ip ), Request::ip() );
+		Events::add( 'settings', sprintf( __( '%s added to the block list through the API.', 'chaos-shield' ), $ip ), Request::ip() );
 		return rest_ensure_response( array( 'blocked' => $ip ) );
 	}
 
@@ -638,7 +638,7 @@ final class Api {
 	public function update_settings( $request ) {
 		$modules = $request->get_param( 'modules' );
 		if ( ! is_array( $modules ) ) {
-			return new \WP_Error( 'sshield_bad_request', __( 'Send a "modules" object of module names and true or false.', 'sentinel-shield' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'cshield_bad_request', __( 'Send a "modules" object of module names and true or false.', 'chaos-shield' ), array( 'status' => 400 ) );
 		}
 		$input = Settings::all();
 		foreach ( array_keys( Settings::modules() ) as $key ) {
@@ -647,7 +647,7 @@ final class Api {
 			}
 		}
 		Settings::save_hardening( $input );
-		Events::add( 'settings', __( 'Hardening settings updated through the API.', 'sentinel-shield' ), Request::ip(), array( 'action' => 'settings.hardening' ) );
+		Events::add( 'settings', __( 'Hardening settings updated through the API.', 'chaos-shield' ), Request::ip(), array( 'action' => 'settings.hardening' ) );
 		return rest_ensure_response( Settings::all() );
 	}
 }

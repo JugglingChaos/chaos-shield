@@ -2,10 +2,10 @@
 /**
  * Weekly security report email.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Report {
 
-	const LAST_OPTION = 'sshield_report_last';
+	const LAST_OPTION = 'cshield_report_last';
 
 	/**
 	 * Sends the report when a week has passed since the last one. Called from the daily job.
@@ -44,7 +44,7 @@ final class Report {
 		$sent = (bool) wp_mail(
 			Settings::alert_email(),
 			/* translators: %s: site name. */
-			sprintf( __( '[%s] Weekly security report', 'sentinel-shield' ), $site ),
+			sprintf( __( '[%s] Weekly security report', 'chaos-shield' ), $site ),
 			self::body()
 		);
 		if ( $sent ) {
@@ -72,45 +72,45 @@ final class Report {
 		$lines   = array();
 		$lines[] = sprintf(
 			/* translators: 1: site URL, 2: score. */
-			__( 'Security report for %1$s. Score: %2$d out of 100.', 'sentinel-shield' ),
+			__( 'Security report for %1$s. Score: %2$d out of 100.', 'chaos-shield' ),
 			home_url(),
 			$score
 		);
 		$lines[] = '';
-		$lines[] = __( 'Last 7 days', 'sentinel-shield' );
+		$lines[] = __( 'Last 7 days', 'chaos-shield' );
 		/* translators: %d: count. */
-		$lines[] = '- ' . sprintf( __( 'Logins: %d', 'sentinel-shield' ), $n( 'login' ) );
+		$lines[] = '- ' . sprintf( __( 'Logins: %d', 'chaos-shield' ), $n( 'login' ) );
 		/* translators: %d: count. */
-		$lines[] = '- ' . sprintf( __( 'Lockouts after failed logins: %d', 'sentinel-shield' ), $n( 'lockout' ) );
+		$lines[] = '- ' . sprintf( __( 'Lockouts after failed logins: %d', 'chaos-shield' ), $n( 'lockout' ) );
 		/* translators: %d: count. */
-		$lines[] = '- ' . sprintf( __( 'IPs banned: %d', 'sentinel-shield' ), $n( 'ban' ) );
+		$lines[] = '- ' . sprintf( __( 'IPs banned: %d', 'chaos-shield' ), $n( 'ban' ) );
 		/* translators: %d: count. */
-		$lines[] = '- ' . sprintf( __( 'Firewall block events: %d', 'sentinel-shield' ), $n( 'blocked' ) );
+		$lines[] = '- ' . sprintf( __( 'Firewall block events: %d', 'chaos-shield' ), $n( 'blocked' ) );
 		/* translators: %d: count. */
-		$lines[] = '- ' . sprintf( __( 'User and role changes: %d', 'sentinel-shield' ), $n( 'user' ) );
+		$lines[] = '- ' . sprintf( __( 'User and role changes: %d', 'chaos-shield' ), $n( 'user' ) );
 		/* translators: %d: count. */
-		$lines[] = '- ' . sprintf( __( 'Plugin and theme changes: %d', 'sentinel-shield' ), $n( 'plugin' ) + $n( 'theme' ) );
+		$lines[] = '- ' . sprintf( __( 'Plugin and theme changes: %d', 'chaos-shield' ), $n( 'plugin' ) + $n( 'theme' ) );
 		$lines[] = '';
-		$lines[] = __( 'Right now', 'sentinel-shield' );
+		$lines[] = __( 'Right now', 'chaos-shield' );
 		/* translators: %d: count. */
-		$lines[] = '- ' . sprintf( __( 'IPs banned: %d', 'sentinel-shield' ), count( Bans::bans() ) );
+		$lines[] = '- ' . sprintf( __( 'IPs banned: %d', 'chaos-shield' ), count( Bans::bans() ) );
 		/* translators: %d: count. */
-		$lines[] = '- ' . sprintf( __( 'IPs locked out: %d', 'sentinel-shield' ), count( Login_Guard::lockouts() ) );
+		$lines[] = '- ' . sprintf( __( 'IPs locked out: %d', 'chaos-shield' ), count( Login_Guard::lockouts() ) );
 		if ( Vulns::enabled() ) {
 			/* translators: %d: count. */
-			$lines[] = '- ' . sprintf( __( 'Installed items with known vulnerabilities: %d', 'sentinel-shield' ), count( Vulns::open() ) );
+			$lines[] = '- ' . sprintf( __( 'Installed items with known vulnerabilities: %d', 'chaos-shield' ), count( Vulns::open() ) );
 		}
 		/* translators: 1: admins with two-factor, 2: all admins. */
-		$lines[] = '- ' . sprintf( __( 'Administrators with two-factor: %1$d of %2$d', 'sentinel-shield' ), $cover['enabled'], $cover['total'] );
+		$lines[] = '- ' . sprintf( __( 'Administrators with two-factor: %1$d of %2$d', 'chaos-shield' ), $cover['enabled'], $cover['total'] );
 		if ( $results ) {
 			$lines[] = '- ' . sprintf(
 				/* translators: 1: date, 2: open findings. */
-				__( 'Last scan %1$s, %2$d open findings', 'sentinel-shield' ),
+				__( 'Last scan %1$s, %2$d open findings', 'chaos-shield' ),
 				wp_date( get_option( 'date_format' ), $results['finished'] ),
 				count( $open )
 			);
 		} else {
-			$lines[] = '- ' . __( 'No scan has run yet', 'sentinel-shield' );
+			$lines[] = '- ' . __( 'No scan has run yet', 'chaos-shield' );
 		}
 
 		$todo = array_filter(
@@ -121,7 +121,7 @@ final class Report {
 		);
 		if ( $todo ) {
 			$lines[] = '';
-			$lines[] = __( 'To fix', 'sentinel-shield' );
+			$lines[] = __( 'To fix', 'chaos-shield' );
 			foreach ( $todo as $c ) {
 				$lines[] = '- ' . $c['label'] . ': ' . wp_strip_all_tags( $c['detail'] );
 			}
@@ -129,10 +129,10 @@ final class Report {
 
 		$lines[] = '';
 		/* translators: %s: dashboard URL. */
-		$lines[] = sprintf( __( 'Open the dashboard: %s', 'sentinel-shield' ), Network::admin_url( 'admin.php?page=sentinel-shield' ) );
+		$lines[] = sprintf( __( 'Open the dashboard: %s', 'chaos-shield' ), Network::admin_url( 'admin.php?page=chaos-shield' ) );
 		$lines[] = '';
 		$lines[] = '-- ';
-		$lines[] = __( 'Sent weekly by Sentinel Shield. Turn it off under Sentinel Shield > Alerts.', 'sentinel-shield' );
+		$lines[] = __( 'Sent weekly by Chaos Shield. Turn it off under Chaos Shield > Alerts.', 'chaos-shield' );
 		return implode( "\n", $lines );
 	}
 }

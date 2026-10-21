@@ -1,13 +1,13 @@
-/* Sentinel Shield: add and remove passkeys on the profile screen. */
+/* Chaos Shield: add and remove passkeys on the profile screen. */
 ( function () {
 	'use strict';
-	var box = document.getElementById( 'sshield-passkeys' );
-	var cfg = window.sshieldPasskey;
+	var box = document.getElementById( 'cshield-passkeys' );
+	var cfg = window.cshieldPasskey;
 	if ( ! box || ! cfg ) {
 		return;
 	}
-	var msg = box.querySelector( '.sshield-pk__msg' );
-	var create = box.querySelector( '.sshield-pk__create' );
+	var msg = box.querySelector( '.cshield-pk__msg' );
+	var create = box.querySelector( '.cshield-pk__create' );
 
 	function toBytes( text ) {
 		var b64 = text.replace( /-/g, '+' ).replace( /_/g, '/' );
@@ -48,8 +48,8 @@
 			msg.textContent = cfg.unsupported;
 		}
 		create.addEventListener( 'click', function () {
-			var name = box.querySelector( '#sshield-pk-name' );
-			var pass = box.querySelector( '#sshield-pk-password' );
+			var name = box.querySelector( '#cshield-pk-name' );
+			var pass = box.querySelector( '#cshield-pk-password' );
 			if ( pass && ! pass.value ) {
 				msg.textContent = cfg.password;
 				pass.focus();
@@ -57,7 +57,7 @@
 			}
 			create.disabled = true;
 			msg.textContent = cfg.working;
-			post( { action: 'sshield_pk_reg_options', password: pass ? pass.value : '' } )
+			post( { action: 'cshield_pk_reg_options', password: pass ? pass.value : '' } )
 				.then( function ( res ) {
 					if ( ! res.success ) {
 						throw new Error( res.data && res.data.message );
@@ -75,7 +75,7 @@
 				} )
 				.then( function ( cred ) {
 					return post( {
-						action: 'sshield_pk_register',
+						action: 'cshield_pk_register',
 						name: name ? name.value : '',
 						clientDataJSON: toText( cred.response.clientDataJSON ),
 						attestationObject: toText( cred.response.attestationObject )
@@ -102,12 +102,12 @@
 	}
 
 	box.addEventListener( 'click', function ( e ) {
-		var btn = e.target.closest( '.sshield-pk__remove' );
+		var btn = e.target.closest( '.cshield-pk__remove' );
 		if ( ! btn || ! window.confirm( cfg.confirm ) ) {
 			return;
 		}
 		btn.disabled = true;
-		post( { action: 'sshield_pk_delete', user: box.getAttribute( 'data-user' ), id: btn.getAttribute( 'data-id' ) } ).then( function ( res ) {
+		post( { action: 'cshield_pk_delete', user: box.getAttribute( 'data-user' ), id: btn.getAttribute( 'data-id' ) } ).then( function ( res ) {
 			if ( res.success ) {
 				window.location.reload();
 			} else {

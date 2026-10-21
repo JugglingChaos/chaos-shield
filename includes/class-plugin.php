@@ -2,10 +2,10 @@
 /**
  * Plugin bootstrap.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -90,7 +90,7 @@ final class Plugin {
 		add_action( 'init', array( $this, 'load_textdomain' ) );
 	}
 
-	const DAILY = 'sshield_daily';
+	const DAILY = 'cshield_daily';
 
 	/**
 	 * Makes sure the daily job is scheduled.
@@ -144,7 +144,7 @@ final class Plugin {
 	 * Loads translations.
 	 */
 	public function load_textdomain() {
-		load_plugin_textdomain( 'sentinel-shield', false, dirname( plugin_basename( SSHIELD_FILE ) ) . '/languages' );
+		load_plugin_textdomain( 'chaos-shield', false, dirname( plugin_basename( CSHIELD_FILE ) ) . '/languages' );
 	}
 
 	/**
@@ -157,8 +157,8 @@ final class Plugin {
 			// One site's firewall and login limits cannot protect a network that shares
 			// its users and files, so the plugin runs for the whole network or not at all.
 			wp_die(
-				esc_html__( 'Sentinel Shield protects the whole network, so it has to be network activated. Go to Network Admin, Plugins, and choose Network Activate.', 'sentinel-shield' ),
-				esc_html__( 'Network activation needed', 'sentinel-shield' ),
+				esc_html__( 'Chaos Shield protects the whole network, so it has to be network activated. Go to Network Admin, Plugins, and choose Network Activate.', 'chaos-shield' ),
+				esc_html__( 'Network activation needed', 'chaos-shield' ),
 				array( 'back_link' => true )
 			);
 		}
@@ -170,7 +170,7 @@ final class Plugin {
 			Network::add_option( Settings::OPTION, Settings::defaults() );
 		}
 		Events::install();
-		Events::add( 'system', __( 'Sentinel Shield activated.', 'sentinel-shield' ) );
+		Events::add( 'system', __( 'Chaos Shield activated.', 'chaos-shield' ) );
 	}
 
 	/**

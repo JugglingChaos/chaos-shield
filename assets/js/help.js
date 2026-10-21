@@ -1,8 +1,8 @@
-/* Sentinel Shield visitor help. Matches questions in the browser; nothing is sent anywhere until the visitor sends a message. */
+/* Chaos Shield visitor help. Matches questions in the browser; nothing is sent anywhere until the visitor sends a message. */
 ( function () {
 	'use strict';
 
-	var cfg = window.sshieldHelp;
+	var cfg = window.cshieldHelp;
 	if ( ! cfg || ! cfg.items ) {
 		return;
 	}
@@ -228,7 +228,7 @@
 		f.addEventListener( 'submit', function ( e ) {
 			e.preventDefault();
 			var body = new window.FormData( f );
-			body.append( 'sshield_help', 'ask' );
+			body.append( 'cshield_help', 'ask' );
 			body.append( 'token', cfg.contact.token );
 			body.append( 'reference', cfg.contact.ref || '' );
 			body.append( 'reason', cfg.contact.reason || cfg.context );

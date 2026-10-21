@@ -2,10 +2,10 @@
 /**
  * Activity monitoring: logins, users, plugins, themes and core.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Monitor {
 
-	const KNOWN_IPS_META = '_sshield_known_ips';
+	const KNOWN_IPS_META = '_cshield_known_ips';
 
 	/**
 	 * Registers hooks.
@@ -50,7 +50,7 @@ final class Monitor {
 		Events::add(
 			'login',
 			/* translators: %s: username. */
-			sprintf( __( '%s logged in.', 'sentinel-shield' ), $login ),
+			sprintf( __( '%s logged in.', 'chaos-shield' ), $login ),
 			$ip,
 			array(
 				'user_id' => $user->ID,
@@ -78,7 +78,7 @@ final class Monitor {
 		Events::add(
 			'login',
 			/* translators: 1: username, 2: IP address. */
-			sprintf( __( 'Administrator %1$s logged in from a new IP address (%2$s).', 'sentinel-shield' ), $login, $ip ),
+			sprintf( __( 'Administrator %1$s logged in from a new IP address (%2$s).', 'chaos-shield' ), $login, $ip ),
 			$ip,
 			array(
 				'user_id'  => $user->ID,
@@ -89,10 +89,10 @@ final class Monitor {
 		);
 		Alerts::send(
 			'alert_admin_login',
-			__( 'Administrator login from a new IP address', 'sentinel-shield' ),
+			__( 'Administrator login from a new IP address', 'chaos-shield' ),
 			sprintf(
 				/* translators: 1: username, 2: IP address, 3: date and time. */
-				__( "The administrator account \"%1\$s\" logged in from %2\$s, an address not seen for this account before, at %3\$s.\n\nIf this was not you, change the password, check Users for accounts you do not recognise, and block the IP under Sentinel Shield > Access.", 'sentinel-shield' ),
+				__( "The administrator account \"%1\$s\" logged in from %2\$s, an address not seen for this account before, at %3\$s.\n\nIf this was not you, change the password, check Users for accounts you do not recognise, and block the IP under Chaos Shield > Access.", 'chaos-shield' ),
 				$login,
 				$ip,
 				wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) )
@@ -110,7 +110,7 @@ final class Monitor {
 		Events::add(
 			'user',
 			/* translators: %s: username. */
-			sprintf( __( 'Password reset for %s.', 'sentinel-shield' ), $user->user_login ),
+			sprintf( __( 'Password reset for %s.', 'chaos-shield' ), $user->user_login ),
 			Request::ip(),
 			array(
 				'user_id'  => $user->ID,
@@ -136,7 +136,7 @@ final class Monitor {
 		Events::add(
 			'user',
 			/* translators: 1: username, 2: roles. */
-			sprintf( __( 'User %1$s created with role %2$s.', 'sentinel-shield' ), $user->user_login, $roles ? $roles : '-' ),
+			sprintf( __( 'User %1$s created with role %2$s.', 'chaos-shield' ), $user->user_login, $roles ? $roles : '-' ),
 			Request::ip(),
 			array(
 				'severity' => $admin ? Events::CRITICAL : Events::INFO,
@@ -169,7 +169,7 @@ final class Monitor {
 		Events::add(
 			'user',
 			/* translators: 1: username, 2: old roles, 3: new role. */
-			sprintf( __( 'Role of %1$s changed from %2$s to %3$s.', 'sentinel-shield' ), $user->user_login, implode( ', ', (array) $old_roles ), $role ? $role : '-' ),
+			sprintf( __( 'Role of %1$s changed from %2$s to %3$s.', 'chaos-shield' ), $user->user_login, implode( ', ', (array) $old_roles ), $role ? $role : '-' ),
 			Request::ip(),
 			array(
 				'severity' => $promoted ? Events::CRITICAL : Events::NOTICE,
@@ -192,7 +192,7 @@ final class Monitor {
 		Events::add(
 			'user',
 			/* translators: %s: username. */
-			sprintf( __( 'User %s deleted.', 'sentinel-shield' ), $user ? $user->user_login : '#' . $user_id ),
+			sprintf( __( 'User %s deleted.', 'chaos-shield' ), $user ? $user->user_login : '#' . $user_id ),
 			Request::ip(),
 			array(
 				'severity' => Events::NOTICE,
@@ -208,7 +208,7 @@ final class Monitor {
 	 */
 	public function plugin_activated( $plugin ) {
 		/* translators: %s: plugin name. */
-		$this->plugin_event( $plugin, __( 'Plugin activated: %s', 'sentinel-shield' ), true, 'plugin.activated' );
+		$this->plugin_event( $plugin, __( 'Plugin activated: %s', 'chaos-shield' ), true, 'plugin.activated' );
 	}
 
 	/**
@@ -218,7 +218,7 @@ final class Monitor {
 	 */
 	public function plugin_deactivated( $plugin ) {
 		/* translators: %s: plugin name. */
-		$this->plugin_event( $plugin, __( 'Plugin deactivated: %s', 'sentinel-shield' ), false, 'plugin.deactivated' );
+		$this->plugin_event( $plugin, __( 'Plugin deactivated: %s', 'chaos-shield' ), false, 'plugin.deactivated' );
 	}
 
 	/**
@@ -230,7 +230,7 @@ final class Monitor {
 	public function plugin_deleted( $plugin, $deleted ) {
 		if ( $deleted ) {
 			/* translators: %s: plugin name. */
-			$this->plugin_event( $plugin, __( 'Plugin deleted: %s', 'sentinel-shield' ), true, 'plugin.deleted' );
+			$this->plugin_event( $plugin, __( 'Plugin deleted: %s', 'chaos-shield' ), true, 'plugin.deleted' );
 		}
 	}
 
@@ -267,9 +267,9 @@ final class Monitor {
 		if ( 'install' === $action ) {
 			$message = 'plugin' === $type
 				/* translators: %s: plugin name. */
-				? sprintf( __( 'Plugin installed: %s', 'sentinel-shield' ), $list )
+				? sprintf( __( 'Plugin installed: %s', 'chaos-shield' ), $list )
 				/* translators: %s: theme name. */
-				: sprintf( __( 'Theme installed: %s', 'sentinel-shield' ), $list );
+				: sprintf( __( 'Theme installed: %s', 'chaos-shield' ), $list );
 			Events::add(
 				$type,
 				$message,
@@ -286,9 +286,9 @@ final class Monitor {
 
 		$message = 'plugin' === $type
 			/* translators: %s: plugin names. */
-			? sprintf( __( 'Plugins updated: %s', 'sentinel-shield' ), $list )
+			? sprintf( __( 'Plugins updated: %s', 'chaos-shield' ), $list )
 			/* translators: %s: theme names. */
-			: sprintf( __( 'Themes updated: %s', 'sentinel-shield' ), $list );
+			: sprintf( __( 'Themes updated: %s', 'chaos-shield' ), $list );
 		Events::add( $type, $message, Request::ip(), array( 'action' => $type . '.updated' ) );
 	}
 
@@ -326,7 +326,7 @@ final class Monitor {
 	 */
 	public function theme_switched( $name ) {
 		/* translators: %s: theme name. */
-		$message = sprintf( __( 'Theme switched to %s.', 'sentinel-shield' ), $name );
+		$message = sprintf( __( 'Theme switched to %s.', 'chaos-shield' ), $name );
 		Events::add(
 			'theme',
 			$message,
@@ -347,7 +347,7 @@ final class Monitor {
 	 */
 	public function core_updated( $version ) {
 		/* translators: %s: WordPress version. */
-		Events::add( 'system', sprintf( __( 'WordPress updated to %s.', 'sentinel-shield' ), $version ), '', array( 'action' => 'core.updated' ) );
+		Events::add( 'system', sprintf( __( 'WordPress updated to %s.', 'chaos-shield' ), $version ), '', array( 'action' => 'core.updated' ) );
 	}
 
 	/**
@@ -403,12 +403,12 @@ final class Monitor {
 		$actor = wp_get_current_user();
 		Alerts::send(
 			'alert_new_admin',
-			__( 'New administrator account', 'sentinel-shield' ),
+			__( 'New administrator account', 'chaos-shield' ),
 			sprintf(
 				/* translators: 1: new admin username, 2: acting username, 3: IP address. */
-				__( "\"%1\$s\" now has administrator rights. The change was made by %2\$s from %3\$s.\n\nIf you did not expect this, remove the account under Users right away: creating a hidden admin is a common step after a break-in.", 'sentinel-shield' ),
+				__( "\"%1\$s\" now has administrator rights. The change was made by %2\$s from %3\$s.\n\nIf you did not expect this, remove the account under Users right away: creating a hidden admin is a common step after a break-in.", 'chaos-shield' ),
 				$login,
-				$actor && $actor->exists() ? $actor->user_login : __( 'an unknown user or process', 'sentinel-shield' ),
+				$actor && $actor->exists() ? $actor->user_login : __( 'an unknown user or process', 'chaos-shield' ),
 				Request::ip() ? Request::ip() : '-'
 			),
 			(string) $user_id

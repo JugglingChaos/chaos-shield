@@ -1,7 +1,7 @@
-/* Sentinel Shield: draws the two-factor setup QR code on the profile screen. */
+/* Chaos Shield: draws the two-factor setup QR code on the profile screen. */
 ( function () {
 	'use strict';
-	var box = document.querySelector( '.sshield-2fa__qr' );
+	var box = document.querySelector( '.cshield-2fa__qr' );
 	if ( ! box || typeof window.qrcode !== 'function' ) {
 		return;
 	}

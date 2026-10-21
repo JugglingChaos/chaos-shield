@@ -2,10 +2,10 @@
 /**
  * The daily look at the site from outside: page scripts, HTTPS, exposed files and keys.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -15,9 +15,9 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Page_Check {
 
-	const OPTION = 'sshield_page_check';
-	const HOOK   = 'sshield_page_check';
-	const HEADER = 'X-Sshield-Check';
+	const OPTION = 'cshield_page_check';
+	const HOOK   = 'cshield_page_check';
+	const HEADER = 'X-Cshield-Check';
 	const BUDGET = 45;
 
 	/**
@@ -60,7 +60,7 @@ final class Page_Check {
 	 * @return bool
 	 */
 	public static function is_self() {
-		$value = Request::server( 'HTTP_X_SSHIELD_CHECK' );
+		$value = Request::server( 'HTTP_X_CSHIELD_CHECK' );
 		$parts = explode( '.', $value, 2 );
 		if ( 2 !== count( $parts ) || ! ctype_digit( $parts[0] ) || abs( time() - (int) $parts[0] ) > 5 * MINUTE_IN_SECONDS || ! function_exists( 'wp_salt' ) ) {
 			return false;
@@ -99,7 +99,7 @@ final class Page_Check {
 		 *
 		 * @param string[] $urls Full addresses on this site.
 		 */
-		$urls = (array) apply_filters( 'sshield_check_pages', $urls );
+		$urls = (array) apply_filters( 'cshield_check_pages', $urls );
 		return array_slice( array_values( array_unique( array_filter( array_map( 'strval', $urls ) ) ) ), 0, 8 );
 	}
 
@@ -112,11 +112,11 @@ final class Page_Check {
 	 */
 	public static function fetch( $url, array $args = array() ) {
 		if ( self::$started && microtime( true ) - self::$started > self::BUDGET ) {
-			return new \WP_Error( 'sshield_budget', 'Out of time' );
+			return new \WP_Error( 'cshield_budget', 'Out of time' );
 		}
 		$own     = (string) wp_parse_url( $url, PHP_URL_HOST ) === (string) wp_parse_url( home_url(), PHP_URL_HOST );
 		$headers = array(
-			'User-Agent' => 'Mozilla/5.0 (compatible; SentinelShield/' . SSHIELD_VERSION . '; page check)',
+			'User-Agent' => 'Mozilla/5.0 (compatible; ChaosShield/' . CSHIELD_VERSION . '; page check)',
 			'Accept'     => 'text/html,application/xhtml+xml,*/*;q=0.8',
 		);
 		if ( $own ) {

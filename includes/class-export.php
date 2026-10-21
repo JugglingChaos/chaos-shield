@@ -2,10 +2,10 @@
 /**
  * Activity log CSV export and the printable compliance report.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -20,8 +20,8 @@ final class Export {
 	 * Registers hooks.
 	 */
 	public function register() {
-		add_action( 'admin_post_sshield_export', array( $this, 'csv' ) );
-		add_action( 'admin_post_sshield_compliance', array( $this, 'compliance' ) );
+		add_action( 'admin_post_cshield_export', array( $this, 'csv' ) );
+		add_action( 'admin_post_cshield_compliance', array( $this, 'compliance' ) );
 	}
 
 	/**
@@ -84,15 +84,15 @@ final class Export {
 	 */
 	public function csv() {
 		if ( ! current_user_can( Network::cap() ) ) {
-			wp_die( esc_html__( 'You are not allowed to do this.', 'sentinel-shield' ), 403 );
+			wp_die( esc_html__( 'You are not allowed to do this.', 'chaos-shield' ), 403 );
 		}
-		check_admin_referer( 'sshield_export' );
+		check_admin_referer( 'cshield_export' );
 		$filters = self::filters( $_GET ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Checked above.
 		$args    = array_intersect_key( $filters, array_flip( array( 'type', 'search', 'user_id', 'since', 'until', 'blog_id' ) ) );
 
 		Events::add(
 			'settings',
-			__( 'Activity log exported to CSV.', 'sentinel-shield' ),
+			__( 'Activity log exported to CSV.', 'chaos-shield' ),
 			Request::ip(),
 			array(
 				'severity' => Events::NOTICE,
@@ -102,7 +102,7 @@ final class Export {
 
 		nocache_headers();
 		header( 'Content-Type: text/csv; charset=utf-8' );
-		header( 'Content-Disposition: attachment; filename="sentinel-shield-log-' . gmdate( 'Y-m-d' ) . '.csv"' );
+		header( 'Content-Disposition: attachment; filename="chaos-shield-log-' . gmdate( 'Y-m-d' ) . '.csv"' );
 		header( 'X-Content-Type-Options: nosniff' );
 
 		$out = fopen( 'php://output', 'w' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- Streaming a download.
@@ -193,106 +193,106 @@ final class Export {
 		$controls = array();
 
 		$controls[] = array(
-			'area'     => __( 'Access control', 'sentinel-shield' ),
-			'label'    => __( 'Multi-factor authentication for administrators', 'sentinel-shield' ),
+			'area'     => __( 'Access control', 'chaos-shield' ),
+			'label'    => __( 'Multi-factor authentication for administrators', 'chaos-shield' ),
 			'ok'       => $admins && count( $admins ) === $covered,
 			/* translators: 1: covered admins, 2: all admins. */
-			'evidence' => sprintf( __( '%1$d of %2$d administrators use two-factor login or a passkey.', 'sentinel-shield' ), $covered, count( $admins ) ),
+			'evidence' => sprintf( __( '%1$d of %2$d administrators use two-factor login or a passkey.', 'chaos-shield' ), $covered, count( $admins ) ),
 			'refs'     => 'SOC 2 CC6.1 · ISO 27001 A.8.5',
 		);
 		$controls[] = array(
-			'area'     => __( 'Access control', 'sentinel-shield' ),
-			'label'    => __( 'Password policy', 'sentinel-shield' ),
+			'area'     => __( 'Access control', 'chaos-shield' ),
+			'label'    => __( 'Password policy', 'chaos-shield' ),
 			'ok'       => $policy && (int) Settings::get( 'pw_min_length' ) >= 12,
 			'evidence' => $policy
-				? Password_Policy::describe() . ' ' . ( (int) Settings::get( 'pw_max_age' ) ? sprintf( /* translators: %d: days. */ __( 'Passwords expire after %d days.', 'sentinel-shield' ), (int) Settings::get( 'pw_max_age' ) ) : __( 'Passwords do not expire.', 'sentinel-shield' ) )
-				: __( 'No password policy is enforced.', 'sentinel-shield' ),
+				? Password_Policy::describe() . ' ' . ( (int) Settings::get( 'pw_max_age' ) ? sprintf( /* translators: %d: days. */ __( 'Passwords expire after %d days.', 'chaos-shield' ), (int) Settings::get( 'pw_max_age' ) ) : __( 'Passwords do not expire.', 'chaos-shield' ) )
+				: __( 'No password policy is enforced.', 'chaos-shield' ),
 			'refs'     => 'SOC 2 CC6.1 · ISO 27001 A.5.17',
 		);
 		$controls[] = array(
-			'area'     => __( 'Access control', 'sentinel-shield' ),
-			'label'    => __( 'Breached password screening', 'sentinel-shield' ),
+			'area'     => __( 'Access control', 'chaos-shield' ),
+			'label'    => __( 'Breached password screening', 'chaos-shield' ),
 			'ok'       => Settings::enabled( 'breached_passwords' ),
-			'evidence' => Settings::enabled( 'breached_passwords' ) ? __( 'New passwords are checked against known data breaches.', 'sentinel-shield' ) : __( 'Off.', 'sentinel-shield' ),
+			'evidence' => Settings::enabled( 'breached_passwords' ) ? __( 'New passwords are checked against known data breaches.', 'chaos-shield' ) : __( 'Off.', 'chaos-shield' ),
 			'refs'     => 'ISO 27001 A.5.17',
 		);
 		$controls[] = array(
-			'area'     => __( 'Access control', 'sentinel-shield' ),
-			'label'    => __( 'Brute force protection', 'sentinel-shield' ),
+			'area'     => __( 'Access control', 'chaos-shield' ),
+			'label'    => __( 'Brute force protection', 'chaos-shield' ),
 			'ok'       => Settings::enabled( 'limit_login' ),
 			/* translators: 1: attempts, 2: minutes, 3: minutes. */
-			'evidence' => Settings::enabled( 'limit_login' ) ? sprintf( __( 'Lockout after %1$d failed logins in %2$d minutes, for %3$d minutes; repeat offenders are banned.', 'sentinel-shield' ), (int) Settings::get( 'login_max_attempts' ), (int) Settings::get( 'login_window' ), (int) Settings::get( 'login_lockout' ) ) : __( 'Off.', 'sentinel-shield' ),
+			'evidence' => Settings::enabled( 'limit_login' ) ? sprintf( __( 'Lockout after %1$d failed logins in %2$d minutes, for %3$d minutes; repeat offenders are banned.', 'chaos-shield' ), (int) Settings::get( 'login_max_attempts' ), (int) Settings::get( 'login_window' ), (int) Settings::get( 'login_lockout' ) ) : __( 'Off.', 'chaos-shield' ),
 			'refs'     => 'SOC 2 CC6.1 · ISO 27001 A.8.5',
 		);
 		$controls[] = array(
-			'area'     => __( 'Network protection', 'sentinel-shield' ),
-			'label'    => __( 'Web application firewall and rate limiting', 'sentinel-shield' ),
+			'area'     => __( 'Network protection', 'chaos-shield' ),
+			'label'    => __( 'Web application firewall and rate limiting', 'chaos-shield' ),
 			'ok'       => Settings::enabled( 'firewall' ) && Settings::enabled( 'rate_limit' ),
 			'evidence' => implode(
 				' ',
 				array(
-					Settings::enabled( 'firewall' ) ? __( 'Firewall on.', 'sentinel-shield' ) : __( 'Firewall off.', 'sentinel-shield' ),
-					Settings::enabled( 'rate_limit' ) ? __( 'Rate limits on.', 'sentinel-shield' ) : __( 'Rate limits off.', 'sentinel-shield' ),
+					Settings::enabled( 'firewall' ) ? __( 'Firewall on.', 'chaos-shield' ) : __( 'Firewall off.', 'chaos-shield' ),
+					Settings::enabled( 'rate_limit' ) ? __( 'Rate limits on.', 'chaos-shield' ) : __( 'Rate limits off.', 'chaos-shield' ),
 				)
 			),
 			'refs'     => 'SOC 2 CC6.6 · ISO 27001 A.8.20',
 		);
 		$controls[] = array(
-			'area'     => __( 'Network protection', 'sentinel-shield' ),
-			'label'    => __( 'Encryption in transit (HTTPS)', 'sentinel-shield' ),
+			'area'     => __( 'Network protection', 'chaos-shield' ),
+			'label'    => __( 'Encryption in transit (HTTPS)', 'chaos-shield' ),
 			'ok'       => 0 === strpos( home_url(), 'https://' ) && 0 === strpos( site_url(), 'https://' ),
 			'evidence' => home_url( '/' ),
 			'refs'     => 'SOC 2 CC6.7 · ISO 27001 A.8.24',
 		);
 		$controls[] = array(
-			'area'     => __( 'Logging and monitoring', 'sentinel-shield' ),
-			'label'    => __( 'Audit trail', 'sentinel-shield' ),
+			'area'     => __( 'Logging and monitoring', 'chaos-shield' ),
+			'label'    => __( 'Audit trail', 'chaos-shield' ),
 			'ok'       => Settings::enabled( 'audit_trail' ),
 			/* translators: %d: days. */
-			'evidence' => ( Settings::enabled( 'audit_trail' ) ? __( 'Security, user, content and setting changes are logged.', 'sentinel-shield' ) : __( 'Only security events are logged.', 'sentinel-shield' ) ) . ' ' . sprintf( __( 'Kept for %d days.', 'sentinel-shield' ), $days ),
+			'evidence' => ( Settings::enabled( 'audit_trail' ) ? __( 'Security, user, content and setting changes are logged.', 'chaos-shield' ) : __( 'Only security events are logged.', 'chaos-shield' ) ) . ' ' . sprintf( __( 'Kept for %d days.', 'chaos-shield' ), $days ),
 			'refs'     => 'SOC 2 CC7.2 · ISO 27001 A.8.15',
 		);
 		$controls[] = array(
-			'area'     => __( 'Logging and monitoring', 'sentinel-shield' ),
-			'label'    => __( 'Log retention of at least one year', 'sentinel-shield' ),
+			'area'     => __( 'Logging and monitoring', 'chaos-shield' ),
+			'label'    => __( 'Log retention of at least one year', 'chaos-shield' ),
 			'ok'       => $days >= 365 || $forward,
-			'evidence' => $forward ? __( 'Events are forwarded to an external log store, which holds them independently of this site.', 'sentinel-shield' ) : sprintf( /* translators: %d: days. */ __( 'Kept on this site for %d days, with no external copy.', 'sentinel-shield' ), $days ),
+			'evidence' => $forward ? __( 'Events are forwarded to an external log store, which holds them independently of this site.', 'chaos-shield' ) : sprintf( /* translators: %d: days. */ __( 'Kept on this site for %d days, with no external copy.', 'chaos-shield' ), $days ),
 			'refs'     => 'ISO 27001 A.8.15',
 		);
 		$controls[] = array(
-			'area'     => __( 'Logging and monitoring', 'sentinel-shield' ),
-			'label'    => __( 'Security alerts', 'sentinel-shield' ),
+			'area'     => __( 'Logging and monitoring', 'chaos-shield' ),
+			'label'    => __( 'Security alerts', 'chaos-shield' ),
 			'ok'       => Settings::enabled( 'alert_new_admin' ) && Settings::enabled( 'alert_scan' ),
 			/* translators: %s: email address. */
-			'evidence' => sprintf( __( 'Alerts go to %s.', 'sentinel-shield' ), Settings::alert_email() ),
+			'evidence' => sprintf( __( 'Alerts go to %s.', 'chaos-shield' ), Settings::alert_email() ),
 			'refs'     => 'SOC 2 CC7.2 · ISO 27001 A.8.16',
 		);
 		$controls[] = array(
-			'area'     => __( 'Vulnerability management', 'sentinel-shield' ),
-			'label'    => __( 'Known vulnerability monitoring', 'sentinel-shield' ),
+			'area'     => __( 'Vulnerability management', 'chaos-shield' ),
+			'label'    => __( 'Known vulnerability monitoring', 'chaos-shield' ),
 			'ok'       => Vulns::enabled() && ! $vulns,
 			'evidence' => Vulns::enabled()
 				/* translators: %d: number of vulnerabilities. */
-				? sprintf( _n( 'Checked daily against the WPVulnerability database. %d open vulnerability.', 'Checked daily against the WPVulnerability database. %d open vulnerabilities.', count( $vulns ), 'sentinel-shield' ), count( $vulns ) )
-				: __( 'Vulnerability alerts are switched off.', 'sentinel-shield' ),
+				? sprintf( _n( 'Checked daily against the WPVulnerability database. %d open vulnerability.', 'Checked daily against the WPVulnerability database. %d open vulnerabilities.', count( $vulns ), 'chaos-shield' ), count( $vulns ) )
+				: __( 'Vulnerability alerts are switched off.', 'chaos-shield' ),
 			'refs'     => 'SOC 2 CC7.1 · ISO 27001 A.8.8',
 		);
 		$controls[] = array(
-			'area'     => __( 'Vulnerability management', 'sentinel-shield' ),
-			'label'    => __( 'Software kept up to date', 'sentinel-shield' ),
+			'area'     => __( 'Vulnerability management', 'chaos-shield' ),
+			'label'    => __( 'Software kept up to date', 'chaos-shield' ),
 			'ok'       => 0 === $updates,
 			/* translators: %d: number of updates. */
-			'evidence' => sprintf( _n( '%d update waiting for WordPress, plugins or themes.', '%d updates waiting for WordPress, plugins or themes.', $updates, 'sentinel-shield' ), $updates ),
+			'evidence' => sprintf( _n( '%d update waiting for WordPress, plugins or themes.', '%d updates waiting for WordPress, plugins or themes.', $updates, 'chaos-shield' ), $updates ),
 			'refs'     => 'SOC 2 CC7.1 · ISO 27001 A.8.8',
 		);
 		$controls[] = array(
-			'area'     => __( 'Integrity', 'sentinel-shield' ),
-			'label'    => __( 'Malware and file integrity scanning', 'sentinel-shield' ),
+			'area'     => __( 'Integrity', 'chaos-shield' ),
+			'label'    => __( 'Malware and file integrity scanning', 'chaos-shield' ),
 			'ok'       => $results && (int) $results['finished'] > time() - 8 * DAY_IN_SECONDS && ! $open,
 			'evidence' => $results
 				/* translators: 1: date, 2: number of findings. */
-				? sprintf( __( 'Last scan %1$s, %2$d open findings.', 'sentinel-shield' ), wp_date( get_option( 'date_format' ), (int) $results['finished'] ), count( $open ) )
-				: __( 'No scan has run yet.', 'sentinel-shield' ),
+				? sprintf( __( 'Last scan %1$s, %2$d open findings.', 'chaos-shield' ), wp_date( get_option( 'date_format' ), (int) $results['finished'] ), count( $open ) )
+				: __( 'No scan has run yet.', 'chaos-shield' ),
 			'refs'     => 'SOC 2 CC6.8 · ISO 27001 A.8.7',
 		);
 		return $controls;
@@ -360,14 +360,14 @@ final class Export {
 	 */
 	public function compliance() {
 		if ( ! current_user_can( Network::cap() ) ) {
-			wp_die( esc_html__( 'You are not allowed to do this.', 'sentinel-shield' ), 403 );
+			wp_die( esc_html__( 'You are not allowed to do this.', 'chaos-shield' ), 403 );
 		}
-		check_admin_referer( 'sshield_compliance' );
+		check_admin_referer( 'cshield_compliance' );
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Checked above.
 		$days = isset( $_GET['days'] ) ? absint( $_GET['days'] ) : 30;
 		$days = in_array( $days, array( 7, 30, 90, 365 ), true ) ? $days : 30;
 
-		Events::add( 'settings', __( 'Compliance report generated.', 'sentinel-shield' ), Request::ip() );
+		Events::add( 'settings', __( 'Compliance report generated.', 'chaos-shield' ), Request::ip() );
 		nocache_headers();
 		header( 'Content-Type: text/html; charset=utf-8' );
 		header( 'X-Frame-Options: SAMEORIGIN' );
@@ -388,7 +388,7 @@ final class Export {
 				'limit'        => 300,
 			)
 		);
-		include SSHIELD_DIR . 'includes/views/report-compliance.php';
+		include CSHIELD_DIR . 'includes/views/report-compliance.php';
 		exit;
 	}
 }

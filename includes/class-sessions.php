@@ -2,10 +2,10 @@
 /**
  * Administrator sessions overview with remote sign out.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 

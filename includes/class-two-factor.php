@@ -2,10 +2,10 @@
 /**
  * Two-factor login with an authenticator app.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -14,11 +14,11 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Two_Factor {
 
-	const META_SECRET   = '_sshield_2fa_secret';
-	const META_PENDING  = '_sshield_2fa_pending';
-	const META_RECOVERY = '_sshield_2fa_recovery';
-	const META_LAST     = '_sshield_2fa_last_step';
-	const META_LOGIN    = '_sshield_2fa_login';
+	const META_SECRET   = '_cshield_2fa_secret';
+	const META_PENDING  = '_cshield_2fa_pending';
+	const META_RECOVERY = '_cshield_2fa_recovery';
+	const META_LAST     = '_cshield_2fa_last_step';
+	const META_LOGIN    = '_cshield_2fa_login';
 	const MAX_TRIES     = 5;
 	const CHALLENGE_TTL = 600;
 	const RECOVERY_KEYS = 10;
@@ -64,7 +64,7 @@ final class Two_Factor {
 	public function register() {
 		add_action( 'set_logged_in_cookie', array( $this, 'capture_session' ), 10, 6 );
 		add_action( 'wp_login', array( $this, 'interrupt_login' ), 1, 2 );
-		add_action( 'login_form_sshield_2fa', array( $this, 'challenge_screen' ) );
+		add_action( 'login_form_cshield_2fa', array( $this, 'challenge_screen' ) );
 		add_filter( 'authenticate', array( $this, 'block_xmlrpc_password' ), PHP_INT_MAX );
 		add_filter( 'wp_login_errors', array( $this, 'expired_notice' ) );
 
@@ -186,26 +186,26 @@ final class Two_Factor {
 	 */
 	public function block_xmlrpc_password( $user ) {
 		if ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST && self::active() && $user instanceof \WP_User && self::is_enabled( $user->ID ) ) {
-			return new \WP_Error( 'sshield_2fa_required', __( 'This account uses two-factor login. Use an application password instead.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_2fa_required', __( 'This account uses two-factor login. Use an application password instead.', 'chaos-shield' ) );
 		}
 		return $user;
 	}
 
 	/**
-	 * Shows and processes the code form on wp-login.php?action=sshield_2fa.
+	 * Shows and processes the code form on wp-login.php?action=cshield_2fa.
 	 */
 	public function challenge_screen() {
 		// phpcs:disable WordPress.Security.NonceVerification -- The one-time challenge token is the request credential.
 		$user_id = isset( $_REQUEST['uid'] ) ? absint( $_REQUEST['uid'] ) : 0;
 		$token   = isset( $_REQUEST['token'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['token'] ) ) : '';
-		$code    = isset( $_POST['sshield_code'] ) ? sanitize_text_field( wp_unslash( $_POST['sshield_code'] ) ) : '';
+		$code    = isset( $_POST['cshield_code'] ) ? sanitize_text_field( wp_unslash( $_POST['cshield_code'] ) ) : '';
 		$posted  = isset( $_SERVER['REQUEST_METHOD'] ) && 'POST' === $_SERVER['REQUEST_METHOD'];
 		// phpcs:enable
 
 		$user      = $user_id ? get_userdata( $user_id ) : false;
 		$challenge = $user ? self::challenge( $user_id, $token ) : false;
 		if ( ! $challenge ) {
-			wp_safe_redirect( add_query_arg( 'sshield_2fa', 'expired', wp_login_url() ) );
+			wp_safe_redirect( add_query_arg( 'cshield_2fa', 'expired', wp_login_url() ) );
 			exit;
 		}
 
@@ -213,19 +213,19 @@ final class Two_Factor {
 		if ( $posted ) {
 			$ip = Request::ip();
 			if ( $ip && ! Firewall::allowlisted() && Login_Guard::locked_until( $ip ) ) {
-				$error = __( 'Too many failed login attempts. Try again later.', 'sentinel-shield' );
+				$error = __( 'Too many failed login attempts. Try again later.', 'chaos-shield' );
 			} elseif ( $this->check_code( $user_id, $code ) ) {
 				$this->finish_login( $user, $challenge );
 			} else {
 				++$challenge['tries'];
-				do_action( 'wp_login_failed', $user->user_login, new \WP_Error( 'sshield_2fa_invalid' ) );
+				do_action( 'wp_login_failed', $user->user_login, new \WP_Error( 'cshield_2fa_invalid' ) );
 				if ( $challenge['tries'] >= self::MAX_TRIES ) {
 					delete_user_meta( $user_id, self::META_LOGIN );
-					wp_safe_redirect( add_query_arg( 'sshield_2fa', 'expired', wp_login_url() ) );
+					wp_safe_redirect( add_query_arg( 'cshield_2fa', 'expired', wp_login_url() ) );
 					exit;
 				}
 				update_user_meta( $user_id, self::META_LOGIN, $challenge );
-				$error = __( 'That code is not right. Check your authenticator app and try again.', 'sentinel-shield' );
+				$error = __( 'That code is not right. Check your authenticator app and try again.', 'chaos-shield' );
 			}
 		}
 
@@ -241,8 +241,8 @@ final class Two_Factor {
 	 */
 	public function expired_notice( $errors ) {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display only.
-		if ( isset( $_GET['sshield_2fa'] ) && 'expired' === $_GET['sshield_2fa'] ) {
-			$errors->add( 'sshield_2fa_expired', __( 'Your login step expired or had too many wrong codes. Please log in again.', 'sentinel-shield' ) );
+		if ( isset( $_GET['cshield_2fa'] ) && 'expired' === $_GET['cshield_2fa'] ) {
+			$errors->add( 'cshield_2fa_expired', __( 'Your login step expired or had too many wrong codes. Please log in again.', 'chaos-shield' ) );
 		}
 		return $errors;
 	}
@@ -291,7 +291,7 @@ final class Two_Factor {
 			if ( wp_check_password( $normal, $hash ) ) {
 				unset( $hashes[ $i ] );
 				update_user_meta( $user_id, self::META_RECOVERY, array_values( $hashes ) );
-				Events::add( 'twofactor', __( 'A recovery code was used to log in.', 'sentinel-shield' ), Request::ip(), array( 'action' => 'auth.recovery_code' ) );
+				Events::add( 'twofactor', __( 'A recovery code was used to log in.', 'chaos-shield' ), Request::ip(), array( 'action' => 'auth.recovery_code' ) );
 				return true;
 			}
 		}
@@ -327,23 +327,23 @@ final class Two_Factor {
 	private function render_challenge( $user_id, $token, $error ) {
 		$errors = new \WP_Error();
 		if ( $error ) {
-			$errors->add( 'sshield_2fa', $error );
+			$errors->add( 'cshield_2fa', $error );
 		}
-		login_header( __( 'Two-factor login', 'sentinel-shield' ), '', $errors );
+		login_header( __( 'Two-factor login', 'chaos-shield' ), '', $errors );
 		?>
-		<form name="sshield_2fa" id="loginform" action="<?php echo esc_url( self::challenge_url( $user_id, $token ) ); ?>" method="post" autocomplete="off">
-			<p><?php esc_html_e( 'Open your authenticator app and enter the 6-digit code for this site. You can also use one of your recovery codes.', 'sentinel-shield' ); ?></p>
+		<form name="cshield_2fa" id="loginform" action="<?php echo esc_url( self::challenge_url( $user_id, $token ) ); ?>" method="post" autocomplete="off">
+			<p><?php esc_html_e( 'Open your authenticator app and enter the 6-digit code for this site. You can also use one of your recovery codes.', 'chaos-shield' ); ?></p>
 			<p style="margin-top:16px">
-				<label for="sshield_code"><?php esc_html_e( 'Authentication code', 'sentinel-shield' ); ?></label>
-				<input type="text" name="sshield_code" id="sshield_code" class="input" value="" size="20" inputmode="numeric" autocomplete="one-time-code" autofocus required>
+				<label for="cshield_code"><?php esc_html_e( 'Authentication code', 'chaos-shield' ); ?></label>
+				<input type="text" name="cshield_code" id="cshield_code" class="input" value="" size="20" inputmode="numeric" autocomplete="one-time-code" autofocus required>
 			</p>
 			<p class="submit">
-				<input type="submit" class="button button-primary button-large" value="<?php esc_attr_e( 'Verify', 'sentinel-shield' ); ?>">
+				<input type="submit" class="button button-primary button-large" value="<?php esc_attr_e( 'Verify', 'chaos-shield' ); ?>">
 			</p>
 		</form>
-		<p id="nav"><a href="<?php echo esc_url( wp_login_url() ); ?>"><?php esc_html_e( 'Start over', 'sentinel-shield' ); ?></a></p>
+		<p id="nav"><a href="<?php echo esc_url( wp_login_url() ); ?>"><?php esc_html_e( 'Start over', 'chaos-shield' ); ?></a></p>
 		<?php
-		login_footer( 'sshield_code' );
+		login_footer( 'cshield_code' );
 	}
 
 	/**
@@ -356,7 +356,7 @@ final class Two_Factor {
 	private static function challenge_url( $user_id, $token ) {
 		return add_query_arg(
 			array(
-				'action' => 'sshield_2fa',
+				'action' => 'cshield_2fa',
 				'uid'    => $user_id,
 				'token'  => $token,
 			),
@@ -384,9 +384,9 @@ final class Two_Factor {
 		if ( ! self::active() || ! in_array( $hook, array( 'profile.php', 'user-edit.php' ), true ) ) {
 			return;
 		}
-		wp_enqueue_script( 'sshield-qrcode', SSHIELD_URL . 'assets/js/vendor/qrcode.js', array(), '1.4.4', true );
-		wp_enqueue_script( 'sshield-profile', SSHIELD_URL . 'assets/js/profile.js', array( 'sshield-qrcode' ), SSHIELD_VERSION, true );
-		wp_enqueue_style( 'sshield-profile', SSHIELD_URL . 'assets/css/profile.css', array(), SSHIELD_VERSION );
+		wp_enqueue_script( 'cshield-qrcode', CSHIELD_URL . 'assets/js/vendor/qrcode.js', array(), '1.4.4', true );
+		wp_enqueue_script( 'cshield-profile', CSHIELD_URL . 'assets/js/profile.js', array( 'cshield-qrcode' ), CSHIELD_VERSION, true );
+		wp_enqueue_style( 'cshield-profile', CSHIELD_URL . 'assets/css/profile.css', array(), CSHIELD_VERSION );
 	}
 
 	/**
@@ -401,8 +401,8 @@ final class Two_Factor {
 		$own     = get_current_user_id() === $user->ID;
 		$enabled = self::is_enabled( $user->ID );
 		?>
-		<div class="sshield-2fa" id="sshield-2fa">
-			<h2><?php esc_html_e( 'Two-factor login', 'sentinel-shield' ); ?></h2>
+		<div class="cshield-2fa" id="cshield-2fa">
+			<h2><?php esc_html_e( 'Two-factor login', 'chaos-shield' ); ?></h2>
 			<?php
 			if ( ! $own ) {
 				$this->profile_other( $user, $enabled );
@@ -424,13 +424,13 @@ final class Two_Factor {
 	 */
 	private function profile_other( $user, $enabled ) {
 		if ( ! $enabled ) {
-			echo '<p>' . esc_html__( 'This user has not turned on two-factor login. They can set it up from their own profile.', 'sentinel-shield' ) . '</p>';
+			echo '<p>' . esc_html__( 'This user has not turned on two-factor login. They can set it up from their own profile.', 'chaos-shield' ) . '</p>';
 			return;
 		}
 		?>
-		<p><span class="sshield-2fa__on"><?php esc_html_e( 'On', 'sentinel-shield' ); ?></span> <?php esc_html_e( 'This user signs in with an authenticator app.', 'sentinel-shield' ); ?></p>
+		<p><span class="cshield-2fa__on"><?php esc_html_e( 'On', 'chaos-shield' ); ?></span> <?php esc_html_e( 'This user signs in with an authenticator app.', 'chaos-shield' ); ?></p>
 		<?php if ( current_user_can( 'edit_user', $user->ID ) ) : ?>
-			<label><input type="checkbox" name="sshield_2fa_reset" value="1"> <?php esc_html_e( 'Turn off two-factor for this user (for a lost phone). They can set it up again afterwards.', 'sentinel-shield' ); ?></label>
+			<label><input type="checkbox" name="cshield_2fa_reset" value="1"> <?php esc_html_e( 'Turn off two-factor for this user (for a lost phone). They can set it up again afterwards.', 'chaos-shield' ); ?></label>
 		<?php endif; ?>
 		<?php
 	}
@@ -441,36 +441,36 @@ final class Two_Factor {
 	 * @param \WP_User $user User.
 	 */
 	private function profile_enabled( $user ) {
-		$codes    = Network::get_transient( 'sshield_2fa_codes_' . $user->ID );
+		$codes    = Network::get_transient( 'cshield_2fa_codes_' . $user->ID );
 		$left     = count( (array) get_user_meta( $user->ID, self::META_RECOVERY, true ) );
 		$readable = false !== Totp::open( get_user_meta( $user->ID, self::META_SECRET, true ) );
 		if ( $codes ) {
-			Network::delete_transient( 'sshield_2fa_codes_' . $user->ID );
+			Network::delete_transient( 'cshield_2fa_codes_' . $user->ID );
 			$this->print_codes( $codes );
 		}
 		?>
-		<p><span class="sshield-2fa__on"><?php esc_html_e( 'On', 'sentinel-shield' ); ?></span>
+		<p><span class="cshield-2fa__on"><?php esc_html_e( 'On', 'chaos-shield' ); ?></span>
 			<?php
 			printf(
 				/* translators: %d: number of unused recovery codes. */
-				esc_html( _n( 'You sign in with your authenticator app. %d recovery code left.', 'You sign in with your authenticator app. %d recovery codes left.', $left, 'sentinel-shield' ) ),
+				esc_html( _n( 'You sign in with your authenticator app. %d recovery code left.', 'You sign in with your authenticator app. %d recovery codes left.', $left, 'chaos-shield' ) ),
 				(int) $left
 			);
 			?>
 		</p>
 		<?php if ( ! $readable ) : ?>
-			<p class="sshield-2fa__warn"><?php esc_html_e( 'Your authenticator key can no longer be read, usually because the site security keys in wp-config.php changed. Log in with a recovery code, turn two-factor off and set it up again.', 'sentinel-shield' ); ?></p>
+			<p class="cshield-2fa__warn"><?php esc_html_e( 'Your authenticator key can no longer be read, usually because the site security keys in wp-config.php changed. Log in with a recovery code, turn two-factor off and set it up again.', 'chaos-shield' ); ?></p>
 		<?php endif; ?>
 		<table class="form-table" role="presentation">
 			<tr>
-				<th scope="row"><?php esc_html_e( 'Recovery codes', 'sentinel-shield' ); ?></th>
-				<td><label><input type="checkbox" name="sshield_2fa_regen" value="1"> <?php esc_html_e( 'Replace my recovery codes with a new set', 'sentinel-shield' ); ?></label></td>
+				<th scope="row"><?php esc_html_e( 'Recovery codes', 'chaos-shield' ); ?></th>
+				<td><label><input type="checkbox" name="cshield_2fa_regen" value="1"> <?php esc_html_e( 'Replace my recovery codes with a new set', 'chaos-shield' ); ?></label></td>
 			</tr>
 			<tr>
-				<th scope="row"><label for="sshield_2fa_off_code"><?php esc_html_e( 'Turn off', 'sentinel-shield' ); ?></label></th>
+				<th scope="row"><label for="cshield_2fa_off_code"><?php esc_html_e( 'Turn off', 'chaos-shield' ); ?></label></th>
 				<td>
-					<input type="text" id="sshield_2fa_off_code" name="sshield_2fa_off_code" class="regular-text" inputmode="numeric" autocomplete="one-time-code" placeholder="123456">
-					<p class="description"><?php esc_html_e( 'To turn two-factor off, enter a current code from your app or a recovery code, then update your profile.', 'sentinel-shield' ); ?></p>
+					<input type="text" id="cshield_2fa_off_code" name="cshield_2fa_off_code" class="regular-text" inputmode="numeric" autocomplete="one-time-code" placeholder="123456">
+					<p class="description"><?php esc_html_e( 'To turn two-factor off, enter a current code from your app or a recovery code, then update your profile.', 'chaos-shield' ); ?></p>
 				</td>
 			</tr>
 		</table>
@@ -490,19 +490,19 @@ final class Two_Factor {
 		}
 		$uri = Totp::uri( $secret, $user->user_login );
 		?>
-		<p><?php esc_html_e( 'Add a second step to your login: after your password, you enter a code from an authenticator app such as Google Authenticator, Microsoft Authenticator, Authy or 1Password.', 'sentinel-shield' ); ?></p>
-		<div class="sshield-2fa__setup">
-			<div class="sshield-2fa__qr" data-uri="<?php echo esc_attr( $uri ); ?>" role="img" aria-label="<?php esc_attr_e( 'QR code for your authenticator app', 'sentinel-shield' ); ?>"></div>
+		<p><?php esc_html_e( 'Add a second step to your login: after your password, you enter a code from an authenticator app such as Google Authenticator, Microsoft Authenticator, Authy or 1Password.', 'chaos-shield' ); ?></p>
+		<div class="cshield-2fa__setup">
+			<div class="cshield-2fa__qr" data-uri="<?php echo esc_attr( $uri ); ?>" role="img" aria-label="<?php esc_attr_e( 'QR code for your authenticator app', 'chaos-shield' ); ?>"></div>
 			<ol>
-				<li><?php esc_html_e( 'Scan the QR code with your authenticator app.', 'sentinel-shield' ); ?>
-					<br><span class="description"><?php esc_html_e( 'Cannot scan? Enter this key by hand:', 'sentinel-shield' ); ?></span>
-					<code class="sshield-2fa__key"><?php echo esc_html( trim( chunk_split( $secret, 4, ' ' ) ) ); ?></code>
+				<li><?php esc_html_e( 'Scan the QR code with your authenticator app.', 'chaos-shield' ); ?>
+					<br><span class="description"><?php esc_html_e( 'Cannot scan? Enter this key by hand:', 'chaos-shield' ); ?></span>
+					<code class="cshield-2fa__key"><?php echo esc_html( trim( chunk_split( $secret, 4, ' ' ) ) ); ?></code>
 				</li>
 				<li>
-					<label for="sshield_2fa_code"><?php esc_html_e( 'Enter the 6-digit code the app shows:', 'sentinel-shield' ); ?></label><br>
-					<input type="text" id="sshield_2fa_code" name="sshield_2fa_code" class="regular-text" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" maxlength="7">
+					<label for="cshield_2fa_code"><?php esc_html_e( 'Enter the 6-digit code the app shows:', 'chaos-shield' ); ?></label><br>
+					<input type="text" id="cshield_2fa_code" name="cshield_2fa_code" class="regular-text" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" maxlength="7">
 				</li>
-				<li><?php esc_html_e( 'Click Update Profile. You will then see your recovery codes.', 'sentinel-shield' ); ?></li>
+				<li><?php esc_html_e( 'Click Update Profile. You will then see your recovery codes.', 'chaos-shield' ); ?></li>
 			</ol>
 		</div>
 		<?php
@@ -515,9 +515,9 @@ final class Two_Factor {
 	 */
 	private function print_codes( array $codes ) {
 		?>
-		<div class="sshield-2fa__codes">
-			<p><strong><?php esc_html_e( 'Save these recovery codes now.', 'sentinel-shield' ); ?></strong>
-				<?php esc_html_e( 'Each one logs you in once if you lose your phone. They will not be shown again.', 'sentinel-shield' ); ?></p>
+		<div class="cshield-2fa__codes">
+			<p><strong><?php esc_html_e( 'Save these recovery codes now.', 'chaos-shield' ); ?></strong>
+				<?php esc_html_e( 'Each one logs you in once if you lose your phone. They will not be shown again.', 'chaos-shield' ); ?></p>
 			<ul>
 				<?php foreach ( $codes as $code ) : ?>
 					<li><code><?php echo esc_html( substr( $code, 0, 5 ) . '-' . substr( $code, 5 ) ); ?></code></li>
@@ -540,13 +540,13 @@ final class Two_Factor {
 		$own = get_current_user_id() === (int) $user_id;
 
 		if ( ! $own ) {
-			if ( ! empty( $_POST['sshield_2fa_reset'] ) && self::is_enabled( $user_id ) ) {
+			if ( ! empty( $_POST['cshield_2fa_reset'] ) && self::is_enabled( $user_id ) ) {
 				self::reset( $user_id );
 				$target = get_userdata( $user_id );
 				Events::add(
 					'twofactor',
 					/* translators: %s: username. */
-					sprintf( __( 'Two-factor turned off for %s by an administrator.', 'sentinel-shield' ), $target ? $target->user_login : $user_id ),
+					sprintf( __( 'Two-factor turned off for %s by an administrator.', 'chaos-shield' ), $target ? $target->user_login : $user_id ),
 					Request::ip(),
 					array( 'action' => 'auth.2fa_removed' )
 				);
@@ -555,7 +555,7 @@ final class Two_Factor {
 		}
 
 		if ( ! self::is_enabled( $user_id ) ) {
-			$code = isset( $_POST['sshield_2fa_code'] ) ? sanitize_text_field( wp_unslash( $_POST['sshield_2fa_code'] ) ) : '';
+			$code = isset( $_POST['cshield_2fa_code'] ) ? sanitize_text_field( wp_unslash( $_POST['cshield_2fa_code'] ) ) : '';
 			if ( '' === $code ) {
 				return;
 			}
@@ -563,29 +563,29 @@ final class Two_Factor {
 			$secret = Totp::open( $sealed );
 			$step   = $secret ? Totp::verify( $secret, $code ) : false;
 			if ( false === $step ) {
-				$this->profile_error = __( 'Two-factor was not turned on: the code did not match. Make sure the time on your phone is correct and try again.', 'sentinel-shield' );
+				$this->profile_error = __( 'Two-factor was not turned on: the code did not match. Make sure the time on your phone is correct and try again.', 'chaos-shield' );
 				return;
 			}
 			update_user_meta( $user_id, self::META_SECRET, $sealed );
 			update_user_meta( $user_id, self::META_LAST, $step );
 			delete_user_meta( $user_id, self::META_PENDING );
 			$this->issue_codes( $user_id );
-			Events::add( 'twofactor', __( 'A user turned on two-factor login.', 'sentinel-shield' ), Request::ip() );
+			Events::add( 'twofactor', __( 'A user turned on two-factor login.', 'chaos-shield' ), Request::ip() );
 			return;
 		}
 
-		$off = isset( $_POST['sshield_2fa_off_code'] ) ? sanitize_text_field( wp_unslash( $_POST['sshield_2fa_off_code'] ) ) : '';
+		$off = isset( $_POST['cshield_2fa_off_code'] ) ? sanitize_text_field( wp_unslash( $_POST['cshield_2fa_off_code'] ) ) : '';
 		if ( '' !== $off ) {
 			if ( $this->check_code( $user_id, $off ) ) {
 				self::reset( $user_id );
-				Events::add( 'twofactor', __( 'A user turned off two-factor login.', 'sentinel-shield' ), Request::ip(), array( 'action' => 'auth.2fa_removed' ) );
+				Events::add( 'twofactor', __( 'A user turned off two-factor login.', 'chaos-shield' ), Request::ip(), array( 'action' => 'auth.2fa_removed' ) );
 			} else {
-				$this->profile_error = __( 'Two-factor is still on: the code did not match.', 'sentinel-shield' );
+				$this->profile_error = __( 'Two-factor is still on: the code did not match.', 'chaos-shield' );
 			}
 			return;
 		}
 
-		if ( ! empty( $_POST['sshield_2fa_regen'] ) ) {
+		if ( ! empty( $_POST['cshield_2fa_regen'] ) ) {
 			$this->issue_codes( $user_id );
 		}
 		// phpcs:enable
@@ -598,7 +598,7 @@ final class Two_Factor {
 	 */
 	public function profile_errors( $errors ) {
 		if ( $this->profile_error ) {
-			$errors->add( 'sshield_2fa', $this->profile_error );
+			$errors->add( 'cshield_2fa', $this->profile_error );
 		}
 	}
 
@@ -616,7 +616,7 @@ final class Two_Factor {
 			$hashes[] = wp_hash_password( $code );
 		}
 		update_user_meta( $user_id, self::META_RECOVERY, $hashes );
-		Network::set_transient( 'sshield_2fa_codes_' . $user_id, $plain, 10 * MINUTE_IN_SECONDS );
+		Network::set_transient( 'cshield_2fa_codes_' . $user_id, $plain, 10 * MINUTE_IN_SECONDS );
 	}
 
 	/**
@@ -629,9 +629,9 @@ final class Two_Factor {
 		}
 		printf(
 			'<div class="notice notice-warning"><p>%s <a href="%s">%s</a></p></div>',
-			esc_html__( 'Sentinel Shield: your administrator account has no second login step.', 'sentinel-shield' ),
-			esc_url( admin_url( 'profile.php#sshield-2fa' ) ),
-			esc_html__( 'Turn on two-factor login', 'sentinel-shield' )
+			esc_html__( 'Chaos Shield: your administrator account has no second login step.', 'chaos-shield' ),
+			esc_url( admin_url( 'profile.php#cshield-2fa' ) ),
+			esc_html__( 'Turn on two-factor login', 'chaos-shield' )
 		);
 	}
 }

@@ -2,10 +2,10 @@
 /**
  * Detailed audit trail: content, site settings, user profiles and privacy requests.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -61,32 +61,32 @@ final class Audit {
 	 */
 	public static function watched_options() {
 		$options = array(
-			'blogname'                   => __( 'Site title', 'sentinel-shield' ),
-			'blogdescription'            => __( 'Tagline', 'sentinel-shield' ),
-			'siteurl'                    => __( 'WordPress address', 'sentinel-shield' ),
-			'home'                       => __( 'Site address', 'sentinel-shield' ),
-			'admin_email'                => __( 'Administration email', 'sentinel-shield' ),
-			'new_admin_email'            => __( 'Pending administration email', 'sentinel-shield' ),
-			'users_can_register'         => __( 'Anyone can register', 'sentinel-shield' ),
-			'default_role'               => __( 'New user default role', 'sentinel-shield' ),
-			'permalink_structure'        => __( 'Permalink structure', 'sentinel-shield' ),
-			'blog_public'                => __( 'Search engine visibility', 'sentinel-shield' ),
-			'show_on_front'              => __( 'Homepage displays', 'sentinel-shield' ),
-			'page_on_front'              => __( 'Homepage', 'sentinel-shield' ),
-			'default_comment_status'     => __( 'Allow comments on new posts', 'sentinel-shield' ),
-			'comment_registration'       => __( 'Users must be registered to comment', 'sentinel-shield' ),
-			'comment_moderation'         => __( 'Comments must be manually approved', 'sentinel-shield' ),
-			'timezone_string'            => __( 'Timezone', 'sentinel-shield' ),
-			'WPLANG'                     => __( 'Site language', 'sentinel-shield' ),
-			'upload_path'                => __( 'Uploads folder', 'sentinel-shield' ),
-			'wp_page_for_privacy_policy' => __( 'Privacy policy page', 'sentinel-shield' ),
+			'blogname'                   => __( 'Site title', 'chaos-shield' ),
+			'blogdescription'            => __( 'Tagline', 'chaos-shield' ),
+			'siteurl'                    => __( 'WordPress address', 'chaos-shield' ),
+			'home'                       => __( 'Site address', 'chaos-shield' ),
+			'admin_email'                => __( 'Administration email', 'chaos-shield' ),
+			'new_admin_email'            => __( 'Pending administration email', 'chaos-shield' ),
+			'users_can_register'         => __( 'Anyone can register', 'chaos-shield' ),
+			'default_role'               => __( 'New user default role', 'chaos-shield' ),
+			'permalink_structure'        => __( 'Permalink structure', 'chaos-shield' ),
+			'blog_public'                => __( 'Search engine visibility', 'chaos-shield' ),
+			'show_on_front'              => __( 'Homepage displays', 'chaos-shield' ),
+			'page_on_front'              => __( 'Homepage', 'chaos-shield' ),
+			'default_comment_status'     => __( 'Allow comments on new posts', 'chaos-shield' ),
+			'comment_registration'       => __( 'Users must be registered to comment', 'chaos-shield' ),
+			'comment_moderation'         => __( 'Comments must be manually approved', 'chaos-shield' ),
+			'timezone_string'            => __( 'Timezone', 'chaos-shield' ),
+			'WPLANG'                     => __( 'Site language', 'chaos-shield' ),
+			'upload_path'                => __( 'Uploads folder', 'chaos-shield' ),
+			'wp_page_for_privacy_policy' => __( 'Privacy policy page', 'chaos-shield' ),
 		);
 		/**
 		 * Filters the core options the audit trail records changes to.
 		 *
 		 * @param array $options Option name => label.
 		 */
-		return (array) apply_filters( 'sshield_audit_options', $options );
+		return (array) apply_filters( 'cshield_audit_options', $options );
 	}
 
 	// Content.
@@ -114,7 +114,7 @@ final class Audit {
 	private static function describe( $post ) {
 		$object = get_post_type_object( $post->post_type );
 		$label  = $object ? $object->labels->singular_name : $post->post_type;
-		$title  = '' !== $post->post_title ? $post->post_title : __( '(no title)', 'sentinel-shield' );
+		$title  = '' !== $post->post_title ? $post->post_title : __( '(no title)', 'chaos-shield' );
 		return array( $label, wp_html_excerpt( $title, 80, '…' ) . ' (#' . $post->ID . ')' );
 	}
 
@@ -132,22 +132,22 @@ final class Audit {
 		list( $label, $title ) = self::describe( $post );
 		if ( 'publish' === $new_status ) {
 			/* translators: 1: post type, 2: title. */
-			$message = __( '%1$s published: %2$s.', 'sentinel-shield' );
+			$message = __( '%1$s published: %2$s.', 'chaos-shield' );
 		} elseif ( 'trash' === $new_status ) {
 			/* translators: 1: post type, 2: title. */
-			$message = __( '%1$s moved to the trash: %2$s.', 'sentinel-shield' );
+			$message = __( '%1$s moved to the trash: %2$s.', 'chaos-shield' );
 		} elseif ( 'trash' === $old ) {
 			/* translators: 1: post type, 2: title. */
-			$message = __( '%1$s restored from the trash: %2$s.', 'sentinel-shield' );
+			$message = __( '%1$s restored from the trash: %2$s.', 'chaos-shield' );
 		} elseif ( 'publish' === $old ) {
 			/* translators: 1: post type, 2: title. */
-			$message = __( '%1$s unpublished: %2$s.', 'sentinel-shield' );
+			$message = __( '%1$s unpublished: %2$s.', 'chaos-shield' );
 		} elseif ( 'future' === $new_status ) {
 			/* translators: 1: post type, 2: title. */
-			$message = __( '%1$s scheduled: %2$s.', 'sentinel-shield' );
+			$message = __( '%1$s scheduled: %2$s.', 'chaos-shield' );
 		} elseif ( 'new' === $old || 'auto-draft' === $old ) {
 			/* translators: 1: post type, 2: title. */
-			$message = __( '%1$s drafted: %2$s.', 'sentinel-shield' );
+			$message = __( '%1$s drafted: %2$s.', 'chaos-shield' );
 		} else {
 			return;
 		}
@@ -167,31 +167,31 @@ final class Audit {
 		}
 		$changed = array();
 		if ( $after->post_title !== $before->post_title ) {
-			$changed[] = __( 'title', 'sentinel-shield' );
+			$changed[] = __( 'title', 'chaos-shield' );
 		}
 		if ( $after->post_content !== $before->post_content ) {
-			$changed[] = __( 'content', 'sentinel-shield' );
+			$changed[] = __( 'content', 'chaos-shield' );
 		}
 		if ( $after->post_name !== $before->post_name ) {
-			$changed[] = __( 'address', 'sentinel-shield' );
+			$changed[] = __( 'address', 'chaos-shield' );
 		}
 		if ( (int) $after->post_author !== (int) $before->post_author ) {
-			$changed[] = __( 'author', 'sentinel-shield' );
+			$changed[] = __( 'author', 'chaos-shield' );
 		}
 		if ( $after->post_password !== $before->post_password ) {
-			$changed[] = __( 'password', 'sentinel-shield' );
+			$changed[] = __( 'password', 'chaos-shield' );
 		}
 		if ( ! $changed ) {
 			return;
 		}
-		$throttle = 'sshield_aud_' . md5( $post_id . '|' . get_current_user_id() );
+		$throttle = 'cshield_aud_' . md5( $post_id . '|' . get_current_user_id() );
 		if ( Network::get_transient( $throttle ) ) {
 			return;
 		}
 		Network::set_transient( $throttle, 1, 10 * MINUTE_IN_SECONDS );
 		list( $label, $title ) = self::describe( $after );
 		/* translators: 1: post type, 2: title, 3: list of changed fields. */
-		Events::add( 'content', sprintf( __( '%1$s updated: %2$s. Changed: %3$s.', 'sentinel-shield' ), $label, $title, implode( ', ', $changed ) ), Request::ip() );
+		Events::add( 'content', sprintf( __( '%1$s updated: %2$s. Changed: %3$s.', 'chaos-shield' ), $label, $title, implode( ', ', $changed ) ), Request::ip() );
 	}
 
 	/**
@@ -209,7 +209,7 @@ final class Audit {
 		Events::add(
 			'content',
 			/* translators: 1: post type, 2: title. */
-			sprintf( __( '%1$s permanently deleted: %2$s.', 'sentinel-shield' ), $label, $title ),
+			sprintf( __( '%1$s permanently deleted: %2$s.', 'chaos-shield' ), $label, $title ),
 			Request::ip(),
 			array(
 				'severity' => Events::NOTICE,
@@ -225,7 +225,7 @@ final class Audit {
 	 */
 	public function media_added( $post_id ) {
 		/* translators: %s: file name. */
-		Events::add( 'content', sprintf( __( 'Media uploaded: %s.', 'sentinel-shield' ), wp_basename( (string) get_attached_file( $post_id ) ) ), Request::ip() );
+		Events::add( 'content', sprintf( __( 'Media uploaded: %s.', 'chaos-shield' ), wp_basename( (string) get_attached_file( $post_id ) ) ), Request::ip() );
 	}
 
 	/**
@@ -235,7 +235,7 @@ final class Audit {
 	 */
 	public function media_deleted( $post_id ) {
 		/* translators: %s: file name. */
-		Events::add( 'content', sprintf( __( 'Media deleted: %s.', 'sentinel-shield' ), wp_basename( (string) get_attached_file( $post_id ) ) ), Request::ip(), array( 'action' => 'content.deleted' ) );
+		Events::add( 'content', sprintf( __( 'Media deleted: %s.', 'chaos-shield' ), wp_basename( (string) get_attached_file( $post_id ) ) ), Request::ip(), array( 'action' => 'content.deleted' ) );
 	}
 
 	/**
@@ -252,7 +252,7 @@ final class Audit {
 			return;
 		}
 		/* translators: 1: taxonomy name, 2: term name. */
-		Events::add( 'content', sprintf( __( '%1$s created: %2$s.', 'sentinel-shield' ), $tax->labels->singular_name, $term->name ), Request::ip() );
+		Events::add( 'content', sprintf( __( '%1$s created: %2$s.', 'chaos-shield' ), $tax->labels->singular_name, $term->name ), Request::ip() );
 	}
 
 	/**
@@ -268,7 +268,7 @@ final class Audit {
 			return;
 		}
 		/* translators: 1: taxonomy name, 2: term name. */
-		Events::add( 'content', sprintf( __( '%1$s deleted: %2$s.', 'sentinel-shield' ), $tax->labels->singular_name, $term->name ), Request::ip() );
+		Events::add( 'content', sprintf( __( '%1$s deleted: %2$s.', 'chaos-shield' ), $tax->labels->singular_name, $term->name ), Request::ip() );
 	}
 
 	/**
@@ -277,32 +277,32 @@ final class Audit {
 	 * @param int $menu_id Menu ID.
 	 */
 	public function menu_updated( $menu_id ) {
-		$throttle = 'sshield_aud_menu_' . (int) $menu_id;
+		$throttle = 'cshield_aud_menu_' . (int) $menu_id;
 		if ( Network::get_transient( $throttle ) ) {
 			return;
 		}
 		Network::set_transient( $throttle, 1, 5 * MINUTE_IN_SECONDS );
 		$menu = wp_get_nav_menu_object( $menu_id );
 		/* translators: %s: menu name. */
-		Events::add( 'content', sprintf( __( 'Menu updated: %s.', 'sentinel-shield' ), $menu ? $menu->name : '#' . (int) $menu_id ), Request::ip() );
+		Events::add( 'content', sprintf( __( 'Menu updated: %s.', 'chaos-shield' ), $menu ? $menu->name : '#' . (int) $menu_id ), Request::ip() );
 	}
 
 	/**
 	 * Customizer changes published.
 	 */
 	public function customizer_saved() {
-		Events::add( 'content', __( 'Customizer changes published.', 'sentinel-shield' ), Request::ip() );
+		Events::add( 'content', __( 'Customizer changes published.', 'chaos-shield' ), Request::ip() );
 	}
 
 	/**
 	 * Widgets moved, added or removed.
 	 */
 	public function widgets_changed() {
-		if ( Network::get_transient( 'sshield_aud_widgets' ) ) {
+		if ( Network::get_transient( 'cshield_aud_widgets' ) ) {
 			return;
 		}
-		Network::set_transient( 'sshield_aud_widgets', 1, 5 * MINUTE_IN_SECONDS );
-		Events::add( 'content', __( 'Widgets changed.', 'sentinel-shield' ), Request::ip() );
+		Network::set_transient( 'cshield_aud_widgets', 1, 5 * MINUTE_IN_SECONDS );
+		Events::add( 'content', __( 'Widgets changed.', 'chaos-shield' ), Request::ip() );
 	}
 
 	/**
@@ -311,7 +311,7 @@ final class Audit {
 	public function exported() {
 		Events::add(
 			'content',
-			__( 'Site content exported from Tools > Export.', 'sentinel-shield' ),
+			__( 'Site content exported from Tools > Export.', 'chaos-shield' ),
 			Request::ip(),
 			array(
 				'severity' => Events::NOTICE,
@@ -332,7 +332,7 @@ final class Audit {
 	public function option_updated( $option, $old, $value ) {
 		// Options change before init too (cron, transients), when labels cannot be translated yet.
 		$names = array( 'blogname', 'blogdescription', 'siteurl', 'home', 'admin_email', 'new_admin_email', 'users_can_register', 'default_role', 'permalink_structure', 'blog_public', 'show_on_front', 'page_on_front', 'default_comment_status', 'comment_registration', 'comment_moderation', 'timezone_string', 'WPLANG', 'upload_path', 'wp_page_for_privacy_policy' );
-		if ( ( ! in_array( $option, $names, true ) && ! has_filter( 'sshield_audit_options' ) ) || maybe_serialize( $old ) === maybe_serialize( $value ) ) {
+		if ( ( ! in_array( $option, $names, true ) && ! has_filter( 'cshield_audit_options' ) ) || maybe_serialize( $old ) === maybe_serialize( $value ) ) {
 			return;
 		}
 		$watched = did_action( 'init' ) ? self::watched_options() : array_combine( $names, $names );
@@ -343,7 +343,7 @@ final class Audit {
 		Events::add(
 			'option',
 			/* translators: 1: setting label, 2: old value, 3: new value. */
-			sprintf( __( 'Site setting "%1$s" changed from "%2$s" to "%3$s".', 'sentinel-shield' ), $watched[ $option ], self::short( $old ), self::short( $value ) ),
+			sprintf( __( 'Site setting "%1$s" changed from "%2$s" to "%3$s".', 'chaos-shield' ), $watched[ $option ], self::short( $old ), self::short( $value ) ),
 			Request::ip(),
 			array(
 				'severity' => $sensitive ? Events::NOTICE : Events::INFO,
@@ -385,13 +385,13 @@ final class Audit {
 		$actor = wp_get_current_user();
 		$by    = $actor->exists() && $actor->ID !== $user->ID
 			/* translators: %s: username of the administrator. */
-			? ' ' . sprintf( __( '(by %s)', 'sentinel-shield' ), $actor->user_login )
+			? ' ' . sprintf( __( '(by %s)', 'chaos-shield' ), $actor->user_login )
 			: '';
 		if ( $user->user_email !== $old_user->user_email ) {
 			Events::add(
 				'user',
 				/* translators: 1: username, 2: old email, 3: new email, 4: "(by admin)" or nothing. */
-				sprintf( __( 'Email of %1$s changed from %2$s to %3$s.%4$s', 'sentinel-shield' ), $user->user_login, $old_user->user_email, $user->user_email, $by ),
+				sprintf( __( 'Email of %1$s changed from %2$s to %3$s.%4$s', 'chaos-shield' ), $user->user_login, $old_user->user_email, $user->user_email, $by ),
 				Request::ip(),
 				array(
 					'severity' => Events::NOTICE,
@@ -404,7 +404,7 @@ final class Audit {
 			Events::add(
 				'user',
 				/* translators: 1: username, 2: "(by admin)" or nothing. */
-				sprintf( __( 'Password of %1$s changed.%2$s', 'sentinel-shield' ), $user->user_login, $by ),
+				sprintf( __( 'Password of %1$s changed.%2$s', 'chaos-shield' ), $user->user_login, $by ),
 				Request::ip(),
 				array(
 					'severity' => Events::NOTICE,
@@ -417,7 +417,7 @@ final class Audit {
 			Events::add(
 				'user',
 				/* translators: 1: username, 2: old name, 3: new name. */
-				sprintf( __( 'Display name of %1$s changed from "%2$s" to "%3$s".', 'sentinel-shield' ), $user->user_login, $old_user->display_name, $user->display_name ),
+				sprintf( __( 'Display name of %1$s changed from "%2$s" to "%3$s".', 'chaos-shield' ), $user->user_login, $old_user->display_name, $user->display_name ),
 				Request::ip()
 			);
 		}
@@ -434,7 +434,7 @@ final class Audit {
 			Events::add(
 				'login',
 				/* translators: %s: username. */
-				sprintf( __( '%s logged out.', 'sentinel-shield' ), $user->user_login ),
+				sprintf( __( '%s logged out.', 'chaos-shield' ), $user->user_login ),
 				Request::ip(),
 				array(
 					'user_id' => $user->ID,
@@ -452,11 +452,11 @@ final class Audit {
 	 * @param \WP_Error|null $error    Why the login failed.
 	 */
 	public function login_failed( $username, $error = null ) {
-		if ( $error instanceof \WP_Error && 'sshield_reset_required' === $error->get_error_code() ) {
+		if ( $error instanceof \WP_Error && 'cshield_reset_required' === $error->get_error_code() ) {
 			return; // Right password, but a new one is due: not a failure.
 		}
 		$ip  = Request::ip();
-		$key = 'sshield_aud_fail_' . md5( (string) $ip );
+		$key = 'cshield_aud_fail_' . md5( (string) $ip );
 		$n   = (int) Network::get_transient( $key ) + 1;
 		Network::set_transient( $key, $n, HOUR_IN_SECONDS );
 		if ( $n > self::FAILED_LOGIN_CAP + 1 ) {
@@ -464,14 +464,14 @@ final class Audit {
 		}
 		if ( self::FAILED_LOGIN_CAP + 1 === $n ) {
 			/* translators: %d: number of failed logins. */
-			Events::add( 'login', sprintf( __( 'More than %d failed logins from this IP in an hour. Further failures are counted but not logged until the hour is over.', 'sentinel-shield' ), self::FAILED_LOGIN_CAP ), $ip, array( 'severity' => Events::NOTICE ) );
+			Events::add( 'login', sprintf( __( 'More than %d failed logins from this IP in an hour. Further failures are counted but not logged until the hour is over.', 'chaos-shield' ), self::FAILED_LOGIN_CAP ), $ip, array( 'severity' => Events::NOTICE ) );
 			return;
 		}
 		$name = sanitize_user( (string) $username );
 		Events::add(
 			'login',
 			/* translators: %s: attempted username. */
-			sprintf( __( 'Failed login for "%s".', 'sentinel-shield' ), '' !== $name ? $name : '-' ),
+			sprintf( __( 'Failed login for "%s".', 'chaos-shield' ), '' !== $name ? $name : '-' ),
 			$ip,
 			array(
 				'user_id' => 0,
@@ -492,7 +492,7 @@ final class Audit {
 		Events::add(
 			'user',
 			/* translators: 1: application name, 2: username. */
-			sprintf( __( 'Application password "%1$s" created for %2$s.', 'sentinel-shield' ), isset( $item['name'] ) ? $item['name'] : '', $user ? $user->user_login : '#' . (int) $user_id ),
+			sprintf( __( 'Application password "%1$s" created for %2$s.', 'chaos-shield' ), isset( $item['name'] ) ? $item['name'] : '', $user ? $user->user_login : '#' . (int) $user_id ),
 			Request::ip(),
 			array(
 				'severity' => Events::NOTICE,
@@ -510,7 +510,7 @@ final class Audit {
 	public function app_password_deleted( $user_id, $item ) {
 		$user = get_userdata( $user_id );
 		/* translators: 1: application name, 2: username. */
-		Events::add( 'user', sprintf( __( 'Application password "%1$s" revoked for %2$s.', 'sentinel-shield' ), isset( $item['name'] ) ? $item['name'] : '', $user ? $user->user_login : '#' . (int) $user_id ), Request::ip() );
+		Events::add( 'user', sprintf( __( 'Application password "%1$s" revoked for %2$s.', 'chaos-shield' ), isset( $item['name'] ) ? $item['name'] : '', $user ? $user->user_login : '#' . (int) $user_id ), Request::ip() );
 	}
 
 	// Privacy.
@@ -528,7 +528,7 @@ final class Audit {
 		Events::add(
 			'privacy',
 			/* translators: %s: email address. */
-			sprintf( __( 'Personal data export created for %s.', 'sentinel-shield' ), $request ? $request->email : '#' . (int) $request_id ),
+			sprintf( __( 'Personal data export created for %s.', 'chaos-shield' ), $request ? $request->email : '#' . (int) $request_id ),
 			Request::ip(),
 			array(
 				'severity' => Events::NOTICE,
@@ -547,7 +547,7 @@ final class Audit {
 		Events::add(
 			'privacy',
 			/* translators: %s: email address. */
-			sprintf( __( 'Personal data erased for %s.', 'sentinel-shield' ), $request ? $request->email : '#' . (int) $request_id ),
+			sprintf( __( 'Personal data erased for %s.', 'chaos-shield' ), $request ? $request->email : '#' . (int) $request_id ),
 			Request::ip(),
 			array(
 				'severity' => Events::NOTICE,

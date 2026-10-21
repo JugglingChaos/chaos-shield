@@ -2,10 +2,10 @@
 /**
  * Sends activity log events to a webhook or syslog, for a SIEM or chat channel.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -18,9 +18,9 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Forwarder {
 
-	const QUEUE  = 'sshield_forward_queue';
-	const STATUS = 'sshield_forward_status';
-	const HOOK   = 'sshield_forward';
+	const QUEUE  = 'cshield_forward_queue';
+	const STATUS = 'cshield_forward_status';
+	const HOOK   = 'cshield_forward';
 	const MAX    = 1000;
 	const BATCH  = 200;
 
@@ -30,7 +30,7 @@ final class Forwarder {
 	public function register() {
 		add_action( self::HOOK, array( __CLASS__, 'flush' ) );
 		if ( self::webhook() || self::syslog_target() ) {
-			add_action( 'sshield_event', array( __CLASS__, 'forward' ) );
+			add_action( 'cshield_event', array( __CLASS__, 'forward' ) );
 		}
 	}
 
@@ -152,11 +152,11 @@ final class Forwarder {
 				'timeout'    => 8,
 				'headers'    => array( 'Content-Type' => 'application/json' ),
 				'body'       => $body,
-				'user-agent' => 'SentinelShield/' . SSHIELD_VERSION . '; ' . home_url( '/' ),
+				'user-agent' => 'ChaosShield/' . CSHIELD_VERSION . '; ' . home_url( '/' ),
 			);
 			$secret = (string) Settings::get( 'forward_secret' );
 			if ( '' !== $secret ) {
-				$args['headers']['X-Sentinel-Signature'] = 'sha256=' . hash_hmac( 'sha256', $body, $secret );
+				$args['headers']['X-Chaos-Signature'] = 'sha256=' . hash_hmac( 'sha256', $body, $secret );
 			}
 			$response = wp_remote_post( $url, $args );
 			if ( is_wp_error( $response ) ) {
@@ -165,7 +165,7 @@ final class Forwarder {
 			$code = (int) wp_remote_retrieve_response_code( $response );
 			if ( $code < 200 || $code >= 300 ) {
 				/* translators: %d: HTTP status code. */
-				return sprintf( __( 'The webhook answered HTTP %d.', 'sentinel-shield' ), $code );
+				return sprintf( __( 'The webhook answered HTTP %d.', 'chaos-shield' ), $code );
 			}
 		}
 		$target = self::syslog_target();
@@ -208,8 +208,8 @@ final class Forwarder {
 		return array(
 			'text'    => $site . ': ' . implode( "\n", array_slice( $lines, 0, 20 ) ) . ( count( $lines ) > 20 ? "\n…" : '' ),
 			'site'    => home_url( '/' ),
-			'source'  => 'sentinel-shield',
-			'version' => SSHIELD_VERSION,
+			'source'  => 'chaos-shield',
+			'version' => CSHIELD_VERSION,
 			'events'  => $items,
 		);
 	}
@@ -244,12 +244,12 @@ final class Forwarder {
 		$host   = (string) wp_parse_url( home_url(), PHP_URL_HOST );
 		$user   = (int) $event['user_id'] ? get_userdata( (int) $event['user_id'] ) : false;
 		$sd     = sprintf(
-			'[sshield@32473 type="%s" ip="%s" user="%s"]',
+			'[cshield@32473 type="%s" ip="%s" user="%s"]',
 			self::sd_escape( (string) $event['type'] ),
 			self::sd_escape( (string) $event['ip'] ),
 			self::sd_escape( $user ? $user->user_login : '' )
 		);
-		return sprintf( '<%d>1 %s %s sentinel-shield - %s %s %s', $pri, gmdate( 'Y-m-d\TH:i:s\Z', (int) $event['created'] ), $host ? $host : '-', self::sd_escape( (string) $event['type'] ), $sd, str_replace( array( "\r", "\n" ), ' ', (string) $event['message'] ) );
+		return sprintf( '<%d>1 %s %s chaos-shield - %s %s %s', $pri, gmdate( 'Y-m-d\TH:i:s\Z', (int) $event['created'] ), $host ? $host : '-', self::sd_escape( (string) $event['type'] ), $sd, str_replace( array( "\r", "\n" ), ' ', (string) $event['message'] ) );
 	}
 
 	/**
@@ -277,7 +277,7 @@ final class Forwarder {
 			Events::CRITICAL => LOG_CRIT,
 		);
 		$level  = isset( $levels[ (int) $event['severity'] ] ) ? $levels[ (int) $event['severity'] ] : LOG_INFO;
-		openlog( 'sentinel-shield', LOG_NDELAY, defined( 'LOG_AUTHPRIV' ) ? LOG_AUTHPRIV : LOG_AUTH ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions -- Log forwarding the admin turned on.
+		openlog( 'chaos-shield', LOG_NDELAY, defined( 'LOG_AUTHPRIV' ) ? LOG_AUTHPRIV : LOG_AUTH ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions -- Log forwarding the admin turned on.
 		syslog( $level, '[' . $event['type'] . '] ' . $event['message'] . ( $event['ip'] ? ' ip=' . $event['ip'] : '' ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions -- Log forwarding the admin turned on.
 		closelog();
 	}
@@ -295,12 +295,12 @@ final class Forwarder {
 		$socket = @stream_socket_client( $target, $errno, $errstr, 3 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Failure is reported in the status.
 		if ( ! $socket ) {
 			/* translators: %s: error message. */
-			return sprintf( __( 'Could not reach the syslog server: %s', 'sentinel-shield' ), $errstr ? $errstr : (string) $errno );
+			return sprintf( __( 'Could not reach the syslog server: %s', 'chaos-shield' ), $errstr ? $errstr : (string) $errno );
 		}
 		stream_set_timeout( $socket, 3 );
 		$written = fwrite( $socket, $data ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- Network socket.
 		fclose( $socket ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Network socket.
-		return false === $written ? __( 'Could not write to the syslog server.', 'sentinel-shield' ) : true;
+		return false === $written ? __( 'Could not write to the syslog server.', 'chaos-shield' ) : true;
 	}
 
 	/**
@@ -343,7 +343,7 @@ final class Forwarder {
 			'severity' => Events::NOTICE,
 			'user_id'  => get_current_user_id(),
 			'ip'       => Request::ip(),
-			'message'  => __( 'Test event from Sentinel Shield log forwarding.', 'sentinel-shield' ),
+			'message'  => __( 'Test event from Chaos Shield log forwarding.', 'chaos-shield' ),
 		);
 		$target = self::syslog_target();
 		if ( 'local' === $target ) {

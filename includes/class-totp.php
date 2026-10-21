@@ -2,10 +2,10 @@
 /**
  * Time-based one-time passwords (RFC 6238) and secret storage.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -135,7 +135,7 @@ final class Totp {
 	 * @return string
 	 */
 	private static function key() {
-		return hash_hmac( 'sha256', 'sentinel-shield-2fa', wp_salt( 'secure_auth' ), true );
+		return hash_hmac( 'sha256', 'chaos-shield-2fa', wp_salt( 'secure_auth' ), true );
 	}
 
 	/**

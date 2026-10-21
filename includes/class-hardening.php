@@ -2,10 +2,10 @@
 /**
  * One-click hardening modules.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -141,7 +141,7 @@ final class Hardening {
 				if ( preg_match( '#^/wp/v2/users(/|$)#i', $request->get_route() ) ) {
 					return new \WP_Error(
 						'rest_user_cannot_view',
-						__( 'Sorry, you are not allowed to list users.', 'sentinel-shield' ),
+						__( 'Sorry, you are not allowed to list users.', 'chaos-shield' ),
 						array( 'status' => 401 )
 					);
 				}
@@ -188,11 +188,11 @@ final class Hardening {
 		}
 
 		/**
-		 * Filters the security headers Sentinel Shield sends.
+		 * Filters the security headers Chaos Shield sends.
 		 *
 		 * @param array $headers Header name => value. Remove a key to skip it.
 		 */
-		return (array) apply_filters( 'sshield_security_headers', $headers );
+		return (array) apply_filters( 'cshield_security_headers', $headers );
 	}
 
 	/**

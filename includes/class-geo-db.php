@@ -2,10 +2,10 @@
 /**
  * Built-in IP to country database.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -20,8 +20,8 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Geo_Db {
 
-	const STATUS = 'sshield_geo_status';
-	const HOOK   = 'sshield_geo_refresh';
+	const STATUS = 'cshield_geo_status';
+	const HOOK   = 'cshield_geo_refresh';
 	const SOURCE = 'https://github.com/sapics/ip-location-db/releases/download/latest/';
 
 	/**
@@ -91,7 +91,7 @@ final class Geo_Db {
 	 */
 	public static function dir() {
 		// One copy for the whole network, in the main site's uploads.
-		return Network::uploads_dir() . '/sentinel-shield-geo';
+		return Network::uploads_dir() . '/chaos-shield-geo';
 	}
 
 	/**
@@ -193,7 +193,7 @@ final class Geo_Db {
 		$status = self::status();
 		$dir    = self::dir();
 		if ( ! wp_mkdir_p( $dir ) ) {
-			return self::failed( $status, __( 'The uploads folder is not writable.', 'sentinel-shield' ) );
+			return self::failed( $status, __( 'The uploads folder is not writable.', 'chaos-shield' ) );
 		}
 		self::protect( $dir );
 
@@ -205,13 +205,13 @@ final class Geo_Db {
 			$tmp = download_url( self::SOURCE . $name, 240 );
 			if ( is_wp_error( $tmp ) ) {
 				/* translators: %s: error message. */
-				return self::failed( $status, sprintf( __( 'Country database download failed: %s', 'sentinel-shield' ), $tmp->get_error_message() ) );
+				return self::failed( $status, sprintf( __( 'Country database download failed: %s', 'chaos-shield' ), $tmp->get_error_message() ) );
 			}
 			$count = self::build( $tmp, self::file( $family ), $family );
 			wp_delete_file( $tmp );
 			// A truncated or empty download must never replace a good file.
 			if ( $count < ( 4 === $family ? 50000 : 20000 ) ) {
-				return self::failed( $status, __( 'The country database download looked incomplete, so the previous copy was kept.', 'sentinel-shield' ) );
+				return self::failed( $status, __( 'The country database download looked incomplete, so the previous copy was kept.', 'chaos-shield' ) );
 			}
 			$counts[ $family ] = $count;
 		}
@@ -244,7 +244,7 @@ final class Geo_Db {
 		Network::update_option( self::STATUS, $status, false );
 		Network::clear_scheduled( self::HOOK );
 		Network::schedule_single( time() + 6 * HOUR_IN_SECONDS, self::HOOK );
-		return new \WP_Error( 'sshield_geo', $error );
+		return new \WP_Error( 'cshield_geo', $error );
 	}
 
 	/**

@@ -2,10 +2,10 @@
 /**
  * HTTPS checks: the certificate, the redirect from http, and mixed content.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -19,7 +19,7 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Https {
 
-	const OPTION = 'sshield_https';
+	const OPTION = 'cshield_https';
 
 	/**
 	 * Registers hooks.
@@ -77,7 +77,7 @@ final class Https {
 			return; // A redirect would drop the form the visitor sent.
 		}
 		$host = (string) wp_parse_url( home_url(), PHP_URL_HOST );
-		wp_safe_redirect( 'https://' . $host . Request::server( 'REQUEST_URI' ), 301, 'Sentinel Shield' );
+		wp_safe_redirect( 'https://' . $host . Request::server( 'REQUEST_URI' ), 301, 'Chaos Shield' );
 		exit;
 	}
 
@@ -89,13 +89,13 @@ final class Https {
 	public static function can_force() {
 		$cert = Uptime::certificate( 'https://' . wp_parse_url( home_url(), PHP_URL_HOST ) . '/' );
 		if ( empty( $cert['expires'] ) ) {
-			return __( 'This site does not answer on HTTPS yet. Ask your host for a free certificate (most offer Let\'s Encrypt), or connect Cloudflare, then try again.', 'sentinel-shield' );
+			return __( 'This site does not answer on HTTPS yet. Ask your host for a free certificate (most offer Let\'s Encrypt), or connect Cloudflare, then try again.', 'chaos-shield' );
 		}
 		if ( ! $cert['trusted'] ) {
-			return __( 'The site answers on HTTPS, but browsers do not trust its certificate. Fix the certificate first, or visitors would see a warning on every page.', 'sentinel-shield' );
+			return __( 'The site answers on HTTPS, but browsers do not trust its certificate. Fix the certificate first, or visitors would see a warning on every page.', 'chaos-shield' );
 		}
 		if ( Uptime::days_left( (int) $cert['expires'] ) < 0 ) {
-			return __( 'The certificate has expired. Renew it first.', 'sentinel-shield' );
+			return __( 'The certificate has expired. Renew it first.', 'chaos-shield' );
 		}
 		return true;
 	}
@@ -122,12 +122,12 @@ final class Https {
 			if ( null !== $days && $days <= Uptime::SSL_WARN ) {
 				Alerts::send(
 					'alert_uptime',
-					$days < 0 ? __( 'Your HTTPS certificate has expired', 'sentinel-shield' )
+					$days < 0 ? __( 'Your HTTPS certificate has expired', 'chaos-shield' )
 						/* translators: %d: days. */
-						: sprintf( _n( 'Your HTTPS certificate expires in %d day', 'Your HTTPS certificate expires in %d days', $days, 'sentinel-shield' ), $days ),
+						: sprintf( _n( 'Your HTTPS certificate expires in %d day', 'Your HTTPS certificate expires in %d days', $days, 'chaos-shield' ), $days ),
 					sprintf(
 						/* translators: 1: site address, 2: date, 3: issuer. */
-						__( "The certificate of %1\$s expires on %2\$s (issued by %3\$s). After that, visitors see a security warning instead of the site.\n\nMost hosts renew free certificates on their own. If yours did not, renew it in your hosting panel or ask your host.", 'sentinel-shield' ),
+						__( "The certificate of %1\$s expires on %2\$s (issued by %3\$s). After that, visitors see a security warning instead of the site.\n\nMost hosts renew free certificates on their own. If yours did not, renew it in your hosting panel or ask your host.", 'chaos-shield' ),
 						$home,
 						wp_date( get_option( 'date_format' ), (int) $state['cert']['expires'] ),
 						isset( $state['cert']['issuer'] ) ? $state['cert']['issuer'] : '?'

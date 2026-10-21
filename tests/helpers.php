@@ -2,28 +2,28 @@
 /**
  * Shared helpers for the integration tests.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
 // phpcs:disable WordPress.Security.EscapeOutput -- Command line output.
 
-namespace SentinelShield\Tests;
+namespace ChaosShield\Tests;
 
-use SentinelShield\Api;
-use SentinelShield\Bans;
-use SentinelShield\Events;
-use SentinelShield\Firewall;
-use SentinelShield\Geo_Db;
-use SentinelShield\Incidents;
-use SentinelShield\Login_Guard;
-use SentinelShield\Password_Policy;
-use SentinelShield\Request;
-use SentinelShield\Scanner;
-use SentinelShield\Settings;
-use SentinelShield\Siem;
-use SentinelShield\Threat_Feed;
-use SentinelShield\Totp;
-use SentinelShield\Two_Factor;
+use ChaosShield\Api;
+use ChaosShield\Bans;
+use ChaosShield\Events;
+use ChaosShield\Firewall;
+use ChaosShield\Geo_Db;
+use ChaosShield\Incidents;
+use ChaosShield\Login_Guard;
+use ChaosShield\Password_Policy;
+use ChaosShield\Request;
+use ChaosShield\Scanner;
+use ChaosShield\Settings;
+use ChaosShield\Siem;
+use ChaosShield\Threat_Feed;
+use ChaosShield\Totp;
+use ChaosShield\Two_Factor;
 
 $GLOBALS['sst'] = array(
 	'pass'  => 0,

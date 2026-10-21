@@ -2,10 +2,10 @@
 /**
  * SIEM detection engine.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -39,9 +39,9 @@ final class Detect {
 		if ( ! self::$queue || did_action( 'init' ) ) {
 			return;
 		}
-		$parked = (array) Network::get_option( 'sshield_detect_queue', array() );
+		$parked = (array) Network::get_option( 'cshield_detect_queue', array() );
 		// Autoloaded and kept, even when empty, so checking it costs no query.
-		Network::update_option( 'sshield_detect_queue', array_slice( array_merge( $parked, self::$queue ), -200 ), true );
+		Network::update_option( 'cshield_detect_queue', array_slice( array_merge( $parked, self::$queue ), -200 ), true );
 		self::$queue = array();
 	}
 
@@ -49,9 +49,9 @@ final class Detect {
 	 * Checks the events that arrived before init, here or in an earlier request.
 	 */
 	public static function drain() {
-		$parked = Network::get_option( 'sshield_detect_queue' );
+		$parked = Network::get_option( 'cshield_detect_queue' );
 		if ( $parked ) {
-			Network::update_option( 'sshield_detect_queue', array(), true );
+			Network::update_option( 'cshield_detect_queue', array(), true );
 		}
 		$queue       = array_merge( is_array( $parked ) ? $parked : array(), self::$queue );
 		self::$queue = array();
@@ -67,8 +67,8 @@ final class Detect {
 		if ( ! Settings::enabled( 'siem' ) ) {
 			return;
 		}
-		add_action( 'sshield_event', array( __CLASS__, 'on_event' ), 20 );
-		if ( Network::get_option( 'sshield_detect_queue' ) ) {
+		add_action( 'cshield_event', array( __CLASS__, 'on_event' ), 20 );
+		if ( Network::get_option( 'cshield_detect_queue' ) ) {
 			add_action( 'init', array( __CLASS__, 'drain' ), 0 );
 		}
 	}
@@ -81,85 +81,85 @@ final class Detect {
 	public static function rules() {
 		return array(
 			'brute_success'   => array(
-				'name'        => __( 'Login after brute force', 'sentinel-shield' ),
-				'description' => __( 'A login succeeds from an IP that failed or was locked out at least five times in the hour before.', 'sentinel-shield' ),
+				'name'        => __( 'Login after brute force', 'chaos-shield' ),
+				'description' => __( 'A login succeeds from an IP that failed or was locked out at least five times in the hour before.', 'chaos-shield' ),
 				'technique'   => 'T1110',
 				'tactic'      => 'Credential Access',
 				'on'          => array( 'auth.login' ),
 			),
 			'stuffing'        => array(
-				'name'        => __( 'Credential stuffing', 'sentinel-shield' ),
-				'description' => __( 'One IP tries five or more different usernames in 15 minutes.', 'sentinel-shield' ),
+				'name'        => __( 'Credential stuffing', 'chaos-shield' ),
+				'description' => __( 'One IP tries five or more different usernames in 15 minutes.', 'chaos-shield' ),
 				'technique'   => 'T1110.004',
 				'tactic'      => 'Credential Access',
 				'on'          => array( 'auth.failed' ),
 			),
 			'distributed'     => array(
-				'name'        => __( 'Distributed login attack', 'sentinel-shield' ),
-				'description' => __( 'Thirty or more failed logins from ten or more IPs in 10 minutes: a botnet working around per-IP lockouts.', 'sentinel-shield' ),
+				'name'        => __( 'Distributed login attack', 'chaos-shield' ),
+				'description' => __( 'Thirty or more failed logins from ten or more IPs in 10 minutes: a botnet working around per-IP lockouts.', 'chaos-shield' ),
 				'technique'   => 'T1110.003',
 				'tactic'      => 'Credential Access',
 				'on'          => array( 'auth.failed' ),
 			),
 			'new_admin'       => array(
-				'name'        => __( 'New administrator', 'sentinel-shield' ),
-				'description' => __( 'An administrator account is created, or a user is promoted to administrator.', 'sentinel-shield' ),
+				'name'        => __( 'New administrator', 'chaos-shield' ),
+				'description' => __( 'An administrator account is created, or a user is promoted to administrator.', 'chaos-shield' ),
 				'technique'   => 'T1136.001',
 				'tactic'      => 'Persistence',
 				'on'          => array( 'user.created', 'user.role' ),
 			),
 			'risky_session'   => array(
-				'name'        => __( 'Risky changes from a new IP', 'sentinel-shield' ),
-				'description' => __( 'Within two hours of logging in from a new IP, an administrator installs or activates code, adds an administrator, creates an application password, changes key settings or exports data.', 'sentinel-shield' ),
+				'name'        => __( 'Risky changes from a new IP', 'chaos-shield' ),
+				'description' => __( 'Within two hours of logging in from a new IP, an administrator installs or activates code, adds an administrator, creates an application password, changes key settings or exports data.', 'chaos-shield' ),
 				'technique'   => 'T1078',
 				'tactic'      => 'Initial Access',
 				'on'          => array( 'plugin.installed', 'theme.installed', 'plugin.activated', 'user.created', 'user.role', 'user.app_password', 'option.changed', 'settings.weakened', 'data.export' ),
 			),
 			'takeover'        => array(
-				'name'        => __( 'Account takeover pattern', 'sentinel-shield' ),
-				'description' => __( 'The email and the password of one account change within an hour of each other.', 'sentinel-shield' ),
+				'name'        => __( 'Account takeover pattern', 'chaos-shield' ),
+				'description' => __( 'The email and the password of one account change within an hour of each other.', 'chaos-shield' ),
 				'technique'   => 'T1098',
 				'tactic'      => 'Persistence',
 				'on'          => array( 'user.email_changed', 'user.password_changed' ),
 			),
 			'site_hijack'     => array(
-				'name'        => __( 'Site address or registration changed', 'sentinel-shield' ),
-				'description' => __( 'The site address, admin email, registration or default role changes. Open registration as administrator is critical.', 'sentinel-shield' ),
+				'name'        => __( 'Site address or registration changed', 'chaos-shield' ),
+				'description' => __( 'The site address, admin email, registration or default role changes. Open registration as administrator is critical.', 'chaos-shield' ),
 				'technique'   => 'T1098',
 				'tactic'      => 'Persistence',
 				'on'          => array( 'option.changed' ),
 			),
 			'defense_evasion' => array(
-				'name'        => __( 'Protection switched off', 'sentinel-shield' ),
-				'description' => __( 'A Sentinel Shield protection, two-factor for an account, or a security plugin is switched off.', 'sentinel-shield' ),
+				'name'        => __( 'Protection switched off', 'chaos-shield' ),
+				'description' => __( 'A Chaos Shield protection, two-factor for an account, or a security plugin is switched off.', 'chaos-shield' ),
 				'technique'   => 'T1562.001',
 				'tactic'      => 'Defense Evasion',
 				'on'          => array( 'settings.weakened', 'auth.2fa_removed', 'plugin.deactivated' ),
 			),
 			'malware'         => array(
-				'name'        => __( 'Malware or tampered files found', 'sentinel-shield' ),
-				'description' => __( 'A scan finishes with high severity findings: backdoor patterns or official files that were modified.', 'sentinel-shield' ),
+				'name'        => __( 'Malware or tampered files found', 'chaos-shield' ),
+				'description' => __( 'A scan finishes with high severity findings: backdoor patterns or official files that were modified.', 'chaos-shield' ),
 				'technique'   => 'T1505.003',
 				'tactic'      => 'Persistence',
 				'on'          => array( 'scan.finished' ),
 			),
 			'repeat_attacker' => array(
-				'name'        => __( 'Repeat attacker', 'sentinel-shield' ),
-				'description' => __( 'The same IP is banned a second time within a week. Consider blocking it for good.', 'sentinel-shield' ),
+				'name'        => __( 'Repeat attacker', 'chaos-shield' ),
+				'description' => __( 'The same IP is banned a second time within a week. Consider blocking it for good.', 'chaos-shield' ),
 				'technique'   => 'T1595',
 				'tactic'      => 'Reconnaissance',
 				'on'          => array( 'fw.ban' ),
 			),
 			'mass_delete'     => array(
-				'name'        => __( 'Mass deletion', 'sentinel-shield' ),
-				'description' => __( 'One user permanently deletes 20 or more posts, pages or media files in 10 minutes.', 'sentinel-shield' ),
+				'name'        => __( 'Mass deletion', 'chaos-shield' ),
+				'description' => __( 'One user permanently deletes 20 or more posts, pages or media files in 10 minutes.', 'chaos-shield' ),
 				'technique'   => 'T1485',
 				'tactic'      => 'Impact',
 				'on'          => array( 'content.deleted' ),
 			),
 			'key_abuse'       => array(
-				'name'        => __( 'Suspicious sign-in method', 'sentinel-shield' ),
-				'description' => __( 'A passkey looks copied, or an administrator signs in with a breached password.', 'sentinel-shield' ),
+				'name'        => __( 'Suspicious sign-in method', 'chaos-shield' ),
+				'description' => __( 'A passkey looks copied, or an administrator signs in with a breached password.', 'chaos-shield' ),
 				'technique'   => 'T1556',
 				'tactic'      => 'Credential Access',
 				'on'          => array( 'auth.passkey_clone', 'auth.breached_password' ),
@@ -256,9 +256,9 @@ final class Detect {
 				return array(
 					'severity' => $admin ? Incidents::CRITICAL : Incidents::HIGH,
 					/* translators: 1: username, 2: IP address. */
-					'title'    => sprintf( __( '%1$s logged in from %2$s after repeated failures', 'sentinel-shield' ), $subject, $ip ),
+					'title'    => sprintf( __( '%1$s logged in from %2$s after repeated failures', 'chaos-shield' ), $subject, $ip ),
 					/* translators: 1: number of failures, 2: IP address, 3: username. */
-					'summary'  => sprintf( __( '%1$d failed logins or lockouts came from %2$s in the hour before %3$s logged in from it. The password may have been guessed. Check the account, end its sessions and reset its password if the login was not expected.', 'sentinel-shield' ), count( $fails ), $ip, $subject ),
+					'summary'  => sprintf( __( '%1$d failed logins or lockouts came from %2$s in the hour before %3$s logged in from it. The password may have been guessed. Check the account, end its sessions and reset its password if the login was not expected.', 'chaos-shield' ), count( $fails ), $ip, $subject ),
 					'key'      => $ip . '|' . $user_id,
 					'events'   => array_merge( $fails, array( (int) $event['id'] ) ),
 				);
@@ -281,9 +281,9 @@ final class Detect {
 				return array(
 					'severity' => Incidents::MEDIUM,
 					/* translators: 1: IP address, 2: number of usernames. */
-					'title'    => sprintf( __( '%1$s tried %2$d different usernames', 'sentinel-shield' ), $ip, count( $names ) ),
+					'title'    => sprintf( __( '%1$s tried %2$d different usernames', 'chaos-shield' ), $ip, count( $names ) ),
 					/* translators: 1: IP address, 2: usernames. */
-					'summary'  => sprintf( __( '%1$s tried to log in as %2$s within 15 minutes, which looks like a list of stolen credentials being tested.', 'sentinel-shield' ), $ip, implode( ', ', array_slice( $names, 0, 10 ) ) ),
+					'summary'  => sprintf( __( '%1$s tried to log in as %2$s within 15 minutes, which looks like a list of stolen credentials being tested.', 'chaos-shield' ), $ip, implode( ', ', array_slice( $names, 0, 10 ) ) ),
 					'key'      => $ip,
 				);
 
@@ -308,8 +308,8 @@ final class Detect {
 				return array(
 					'severity' => Incidents::MEDIUM,
 					/* translators: 1: number of failures, 2: number of IPs. */
-					'title'    => sprintf( __( '%1$d failed logins from %2$d IPs in 10 minutes', 'sentinel-shield' ), $total, count( $ips ) ),
-					'summary'  => __( 'Many IPs are each trying a few passwords, which stays under per-IP lockouts. Consider the login CAPTCHA, a custom login address or country rules for the login page.', 'sentinel-shield' ),
+					'title'    => sprintf( __( '%1$d failed logins from %2$d IPs in 10 minutes', 'chaos-shield' ), $total, count( $ips ) ),
+					'summary'  => __( 'Many IPs are each trying a few passwords, which stays under per-IP lockouts. Consider the login CAPTCHA, a custom login address or country rules for the login page.', 'chaos-shield' ),
 					'key'      => 'global|' . gmdate( 'YmdH', $now ),
 					'ip'       => '',
 					'user_id'  => 0,
@@ -324,9 +324,9 @@ final class Detect {
 				return array(
 					'severity' => Incidents::HIGH,
 					/* translators: %s: username. */
-					'title'    => sprintf( __( 'New administrator: %s', 'sentinel-shield' ), $subject ),
+					'title'    => sprintf( __( 'New administrator: %s', 'chaos-shield' ), $subject ),
 					/* translators: 1: username, 2: who made the change, 3: IP address. */
-					'summary'  => sprintf( __( '%1$s now has full control of the site. The change was made by %2$s from %3$s. If nobody on your team expected this, delete the account and review recent activity.', 'sentinel-shield' ), $subject, $actor ? $actor->user_login : __( 'an unknown user or code', 'sentinel-shield' ), $ip ? $ip : '-' ),
+					'summary'  => sprintf( __( '%1$s now has full control of the site. The change was made by %2$s from %3$s. If nobody on your team expected this, delete the account and review recent activity.', 'chaos-shield' ), $subject, $actor ? $actor->user_login : __( 'an unknown user or code', 'chaos-shield' ), $ip ? $ip : '-' ),
 					'key'      => $subject,
 				);
 
@@ -355,9 +355,9 @@ final class Detect {
 				return array(
 					'severity' => Incidents::CRITICAL,
 					/* translators: %s: username. */
-					'title'    => sprintf( __( 'Risky changes by %s soon after a login from a new IP', 'sentinel-shield' ), $user ? $user->user_login : '#' . $user_id ),
+					'title'    => sprintf( __( 'Risky changes by %s soon after a login from a new IP', 'chaos-shield' ), $user ? $user->user_login : '#' . $user_id ),
 					/* translators: 1: username, 2: what was done. */
-					'summary'  => sprintf( __( '%1$s logged in from an IP never seen before and then: %2$s This is how a stolen administrator login is usually used. Confirm with the person; if it was not them, end their sessions and force a password reset.', 'sentinel-shield' ), $user ? $user->user_login : '#' . $user_id, $event['message'] ),
+					'summary'  => sprintf( __( '%1$s logged in from an IP never seen before and then: %2$s This is how a stolen administrator login is usually used. Confirm with the person; if it was not them, end their sessions and force a password reset.', 'chaos-shield' ), $user ? $user->user_login : '#' . $user_id, $event['message'] ),
 					'key'      => (string) $user_id,
 					'events'   => array_merge( $login, array( (int) $event['id'] ) ),
 				);
@@ -377,9 +377,9 @@ final class Detect {
 				return array(
 					'severity' => Incidents::HIGH,
 					/* translators: %s: username. */
-					'title'    => sprintf( __( 'Email and password of %s changed together', 'sentinel-shield' ), $subject ),
+					'title'    => sprintf( __( 'Email and password of %s changed together', 'chaos-shield' ), $subject ),
 					/* translators: %s: username. */
-					'summary'  => sprintf( __( 'Changing both the email and the password of %s locks the real owner out. Confirm the change with them.', 'sentinel-shield' ), $subject ),
+					'summary'  => sprintf( __( 'Changing both the email and the password of %s locks the real owner out. Confirm the change with them.', 'chaos-shield' ), $subject ),
 					'key'      => $subject,
 					'events'   => array_merge( $pair, array( (int) $event['id'] ) ),
 				);
@@ -393,11 +393,11 @@ final class Detect {
 				return array(
 					'severity' => $open_admin ? Incidents::CRITICAL : Incidents::HIGH,
 					'title'    => $open_admin
-						? __( 'Anyone can now register as an administrator', 'sentinel-shield' )
+						? __( 'Anyone can now register as an administrator', 'chaos-shield' )
 						/* translators: %s: option name. */
-						: sprintf( __( 'Key site setting changed: %s', 'sentinel-shield' ), $subject ),
+						: sprintf( __( 'Key site setting changed: %s', 'chaos-shield' ), $subject ),
 					'summary'  => $open_admin
-						? __( 'Registration is open and new users become administrators. Attackers use this to take a site over. Switch off registration or set the default role to Subscriber under Settings > General.', 'sentinel-shield' )
+						? __( 'Registration is open and new users become administrators. Attackers use this to take a site over. Switch off registration or set the default role to Subscriber under Settings > General.', 'chaos-shield' )
 						: (string) $event['message'],
 					'key'      => $open_admin ? 'open_admin' : $subject,
 				);
@@ -408,9 +408,9 @@ final class Detect {
 				}
 				return array(
 					'severity' => Incidents::MEDIUM,
-					'title'    => __( 'Protection switched off', 'sentinel-shield' ),
+					'title'    => __( 'Protection switched off', 'chaos-shield' ),
 					/* translators: %s: event message. */
-					'summary'  => sprintf( __( '%s Attackers switch protections off before they act. Make sure this was intended.', 'sentinel-shield' ), $event['message'] ),
+					'summary'  => sprintf( __( '%s Attackers switch protections off before they act. Make sure this was intended.', 'chaos-shield' ), $event['message'] ),
 					'key'      => (string) $user_id,
 				);
 
@@ -420,9 +420,9 @@ final class Detect {
 				}
 				return array(
 					'severity' => Incidents::CRITICAL,
-					'title'    => __( 'Malware or tampered files found by the scan', 'sentinel-shield' ),
+					'title'    => __( 'Malware or tampered files found by the scan', 'chaos-shield' ),
 					/* translators: %s: scan summary. */
-					'summary'  => sprintf( __( '%s Open the Scan tab to repair or quarantine the files, then change all passwords.', 'sentinel-shield' ), $event['message'] ),
+					'summary'  => sprintf( __( '%s Open the Scan tab to repair or quarantine the files, then change all passwords.', 'chaos-shield' ), $event['message'] ),
 					'key'      => 'scan',
 				);
 
@@ -440,8 +440,8 @@ final class Detect {
 				return array(
 					'severity' => Incidents::LOW,
 					/* translators: 1: IP address, 2: number of bans. */
-					'title'    => sprintf( __( '%1$s banned %2$d times this week', 'sentinel-shield' ), $ip, count( $bans ) ),
-					'summary'  => __( 'This IP keeps coming back after its bans end. Block it for good from this incident.', 'sentinel-shield' ),
+					'title'    => sprintf( __( '%1$s banned %2$d times this week', 'chaos-shield' ), $ip, count( $bans ) ),
+					'summary'  => __( 'This IP keeps coming back after its bans end. Block it for good from this incident.', 'chaos-shield' ),
 					'key'      => $ip,
 					'events'   => $bans,
 				);
@@ -461,8 +461,8 @@ final class Detect {
 				return array(
 					'severity' => Incidents::HIGH,
 					/* translators: 1: username, 2: number of items. */
-					'title'    => sprintf( __( '%1$s permanently deleted %2$d items in 10 minutes', 'sentinel-shield' ), $user ? $user->user_login : '#' . $user_id, count( $deleted ) ),
-					'summary'  => __( 'Deleting content in bulk can be sabotage or a hijacked account. Check with the person and restore from a backup if needed.', 'sentinel-shield' ),
+					'title'    => sprintf( __( '%1$s permanently deleted %2$d items in 10 minutes', 'chaos-shield' ), $user ? $user->user_login : '#' . $user_id, count( $deleted ) ),
+					'summary'  => __( 'Deleting content in bulk can be sabotage or a hijacked account. Check with the person and restore from a backup if needed.', 'chaos-shield' ),
 					'key'      => (string) $user_id,
 					'events'   => $deleted,
 				);
@@ -470,7 +470,7 @@ final class Detect {
 			case 'key_abuse':
 				return array(
 					'severity' => 'auth.passkey_clone' === $event['action'] ? Incidents::HIGH : Incidents::MEDIUM,
-					'title'    => 'auth.passkey_clone' === $event['action'] ? __( 'Possible copied passkey', 'sentinel-shield' ) : __( 'Administrator signed in with a breached password', 'sentinel-shield' ),
+					'title'    => 'auth.passkey_clone' === $event['action'] ? __( 'Possible copied passkey', 'chaos-shield' ) : __( 'Administrator signed in with a breached password', 'chaos-shield' ),
 					'summary'  => (string) $event['message'],
 					'key'      => $event['action'] . '|' . $subject,
 				);

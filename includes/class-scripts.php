@@ -2,10 +2,10 @@
 /**
  * Page script monitor and Content Security Policy.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -18,7 +18,7 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Scripts {
 
-	const OPTION  = 'sshield_scripts';
+	const OPTION  = 'cshield_scripts';
 	const MAX     = 300;
 	const ROUTE   = '/csp';
 	const KEEP    = 30 * DAY_IN_SECONDS;
@@ -216,11 +216,11 @@ final class Scripts {
 	 */
 	public static function suspicious( $code ) {
 		$signs = array(
-			'/coinhive|cryptonight|coin-hive|webminepool|crypto-loot|cryptoloot|minero\.cc|jsecoin/i' => __( 'Looks like a cryptocurrency miner', 'sentinel-shield' ),
-			'/eval\s*\(\s*(?:atob|unescape|decodeURIComponent|String\.fromCharCode)\s*\(/i' => __( 'Runs hidden code with eval', 'sentinel-shield' ),
-			'/(?:atob|unescape)\s*\(\s*["\'][A-Za-z0-9+\/=%]{400,}/' => __( 'Carries a long block of encoded code', 'sentinel-shield' ),
-			'/document\.write\s*\(\s*unescape\s*\(/i' => __( 'Writes hidden code into the page', 'sentinel-shield' ),
-			'/(?:cc_?num(?:ber)?|card_?number|cc-number|card\[number\]|cvv|cvc2?)\b(?=.{0,600}?\b(?:btoa|atob)\s*\()(?=.{0,600}?(?:sendBeacon|new\s+Image|WebSocket|fetch\s*\(|XMLHttpRequest))/is' => __( 'Reads card details and sends them somewhere', 'sentinel-shield' ),
+			'/coinhive|cryptonight|coin-hive|webminepool|crypto-loot|cryptoloot|minero\.cc|jsecoin/i' => __( 'Looks like a cryptocurrency miner', 'chaos-shield' ),
+			'/eval\s*\(\s*(?:atob|unescape|decodeURIComponent|String\.fromCharCode)\s*\(/i' => __( 'Runs hidden code with eval', 'chaos-shield' ),
+			'/(?:atob|unescape)\s*\(\s*["\'][A-Za-z0-9+\/=%]{400,}/' => __( 'Carries a long block of encoded code', 'chaos-shield' ),
+			'/document\.write\s*\(\s*unescape\s*\(/i' => __( 'Writes hidden code into the page', 'chaos-shield' ),
+			'/(?:cc_?num(?:ber)?|card_?number|cc-number|card\[number\]|cvv|cvc2?)\b(?=.{0,600}?\b(?:btoa|atob)\s*\()(?=.{0,600}?(?:sendBeacon|new\s+Image|WebSocket|fetch\s*\(|XMLHttpRequest))/is' => __( 'Reads card details and sends them somewhere', 'chaos-shield' ),
 		);
 		foreach ( $signs as $pattern => $reason ) {
 			if ( preg_match( $pattern, $code ) ) {
@@ -298,7 +298,7 @@ final class Scripts {
 			}
 			// A script served from the uploads folder is almost never placed there on purpose.
 			if ( 'own' === $item['kind'] && false !== strpos( (string) wp_parse_url( $f['src'], PHP_URL_PATH ), '/wp-content/uploads/' ) && ! $item['flag'] ) {
-				$item['flag'] = __( 'Loaded from the uploads folder, where scripts do not belong', 'sentinel-shield' );
+				$item['flag'] = __( 'Loaded from the uploads folder, where scripts do not belong', 'chaos-shield' );
 				$alerts[]     = $key;
 			}
 			$items[ $key ] = $item;
@@ -382,10 +382,10 @@ final class Scripts {
 		}
 		Alerts::send(
 			'alert_scripts',
-			__( 'New or suspicious scripts on your pages', 'sentinel-shield' ),
+			__( 'New or suspicious scripts on your pages', 'chaos-shield' ),
 			sprintf(
 				/* translators: 1: site address, 2: list of scripts. */
-				__( "Your pages at %1\$s load scripts that were not there before, or that look harmful:\n\n%2\$s\n\nIf you did not add them, a plugin, theme or attacker did. Review them on the Edge tab: approve the ones you expect, and block the rest.", 'sentinel-shield' ),
+				__( "Your pages at %1\$s load scripts that were not there before, or that look harmful:\n\n%2\$s\n\nIf you did not add them, a plugin, theme or attacker did. Review them on the Edge tab: approve the ones you expect, and block the rest.", 'chaos-shield' ),
 				home_url(),
 				implode( "\n", $lines )
 			),
@@ -394,7 +394,7 @@ final class Scripts {
 		Events::add(
 			'scan',
 			/* translators: %d: number of scripts. */
-			sprintf( _n( '%d new or suspicious script found on the site\'s pages.', '%d new or suspicious scripts found on the site\'s pages.', count( $lines ), 'sentinel-shield' ), count( $lines ) ),
+			sprintf( _n( '%d new or suspicious script found on the site\'s pages.', '%d new or suspicious scripts found on the site\'s pages.', count( $lines ), 'chaos-shield' ), count( $lines ) ),
 			'',
 			array(
 				'severity' => Events::NOTICE,
@@ -411,14 +411,14 @@ final class Scripts {
 	 */
 	public static function label( array $item ) {
 		if ( 'inline' === $item['kind'] ) {
-			return __( 'Code written into the page', 'sentinel-shield' );
+			return __( 'Code written into the page', 'chaos-shield' );
 		}
 		if ( 0 === strpos( $item['key'], 'keyword:' ) ) {
 			$names = array(
-				'keyword:eval'   => __( 'Code built at run time (eval)', 'sentinel-shield' ),
-				'keyword:blob'   => __( 'Scripts made in the browser (blob:)', 'sentinel-shield' ),
-				'keyword:data'   => __( 'Scripts written into an address (data:)', 'sentinel-shield' ),
-				'keyword:inline' => __( 'Code written into the page', 'sentinel-shield' ),
+				'keyword:eval'   => __( 'Code built at run time (eval)', 'chaos-shield' ),
+				'keyword:blob'   => __( 'Scripts made in the browser (blob:)', 'chaos-shield' ),
+				'keyword:data'   => __( 'Scripts written into an address (data:)', 'chaos-shield' ),
+				'keyword:inline' => __( 'Code written into the page', 'chaos-shield' ),
 			);
 			return isset( $names[ $item['key'] ] ) ? $names[ $item['key'] ] : $item['key'];
 		}
@@ -532,7 +532,7 @@ final class Scripts {
 			return $ok;
 		}
 		$ip       = Request::ip();
-		$throttle = 'sshield_csp_' . md5( (string) $ip );
+		$throttle = 'cshield_csp_' . md5( (string) $ip );
 		$count    = (int) Network::get_transient( $throttle );
 		if ( $count >= 30 ) {
 			return $ok;

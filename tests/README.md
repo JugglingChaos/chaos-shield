@@ -1,4 +1,4 @@
-# Sentinel Shield tests
+# Chaos Shield tests
 
 Integration tests that drive a real WordPress site over HTTP: login limits, two-factor,
 firewall and bans, the threat feed and country database, the malware scan, SIEM detections,
@@ -10,6 +10,6 @@ that lets a request choose its IP.
 
     tests/run.sh /path/to/test/wordpress
 
-The site must answer at its home URL, use plain or pretty permalinks, and have Sentinel
+The site must answer at its home URL, use plain or pretty permalinks, and have Chaos
 Shield active. The run exits with 1 if anything fails. The `tests` folder is not part of
 release zips.

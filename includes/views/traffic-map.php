@@ -2,129 +2,129 @@
 /**
  * Live traffic: where requests come from, as a world heatmap and a top countries table.
  *
- * Expects $sshield_world and $sshield_geo from tab-traffic.php.
+ * Expects $cshield_world and $cshield_geo from tab-traffic.php.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
-$sshield_geo_status = Geo_Db::status();
-$sshield_geo_max    = 0;
-$sshield_geo_names  = array();
-foreach ( $sshield_geo as $sshield_cc => $sshield_g ) {
-	$sshield_geo_max                  = max( $sshield_geo_max, $sshield_g['all'] );
-	$sshield_en                       = isset( $sshield_world['shapes'][ $sshield_cc ] ) ? $sshield_world['shapes'][ $sshield_cc ]['n'] : ( isset( $sshield_world['dots'][ $sshield_cc ] ) ? $sshield_world['dots'][ $sshield_cc ]['n'] : $sshield_cc );
-	$sshield_geo_names[ $sshield_cc ] = Geo_Db::name( $sshield_cc, $sshield_en );
+$cshield_geo_status = Geo_Db::status();
+$cshield_geo_max    = 0;
+$cshield_geo_names  = array();
+foreach ( $cshield_geo as $cshield_cc => $cshield_g ) {
+	$cshield_geo_max                  = max( $cshield_geo_max, $cshield_g['all'] );
+	$cshield_en                       = isset( $cshield_world['shapes'][ $cshield_cc ] ) ? $cshield_world['shapes'][ $cshield_cc ]['n'] : ( isset( $cshield_world['dots'][ $cshield_cc ] ) ? $cshield_world['dots'][ $cshield_cc ]['n'] : $cshield_cc );
+	$cshield_geo_names[ $cshield_cc ] = Geo_Db::name( $cshield_cc, $cshield_en );
 }
-$sshield_geo_total = array_sum( wp_list_pluck( $sshield_geo, 'all' ) );
-$sshield_geo_none  = Traffic::unlocated();
-$sshield_geo_data  = array(
-	'counts' => $sshield_geo,
-	'names'  => $sshield_geo_names,
+$cshield_geo_total = array_sum( wp_list_pluck( $cshield_geo, 'all' ) );
+$cshield_geo_none  = Traffic::unlocated();
+$cshield_geo_data  = array(
+	'counts' => $cshield_geo,
+	'names'  => $cshield_geo_names,
 	'i18n'   => array(
 		/* translators: 1: requests, 2: blocked, 3: logins, 4: distinct IPs. */
-		'tip'  => __( '%1$s requests · %2$s blocked · %3$s logins · %4$s IPs', 'sentinel-shield' ),
-		'none' => __( 'No traffic in the last 24 hours', 'sentinel-shield' ),
+		'tip'  => __( '%1$s requests · %2$s blocked · %3$s logins · %4$s IPs', 'chaos-shield' ),
+		'none' => __( 'No traffic in the last 24 hours', 'chaos-shield' ),
 	),
 );
 ?>
-<section class="sshield-card sshield-card--full sshield-geo" data-geo="<?php echo esc_attr( wp_json_encode( $sshield_geo_data ) ); ?>">
-	<div class="sshield-card__head">
+<section class="cshield-card cshield-card--full cshield-geo" data-geo="<?php echo esc_attr( wp_json_encode( $cshield_geo_data ) ); ?>">
+	<div class="cshield-card__head">
 		<div>
-			<h2><?php esc_html_e( 'Where traffic comes from', 'sentinel-shield' ); ?></h2>
+			<h2><?php esc_html_e( 'Where traffic comes from', 'chaos-shield' ); ?></h2>
 			<p>
 				<?php
 				if ( Geo_Db::enabled() && Geo_Db::ready() ) {
 					printf(
 						/* translators: 1: number of countries, 2: date. */
-						esc_html( _n( '%1$s country in the last 24 hours. Country data from the built-in database, updated %2$s.', '%1$s countries in the last 24 hours. Country data from the built-in database, updated %2$s.', count( $sshield_geo ), 'sentinel-shield' ) ),
-						esc_html( number_format_i18n( count( $sshield_geo ) ) ),
-						esc_html( wp_date( get_option( 'date_format' ), $sshield_geo_status['updated'] ) )
+						esc_html( _n( '%1$s country in the last 24 hours. Country data from the built-in database, updated %2$s.', '%1$s countries in the last 24 hours. Country data from the built-in database, updated %2$s.', count( $cshield_geo ), 'chaos-shield' ) ),
+						esc_html( number_format_i18n( count( $cshield_geo ) ) ),
+						esc_html( wp_date( get_option( 'date_format' ), $cshield_geo_status['updated'] ) )
 					);
 				} elseif ( Geo_Db::enabled() ) {
-					esc_html_e( 'The country database is downloading in the background. The map fills in as new requests arrive.', 'sentinel-shield' );
+					esc_html_e( 'The country database is downloading in the background. The map fills in as new requests arrive.', 'chaos-shield' );
 				} elseif ( Settings::get( 'country_source' ) ) {
-					esc_html_e( 'Countries come from the header your proxy or host sends.', 'sentinel-shield' );
+					esc_html_e( 'Countries come from the header your proxy or host sends.', 'chaos-shield' );
 				} else {
-					esc_html_e( 'Switch on Built-in country lookup under Hardening to see where traffic comes from.', 'sentinel-shield' );
+					esc_html_e( 'Switch on Built-in country lookup under Hardening to see where traffic comes from.', 'chaos-shield' );
 				}
-				if ( Geo_Db::enabled() && $sshield_geo_status['error'] ) {
-					echo ' ' . esc_html( $sshield_geo_status['error'] );
+				if ( Geo_Db::enabled() && $cshield_geo_status['error'] ) {
+					echo ' ' . esc_html( $cshield_geo_status['error'] );
 				}
 				?>
 			</p>
 		</div>
-		<div class="sshield-chips sshield-geo__metric" role="group" aria-label="<?php esc_attr_e( 'Show on the map', 'sentinel-shield' ); ?>">
-			<button type="button" class="sshield-chip is-active" data-metric="all" aria-pressed="true"><?php esc_html_e( 'All requests', 'sentinel-shield' ); ?></button>
-			<button type="button" class="sshield-chip" data-metric="blocked" aria-pressed="false"><?php esc_html_e( 'Blocked', 'sentinel-shield' ); ?></button>
-			<button type="button" class="sshield-chip" data-metric="login" aria-pressed="false"><?php esc_html_e( 'Logins', 'sentinel-shield' ); ?></button>
+		<div class="cshield-chips cshield-geo__metric" role="group" aria-label="<?php esc_attr_e( 'Show on the map', 'chaos-shield' ); ?>">
+			<button type="button" class="cshield-chip is-active" data-metric="all" aria-pressed="true"><?php esc_html_e( 'All requests', 'chaos-shield' ); ?></button>
+			<button type="button" class="cshield-chip" data-metric="blocked" aria-pressed="false"><?php esc_html_e( 'Blocked', 'chaos-shield' ); ?></button>
+			<button type="button" class="cshield-chip" data-metric="login" aria-pressed="false"><?php esc_html_e( 'Logins', 'chaos-shield' ); ?></button>
 		</div>
 	</div>
 
-	<div class="sshield-geo__map">
-		<svg viewBox="0 0 <?php echo esc_attr( $sshield_world['w'] . ' ' . $sshield_world['h'] ); ?>" role="img" aria-label="<?php esc_attr_e( 'World map shaded by requests per country in the last 24 hours. The table below lists the same numbers.', 'sentinel-shield' ); ?>">
-			<?php foreach ( $sshield_world['shapes'] as $sshield_cc => $sshield_shape ) : ?>
-				<?php $sshield_n = isset( $sshield_geo[ $sshield_cc ] ) ? $sshield_geo[ $sshield_cc ]['all'] : 0; ?>
-				<path class="sshield-geo__c sshield-geo--<?php echo esc_attr( Traffic::shade( $sshield_n, $sshield_geo_max ) ); ?>" data-cc="<?php echo esc_attr( $sshield_cc ); ?>" data-name="<?php echo esc_attr( isset( $sshield_geo_names[ $sshield_cc ] ) ? $sshield_geo_names[ $sshield_cc ] : $sshield_shape['n'] ); ?>" d="<?php echo esc_attr( $sshield_shape['d'] ); ?>"></path>
+	<div class="cshield-geo__map">
+		<svg viewBox="0 0 <?php echo esc_attr( $cshield_world['w'] . ' ' . $cshield_world['h'] ); ?>" role="img" aria-label="<?php esc_attr_e( 'World map shaded by requests per country in the last 24 hours. The table below lists the same numbers.', 'chaos-shield' ); ?>">
+			<?php foreach ( $cshield_world['shapes'] as $cshield_cc => $cshield_shape ) : ?>
+				<?php $cshield_n = isset( $cshield_geo[ $cshield_cc ] ) ? $cshield_geo[ $cshield_cc ]['all'] : 0; ?>
+				<path class="cshield-geo__c cshield-geo--<?php echo esc_attr( Traffic::shade( $cshield_n, $cshield_geo_max ) ); ?>" data-cc="<?php echo esc_attr( $cshield_cc ); ?>" data-name="<?php echo esc_attr( isset( $cshield_geo_names[ $cshield_cc ] ) ? $cshield_geo_names[ $cshield_cc ] : $cshield_shape['n'] ); ?>" d="<?php echo esc_attr( $cshield_shape['d'] ); ?>"></path>
 			<?php endforeach; ?>
 			<?php
 			// Countries too small for the map's scale show as a dot, but only when they sent traffic.
-			foreach ( $sshield_world['dots'] as $sshield_cc => $sshield_dot ) :
-				if ( empty( $sshield_geo[ $sshield_cc ] ) ) {
+			foreach ( $cshield_world['dots'] as $cshield_cc => $cshield_dot ) :
+				if ( empty( $cshield_geo[ $cshield_cc ] ) ) {
 					continue;
 				}
 				?>
-				<circle class="sshield-geo__c sshield-geo__dot sshield-geo--<?php echo esc_attr( Traffic::shade( $sshield_geo[ $sshield_cc ]['all'], $sshield_geo_max ) ); ?>" data-cc="<?php echo esc_attr( $sshield_cc ); ?>" data-name="<?php echo esc_attr( $sshield_geo_names[ $sshield_cc ] ); ?>" cx="<?php echo esc_attr( $sshield_dot['x'] ); ?>" cy="<?php echo esc_attr( $sshield_dot['y'] ); ?>" r="5"></circle>
+				<circle class="cshield-geo__c cshield-geo__dot cshield-geo--<?php echo esc_attr( Traffic::shade( $cshield_geo[ $cshield_cc ]['all'], $cshield_geo_max ) ); ?>" data-cc="<?php echo esc_attr( $cshield_cc ); ?>" data-name="<?php echo esc_attr( $cshield_geo_names[ $cshield_cc ] ); ?>" cx="<?php echo esc_attr( $cshield_dot['x'] ); ?>" cy="<?php echo esc_attr( $cshield_dot['y'] ); ?>" r="5"></circle>
 			<?php endforeach; ?>
 		</svg>
-		<div class="sshield-geo__tip" role="status" hidden></div>
+		<div class="cshield-geo__tip" role="status" hidden></div>
 	</div>
 
-	<div class="sshield-geo__legend" aria-hidden="true">
-		<span class="sshield-geo__key"><span class="sshield-geo__swatch sshield-geo--0"></span><?php esc_html_e( 'None', 'sentinel-shield' ); ?></span>
-		<span class="sshield-geo__key"><?php esc_html_e( 'Fewer', 'sentinel-shield' ); ?></span>
-		<?php for ( $sshield_s = 1; $sshield_s <= 5; $sshield_s++ ) : ?>
-			<span class="sshield-geo__swatch sshield-geo--<?php echo esc_attr( $sshield_s ); ?>"></span>
+	<div class="cshield-geo__legend" aria-hidden="true">
+		<span class="cshield-geo__key"><span class="cshield-geo__swatch cshield-geo--0"></span><?php esc_html_e( 'None', 'chaos-shield' ); ?></span>
+		<span class="cshield-geo__key"><?php esc_html_e( 'Fewer', 'chaos-shield' ); ?></span>
+		<?php for ( $cshield_s = 1; $cshield_s <= 5; $cshield_s++ ) : ?>
+			<span class="cshield-geo__swatch cshield-geo--<?php echo esc_attr( $cshield_s ); ?>"></span>
 		<?php endfor; ?>
-		<span class="sshield-geo__key">
+		<span class="cshield-geo__key">
 			<?php
 			/* translators: %s: highest count. */
-			echo '<span class="sshield-geo__max">' . esc_html( sprintf( __( 'More (up to %s)', 'sentinel-shield' ), number_format_i18n( $sshield_geo_max ) ) ) . '</span>';
+			echo '<span class="cshield-geo__max">' . esc_html( sprintf( __( 'More (up to %s)', 'chaos-shield' ), number_format_i18n( $cshield_geo_max ) ) ) . '</span>';
 			?>
 		</span>
 	</div>
 
-	<?php if ( $sshield_geo ) : ?>
-		<div class="sshield-table-wrap">
-			<table class="sshield-table sshield-table--geo">
-				<thead><tr><th><?php esc_html_e( 'Country', 'sentinel-shield' ); ?></th><th><?php esc_html_e( 'Requests', 'sentinel-shield' ); ?></th><th><?php esc_html_e( 'Blocked', 'sentinel-shield' ); ?></th><th><?php esc_html_e( 'Logins', 'sentinel-shield' ); ?></th><th><?php esc_html_e( 'IPs', 'sentinel-shield' ); ?></th></tr></thead>
+	<?php if ( $cshield_geo ) : ?>
+		<div class="cshield-table-wrap">
+			<table class="cshield-table cshield-table--geo">
+				<thead><tr><th><?php esc_html_e( 'Country', 'chaos-shield' ); ?></th><th><?php esc_html_e( 'Requests', 'chaos-shield' ); ?></th><th><?php esc_html_e( 'Blocked', 'chaos-shield' ); ?></th><th><?php esc_html_e( 'Logins', 'chaos-shield' ); ?></th><th><?php esc_html_e( 'IPs', 'chaos-shield' ); ?></th></tr></thead>
 				<tbody>
-					<?php foreach ( array_slice( $sshield_geo, 0, 10, true ) as $sshield_cc => $sshield_g ) : ?>
-						<tr data-cc="<?php echo esc_attr( $sshield_cc ); ?>">
+					<?php foreach ( array_slice( $cshield_geo, 0, 10, true ) as $cshield_cc => $cshield_g ) : ?>
+						<tr data-cc="<?php echo esc_attr( $cshield_cc ); ?>">
 							<td>
-								<a class="sshield-link" href="<?php echo esc_url( Admin::url( 'traffic', array( 'country' => $sshield_cc ) ) . '#sshield-traffic' ); ?>"><?php echo esc_html( $sshield_geo_names[ $sshield_cc ] ); ?></a>
-								<span class="sshield-geo__share" style="--share: <?php echo esc_attr( round( 100 * $sshield_g['all'] / max( 1, $sshield_geo_total ), 1 ) ); ?>%"></span>
+								<a class="cshield-link" href="<?php echo esc_url( Admin::url( 'traffic', array( 'country' => $cshield_cc ) ) . '#cshield-traffic' ); ?>"><?php echo esc_html( $cshield_geo_names[ $cshield_cc ] ); ?></a>
+								<span class="cshield-geo__share" style="--share: <?php echo esc_attr( round( 100 * $cshield_g['all'] / max( 1, $cshield_geo_total ), 1 ) ); ?>%"></span>
 							</td>
-							<td><?php echo esc_html( number_format_i18n( $sshield_g['all'] ) ); ?> <span class="sshield-small"><?php echo esc_html( round( 100 * $sshield_g['all'] / max( 1, $sshield_geo_total ) ) . '%' ); ?></span></td>
-							<td><?php echo esc_html( number_format_i18n( $sshield_g['blocked'] ) ); ?></td>
-							<td><?php echo esc_html( number_format_i18n( $sshield_g['login'] ) ); ?></td>
-							<td><?php echo esc_html( number_format_i18n( $sshield_g['ips'] ) ); ?></td>
+							<td><?php echo esc_html( number_format_i18n( $cshield_g['all'] ) ); ?> <span class="cshield-small"><?php echo esc_html( round( 100 * $cshield_g['all'] / max( 1, $cshield_geo_total ) ) . '%' ); ?></span></td>
+							<td><?php echo esc_html( number_format_i18n( $cshield_g['blocked'] ) ); ?></td>
+							<td><?php echo esc_html( number_format_i18n( $cshield_g['login'] ) ); ?></td>
+							<td><?php echo esc_html( number_format_i18n( $cshield_g['ips'] ) ); ?></td>
 						</tr>
 					<?php endforeach; ?>
 				</tbody>
 			</table>
 		</div>
 	<?php endif; ?>
-	<p class="sshield-small">
+	<p class="cshield-small">
 		<?php
-		if ( $sshield_geo_none ) {
+		if ( $cshield_geo_none ) {
 			/* translators: %s: number of requests. */
-			echo esc_html( sprintf( _n( '%s request has no known country (private network or recorded before the lookup was ready).', '%s requests have no known country (private networks or recorded before the lookup was ready).', $sshield_geo_none, 'sentinel-shield' ), number_format_i18n( $sshield_geo_none ) ) ) . ' ';
+			echo esc_html( sprintf( _n( '%s request has no known country (private network or recorded before the lookup was ready).', '%s requests have no known country (private networks or recorded before the lookup was ready).', $cshield_geo_none, 'chaos-shield' ), number_format_i18n( $cshield_geo_none ) ) ) . ' ';
 		}
-		esc_html_e( 'Click a country to filter the live traffic below. Country data: ip-location-db (public domain). Map: Natural Earth.', 'sentinel-shield' );
+		esc_html_e( 'Click a country to filter the live traffic below. Country data: ip-location-db (public domain). Map: Natural Earth.', 'chaos-shield' );
 		?>
 	</p>
 </section>

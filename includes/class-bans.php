@@ -2,10 +2,10 @@
 /**
  * Automatic bans for repeat attackers and 404 probing bots.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -14,8 +14,8 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Bans {
 
-	const OPTION      = 'sshield_bans';
-	const ALERT_EVENT = 'sshield_ban_alert';
+	const OPTION      = 'cshield_bans';
+	const ALERT_EVENT = 'cshield_ban_alert';
 
 	/**
 	 * File types whose 404s come from broken pages, not from scanners.
@@ -72,7 +72,7 @@ final class Bans {
 				$ip,
 				sprintf(
 					/* translators: 1: number of missing pages, 2: last path requested. */
-					__( 'Requested %1$d missing pages within 5 minutes, last one %2$s', 'sentinel-shield' ),
+					__( 'Requested %1$d missing pages within 5 minutes, last one %2$s', 'chaos-shield' ),
 					(int) Settings::get( 'probe_404_limit' ),
 					substr( $uri, 0, 120 )
 				)
@@ -99,7 +99,7 @@ final class Bans {
 			$limit = (int) Settings::get( 'autoban_strikes' );
 			if ( self::count( $ip, 'lockout', DAY_IN_SECONDS ) >= $limit ) {
 				/* translators: %d: number of lockouts. */
-				self::ban( $ip, sprintf( __( 'Locked out %d times within 24 hours', 'sentinel-shield' ), $limit ) );
+				self::ban( $ip, sprintf( __( 'Locked out %d times within 24 hours', 'chaos-shield' ), $limit ) );
 			}
 			return;
 		}
@@ -126,7 +126,7 @@ final class Bans {
 	 * @return int
 	 */
 	private static function count( $ip, $kind, $window ) {
-		$key  = 'sshield_strk_' . $kind . '_' . md5( $ip );
+		$key  = 'cshield_strk_' . $kind . '_' . md5( $ip );
 		$data = Network::get_transient( $key );
 		$now  = time();
 		if ( ! is_array( $data ) || $now - (int) $data['since'] > $window ) {
@@ -173,7 +173,7 @@ final class Bans {
 				$early
 					? sprintf( 'Did not ban %1$s because an administrator has logged in from it (%2$s).', $ip, $reason )
 					/* translators: 1: IP address, 2: reason. */
-					: sprintf( __( 'Did not ban %1$s because an administrator has logged in from it (%2$s).', 'sentinel-shield' ), $ip, $reason ),
+					: sprintf( __( 'Did not ban %1$s because an administrator has logged in from it (%2$s).', 'chaos-shield' ), $ip, $reason ),
 				$ip,
 				array( 'severity' => Events::NOTICE )
 			);
@@ -201,7 +201,7 @@ final class Bans {
 			$early
 				? sprintf( 'Banned %1$s for %2$d hours: %3$s.', $ip, $hours, $reason )
 				/* translators: 1: IP address, 2: hours, 3: reason. */
-				: sprintf( __( 'Banned %1$s for %2$d hours: %3$s.', 'sentinel-shield' ), $ip, $hours, $reason ),
+				: sprintf( __( 'Banned %1$s for %2$d hours: %3$s.', 'chaos-shield' ), $ip, $hours, $reason ),
 			$ip,
 			array(
 				'severity' => Events::NOTICE,
@@ -215,7 +215,7 @@ final class Bans {
 		 * @param string $ip    IP address.
 		 * @param int    $until Unix time the ban ends.
 		 */
-		do_action( 'sshield_ip_banned', $ip, $bans[ $ip ]['until'] );
+		do_action( 'cshield_ip_banned', $ip, $bans[ $ip ]['until'] );
 		if ( $early ) {
 			// Alert emails are translated, so they go out from a later request.
 			Network::schedule_single( time(), self::ALERT_EVENT, array( $ip ) );
@@ -238,10 +238,10 @@ final class Bans {
 		Alerts::send(
 			'alert_lockouts',
 			/* translators: %s: IP address. */
-			sprintf( __( 'IP %s banned', 'sentinel-shield' ), $ip ),
+			sprintf( __( 'IP %s banned', 'chaos-shield' ), $ip ),
 			sprintf(
 				/* translators: 1: IP address, 2: date the ban ends, 3: reason. */
-				__( '%1$s is banned from the whole site until %2$s. Reason: %3$s.', 'sentinel-shield' ),
+				__( '%1$s is banned from the whole site until %2$s. Reason: %3$s.', 'chaos-shield' ),
 				$ip,
 				wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $bans[ $ip ]['until'] ),
 				$bans[ $ip ]['reason']
@@ -304,7 +304,7 @@ final class Bans {
 		 *
 		 * @param string $ip IP address, or '' for all.
 		 */
-		do_action( 'sshield_ip_released', $ip );
+		do_action( 'cshield_ip_released', $ip );
 	}
 
 	/**
@@ -314,7 +314,7 @@ final class Bans {
 	 */
 	private static function reset_counters( $ip ) {
 		foreach ( array( 'lockout', 'firewall', 'probe', 'ratelimit' ) as $kind ) {
-			Network::delete_transient( 'sshield_strk_' . $kind . '_' . md5( $ip ) );
+			Network::delete_transient( 'cshield_strk_' . $kind . '_' . md5( $ip ) );
 		}
 	}
 
@@ -352,7 +352,7 @@ final class Bans {
 			return false;
 		}
 		// DNS lookups are slow, so each IP's answer is kept for a day.
-		$key    = 'sshield_crawler_' . md5( $ip );
+		$key    = 'cshield_crawler_' . md5( $ip );
 		$cached = Network::get_transient( $key );
 		if ( false !== $cached ) {
 			return 'yes' === $cached;

@@ -2,10 +2,10 @@
 /**
  * Threat intelligence IP blocklist.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -17,9 +17,9 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Threat_Feed {
 
-	const OPTION = 'sshield_threat_ranges';
-	const STATUS = 'sshield_threat_status';
-	const HOOK   = 'sshield_threat_refresh';
+	const OPTION = 'cshield_threat_ranges';
+	const STATUS = 'cshield_threat_status';
+	const HOOK   = 'cshield_threat_refresh';
 
 	/**
 	 * Ranges decoded for this request.
@@ -102,7 +102,7 @@ final class Threat_Feed {
 			return;
 		}
 		Login_Guard::bump_stat( 'threat_blocks' );
-		$throttle = 'sshield_tf_' . md5( $ip );
+		$throttle = 'cshield_tf_' . md5( $ip );
 		if ( ! Network::get_transient( $throttle ) ) {
 			Network::set_transient( $throttle, 1, HOUR_IN_SECONDS );
 			$sources = self::sources();
@@ -193,7 +193,7 @@ final class Threat_Feed {
 					$url,
 					array(
 						'timeout'    => 20,
-						'user-agent' => 'SentinelShield/' . SSHIELD_VERSION,
+						'user-agent' => 'ChaosShield/' . CSHIELD_VERSION,
 					)
 				);
 				$code     = is_wp_error( $response ) ? 0 : (int) wp_remote_retrieve_response_code( $response );
@@ -222,7 +222,7 @@ final class Threat_Feed {
 		if ( Settings::enabled( 'threat_feed' ) ) {
 			Network::schedule_single( time() + ( $errors ? HOUR_IN_SECONDS : DAY_IN_SECONDS ), self::HOOK );
 		}
-		return $errors ? new \WP_Error( 'sshield_threat', $status['error'] ) : true;
+		return $errors ? new \WP_Error( 'cshield_threat', $status['error'] ) : true;
 	}
 
 	/**

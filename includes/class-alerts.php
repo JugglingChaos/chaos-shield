@@ -2,10 +2,10 @@
 /**
  * Email and team chat alerts.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -29,7 +29,7 @@ final class Alerts {
 		}
 
 		// One email per alert and target every 15 minutes, so an attack cannot flood the inbox.
-		$throttle = 'sshield_alert_' . md5( $key . '|' . $dedupe );
+		$throttle = 'cshield_alert_' . md5( $key . '|' . $dedupe );
 		if ( Network::get_transient( $throttle ) ) {
 			return false;
 		}
@@ -37,14 +37,14 @@ final class Alerts {
 		$site = wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES );
 		$text = $body . "\n\n"
 			. sprintf(
-				/* translators: %s: URL of the Sentinel Shield dashboard. */
-				__( 'Review it on your Sentinel Shield dashboard: %s', 'sentinel-shield' ),
-				Network::admin_url( 'admin.php?page=sentinel-shield&tab=activity' )
+				/* translators: %s: URL of the Chaos Shield dashboard. */
+				__( 'Review it on your Chaos Shield dashboard: %s', 'chaos-shield' ),
+				Network::admin_url( 'admin.php?page=chaos-shield&tab=activity' )
 			)
 			. "\n\n-- \n"
 			. sprintf(
 				/* translators: 1: site name, 2: site URL. */
-				__( 'Sent by Sentinel Shield on %1$s (%2$s). Change alerts under Sentinel Shield > Alerts.', 'sentinel-shield' ),
+				__( 'Sent by Chaos Shield on %1$s (%2$s). Change alerts under Chaos Shield > Alerts.', 'chaos-shield' ),
 				$site,
 				home_url()
 			);

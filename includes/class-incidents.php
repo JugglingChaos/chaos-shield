@@ -2,10 +2,10 @@
 /**
  * SIEM incidents.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -18,7 +18,7 @@ defined( 'ABSPATH' ) || exit;
 final class Incidents {
 
 	const DB_VERSION        = '1';
-	const DB_VERSION_OPTION = 'sshield_incidents_db';
+	const DB_VERSION_OPTION = 'cshield_incidents_db';
 	const MAX_EVENTS        = 200;
 	const MERGE_WINDOW      = DAY_IN_SECONDS;
 
@@ -33,7 +33,7 @@ final class Incidents {
 	 * @return string
 	 */
 	public static function table() {
-		return Network::table( 'sshield_incidents' );
+		return Network::table( 'cshield_incidents' );
 	}
 
 	/**
@@ -73,7 +73,7 @@ final class Incidents {
 			) {$charset};"
 		);
 		Network::update_option( self::DB_VERSION_OPTION, self::DB_VERSION );
-		Network::add_option( 'sshield_detect_queue', array(), true );
+		Network::add_option( 'cshield_detect_queue', array(), true );
 	}
 
 	/**
@@ -83,10 +83,10 @@ final class Incidents {
 	 */
 	public static function statuses() {
 		return array(
-			'open'           => __( 'Open', 'sentinel-shield' ),
-			'investigating'  => __( 'Investigating', 'sentinel-shield' ),
-			'resolved'       => __( 'Resolved', 'sentinel-shield' ),
-			'false_positive' => __( 'False positive', 'sentinel-shield' ),
+			'open'           => __( 'Open', 'chaos-shield' ),
+			'investigating'  => __( 'Investigating', 'chaos-shield' ),
+			'resolved'       => __( 'Resolved', 'chaos-shield' ),
+			'false_positive' => __( 'False positive', 'chaos-shield' ),
 		);
 	}
 
@@ -97,10 +97,10 @@ final class Incidents {
 	 */
 	public static function severities() {
 		return array(
-			self::LOW      => __( 'Low', 'sentinel-shield' ),
-			self::MEDIUM   => __( 'Medium', 'sentinel-shield' ),
-			self::HIGH     => __( 'High', 'sentinel-shield' ),
-			self::CRITICAL => __( 'Critical', 'sentinel-shield' ),
+			self::LOW      => __( 'Low', 'chaos-shield' ),
+			self::MEDIUM   => __( 'Medium', 'chaos-shield' ),
+			self::HIGH     => __( 'High', 'chaos-shield' ),
+			self::CRITICAL => __( 'Critical', 'chaos-shield' ),
 		);
 	}
 
@@ -183,7 +183,7 @@ final class Incidents {
 		Events::add(
 			'incident',
 			/* translators: 1: severity, 2: incident title. */
-			sprintf( __( '%1$s incident: %2$s', 'sentinel-shield' ), $labels[ $sev ], $data['title'] ),
+			sprintf( __( '%1$s incident: %2$s', 'chaos-shield' ), $labels[ $sev ], $data['title'] ),
 			isset( $data['ip'] ) ? (string) $data['ip'] : '',
 			array(
 				'severity' => $sev >= self::HIGH ? Events::CRITICAL : Events::NOTICE,
@@ -199,8 +199,8 @@ final class Incidents {
 		Alerts::send(
 			'alert_incidents',
 			/* translators: 1: severity, 2: incident title. */
-			sprintf( __( '%1$s incident: %2$s', 'sentinel-shield' ), $labels[ $sev ], $data['title'] ),
-			$data['summary'] . "\n\n" . ( ! empty( $data['technique'] ) ? 'MITRE ATT&CK ' . $data['technique'] . "\n\n" : '' ) . __( 'Investigate and respond:', 'sentinel-shield' ) . "\n" . $link,
+			sprintf( __( '%1$s incident: %2$s', 'chaos-shield' ), $labels[ $sev ], $data['title'] ),
+			$data['summary'] . "\n\n" . ( ! empty( $data['technique'] ) ? 'MITRE ATT&CK ' . $data['technique'] . "\n\n" : '' ) . __( 'Investigate and respond:', 'chaos-shield' ) . "\n" . $link,
 			'incident-' . $id . '-' . $sev
 		);
 	}
@@ -328,15 +328,15 @@ final class Incidents {
 		if ( '' !== $status && isset( $labels[ $status ] ) && $status !== $incident['status'] ) {
 			$data['status'] = $status;
 			/* translators: 1: old status, 2: new status. */
-			$changes[] = sprintf( __( 'Status changed from %1$s to %2$s.', 'sentinel-shield' ), $labels[ $incident['status'] ], $labels[ $status ] );
+			$changes[] = sprintf( __( 'Status changed from %1$s to %2$s.', 'chaos-shield' ), $labels[ $incident['status'] ], $labels[ $status ] );
 		}
 		if ( $assignee >= 0 && $assignee !== $incident['assignee'] ) {
 			$data['assignee'] = $assignee;
 			$who              = $assignee ? get_userdata( $assignee ) : null;
 			$changes[]        = $who
 				/* translators: %s: username. */
-				? sprintf( __( 'Assigned to %s.', 'sentinel-shield' ), $who->user_login )
-				: __( 'Unassigned.', 'sentinel-shield' );
+				? sprintf( __( 'Assigned to %s.', 'chaos-shield' ), $who->user_login )
+				: __( 'Unassigned.', 'chaos-shield' );
 		}
 		$note = trim( sanitize_textarea_field( (string) $note ) );
 		if ( $changes || '' !== $note ) {
@@ -356,7 +356,7 @@ final class Incidents {
 			Events::add(
 				'incident',
 				/* translators: 1: incident ID, 2: incident title, 3: status. */
-				sprintf( __( 'Incident #%1$d (%2$s) marked %3$s.', 'sentinel-shield' ), $id, $incident['title'], $labels[ $status ] ),
+				sprintf( __( 'Incident #%1$d (%2$s) marked %3$s.', 'chaos-shield' ), $id, $incident['title'], $labels[ $status ] ),
 				Request::ip(),
 				array(
 					'action'  => 'siem.status',

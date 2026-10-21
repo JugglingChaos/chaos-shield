@@ -1,11 +1,11 @@
 <?php
 /**
- * Hub: watch the security status of other sites running Sentinel Shield.
+ * Hub: watch the security status of other sites running Chaos Shield.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Hub {
 
-	const SITES_OPTION = 'sshield_hub_sites';
+	const SITES_OPTION = 'cshield_hub_sites';
 	const CACHE_TTL    = 600;
 
 	/**
@@ -39,13 +39,13 @@ final class Hub {
 		$url = esc_url_raw( trim( $url ) );
 		$key = trim( $key );
 		if ( ! $url || ! in_array( wp_parse_url( $url, PHP_URL_SCHEME ), array( 'http', 'https' ), true ) ) {
-			return new \WP_Error( 'sshield_hub_url', __( 'Enter the full site address, starting with https://.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_hub_url', __( 'Enter the full site address, starting with https://.', 'chaos-shield' ) );
 		}
 		if ( ! self::secure_url( $url ) ) {
-			return new \WP_Error( 'sshield_hub_url', __( 'Connect sites over https:// so the hub key cannot be read on the way.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_hub_url', __( 'Connect sites over https:// so the hub key cannot be read on the way.', 'chaos-shield' ) );
 		}
 		if ( 0 !== strpos( $key, 'ssk_' ) ) {
-			return new \WP_Error( 'sshield_hub_key', __( 'That does not look like a Sentinel Shield hub key. Keys start with ssk_.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_hub_key', __( 'That does not look like a Chaos Shield hub key. Keys start with ssk_.', 'chaos-shield' ) );
 		}
 		$url    = trailingslashit( $url );
 		$status = self::request( $url, $key );
@@ -61,7 +61,7 @@ final class Hub {
 			'added' => time(),
 		);
 		Network::update_option( self::SITES_OPTION, $sites, false );
-		Network::set_transient( 'sshield_hub_' . $id, $status, self::CACHE_TTL );
+		Network::set_transient( 'cshield_hub_' . $id, $status, self::CACHE_TTL );
 		return $status;
 	}
 
@@ -74,7 +74,7 @@ final class Hub {
 		$sites = self::sites();
 		unset( $sites[ $id ] );
 		Network::update_option( self::SITES_OPTION, $sites, false );
-		Network::delete_transient( 'sshield_hub_' . $id );
+		Network::delete_transient( 'cshield_hub_' . $id );
 	}
 
 	/**
@@ -87,18 +87,18 @@ final class Hub {
 	public static function status( $id, $fresh = false ) {
 		$sites = self::sites();
 		if ( ! isset( $sites[ $id ] ) ) {
-			return new \WP_Error( 'sshield_hub_missing', __( 'Unknown site.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_hub_missing', __( 'Unknown site.', 'chaos-shield' ) );
 		}
-		$cache = 'sshield_hub_' . $id;
+		$cache = 'cshield_hub_' . $id;
 		if ( ! $fresh ) {
 			$cached = Network::get_transient( $cache );
 			if ( false !== $cached ) {
-				return is_array( $cached ) ? $cached : new \WP_Error( 'sshield_hub_down', (string) $cached );
+				return is_array( $cached ) ? $cached : new \WP_Error( 'cshield_hub_down', (string) $cached );
 			}
 		}
 		$key = Totp::open( $sites[ $id ]['key'] );
 		if ( false === $key ) {
-			return new \WP_Error( 'sshield_hub_key', __( 'The stored key can no longer be read. Remove the site and add it again.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_hub_key', __( 'The stored key can no longer be read. Remove the site and add it again.', 'chaos-shield' ) );
 		}
 		$status = self::request( $sites[ $id ]['url'], $key );
 		// Errors are cached too, as a string, so a dead site does not slow every page load.
@@ -141,12 +141,12 @@ final class Hub {
 					'timeout'     => 10,
 					'redirection' => 0,
 					'headers'     => $headers + array( 'Accept' => 'application/json' ),
-					'user-agent'  => 'SentinelShieldHub/' . SSHIELD_VERSION . '; ' . home_url( '/' ),
+					'user-agent'  => 'ChaosShieldHub/' . CSHIELD_VERSION . '; ' . home_url( '/' ),
 				)
 			);
 			if ( is_wp_error( $response ) ) {
 				/* translators: %s: error message. */
-				return new \WP_Error( 'sshield_hub_down', sprintf( __( 'Could not reach the site: %s', 'sentinel-shield' ), $response->get_error_message() ) );
+				return new \WP_Error( 'cshield_hub_down', sprintf( __( 'Could not reach the site: %s', 'chaos-shield' ), $response->get_error_message() ) );
 			}
 			$code = (int) wp_remote_retrieve_response_code( $response );
 			$body = json_decode( wp_remote_retrieve_body( $response ), true );
@@ -159,16 +159,16 @@ final class Hub {
 				continue; // Same address again, the old way.
 			}
 			if ( in_array( $code, array( 401, 403 ), true ) ) {
-				return new \WP_Error( 'sshield_hub_denied', __( 'The site refused the key. Check that you copied the current hub key from that site.', 'sentinel-shield' ) );
+				return new \WP_Error( 'cshield_hub_denied', __( 'The site refused the key. Check that you copied the current hub key from that site.', 'chaos-shield' ) );
 			}
 			if ( 429 === $code ) {
-				return new \WP_Error( 'sshield_hub_locked', __( 'The site has locked this server out after failed attempts. Release the lockout there, or wait.', 'sentinel-shield' ) );
+				return new \WP_Error( 'cshield_hub_locked', __( 'The site has locked this server out after failed attempts. Release the lockout there, or wait.', 'chaos-shield' ) );
 			}
 			$last = $code;
 			++$i;
 		}
 		/* translators: %d: HTTP status code. */
-		return new \WP_Error( 'sshield_hub_missing', sprintf( __( 'Sentinel Shield did not answer on that site (HTTP %d). Make sure version 1.0 or later is active there.', 'sentinel-shield' ), (int) $last ) );
+		return new \WP_Error( 'cshield_hub_missing', sprintf( __( 'Chaos Shield did not answer on that site (HTTP %d). Make sure version 1.0 or later is active there.', 'chaos-shield' ), (int) $last ) );
 	}
 
 	/**
@@ -276,9 +276,9 @@ final class Hub {
 	 */
 	public static function actions() {
 		return array(
-			'scan'     => __( 'Start a scan', 'sentinel-shield' ),
-			'release'  => __( 'Release all lockouts and bans', 'sentinel-shield' ),
-			'settings' => __( 'Push this site\'s hardening settings', 'sentinel-shield' ),
+			'scan'     => __( 'Start a scan', 'chaos-shield' ),
+			'release'  => __( 'Release all lockouts and bans', 'chaos-shield' ),
+			'settings' => __( 'Push this site\'s hardening settings', 'chaos-shield' ),
 		);
 	}
 
@@ -303,11 +303,11 @@ final class Hub {
 	public static function act( $id, $action ) {
 		$sites = self::sites();
 		if ( ! isset( $sites[ $id ] ) || ! isset( self::actions()[ $action ] ) ) {
-			return new \WP_Error( 'sshield_hub_missing', __( 'Unknown site or action.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_hub_missing', __( 'Unknown site or action.', 'chaos-shield' ) );
 		}
 		$key = Totp::open( $sites[ $id ]['key'] );
 		if ( false === $key ) {
-			return new \WP_Error( 'sshield_hub_key', __( 'The stored key can no longer be read. Remove the site and add it again.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_hub_key', __( 'The stored key can no longer be read. Remove the site and add it again.', 'chaos-shield' ) );
 		}
 		$body = array();
 		if ( 'settings' === $action ) {
@@ -336,12 +336,12 @@ final class Hub {
 						Api::SIG_HDR   => Api::sign( $key, $time, $nonce, 'POST', $route, $body ),
 					),
 					'body'        => $body,
-					'user-agent'  => 'SentinelShieldHub/' . SSHIELD_VERSION . '; ' . home_url( '/' ),
+					'user-agent'  => 'ChaosShieldHub/' . CSHIELD_VERSION . '; ' . home_url( '/' ),
 				)
 			);
 			if ( is_wp_error( $response ) ) {
 				/* translators: %s: error message. */
-				$result = new \WP_Error( 'sshield_hub_down', sprintf( __( 'Could not reach the site: %s', 'sentinel-shield' ), $response->get_error_message() ) );
+				$result = new \WP_Error( 'cshield_hub_down', sprintf( __( 'Could not reach the site: %s', 'chaos-shield' ), $response->get_error_message() ) );
 				break;
 			}
 			$code = (int) wp_remote_retrieve_response_code( $response );
@@ -352,24 +352,24 @@ final class Hub {
 			}
 			if ( 404 === $code || ( 200 === $code && ! is_array( $data ) ) ) {
 				// Without pretty permalinks /wp-json/ serves the home page; try the next form.
-				$result = new \WP_Error( 'sshield_hub_old', __( 'That site runs a Sentinel Shield version without hub actions. Update it to 1.4 or later.', 'sentinel-shield' ) );
+				$result = new \WP_Error( 'cshield_hub_old', __( 'That site runs a Chaos Shield version without hub actions. Update it to 1.4 or later.', 'chaos-shield' ) );
 				continue;
 			}
 			$message = is_array( $data ) && isset( $data['message'] ) ? sanitize_text_field( $data['message'] ) : '';
 			/* translators: %d: HTTP status code. */
-			$result = new \WP_Error( 'sshield_hub_refused', $message ? $message : sprintf( __( 'The site refused the action (HTTP %d).', 'sentinel-shield' ), $code ) );
+			$result = new \WP_Error( 'cshield_hub_refused', $message ? $message : sprintf( __( 'The site refused the action (HTTP %d).', 'chaos-shield' ), $code ) );
 			break;
 		}
-		Network::delete_transient( 'sshield_hub_' . $id );
+		Network::delete_transient( 'cshield_hub_' . $id );
 
 		$labels = self::actions();
 		Events::add(
 			'settings',
 			is_wp_error( $result )
 				/* translators: 1: action, 2: site name, 3: error. */
-				? sprintf( __( 'Hub action "%1$s" failed on %2$s: %3$s', 'sentinel-shield' ), $labels[ $action ], $sites[ $id ]['name'], $result->get_error_message() )
+				? sprintf( __( 'Hub action "%1$s" failed on %2$s: %3$s', 'chaos-shield' ), $labels[ $action ], $sites[ $id ]['name'], $result->get_error_message() )
 				/* translators: 1: action, 2: site name. */
-				: sprintf( __( 'Hub action "%1$s" done on %2$s.', 'sentinel-shield' ), $labels[ $action ], $sites[ $id ]['name'] ),
+				: sprintf( __( 'Hub action "%1$s" done on %2$s.', 'chaos-shield' ), $labels[ $action ], $sites[ $id ]['name'] ),
 			Request::ip(),
 			array( 'severity' => is_wp_error( $result ) ? Events::NOTICE : Events::INFO )
 		);

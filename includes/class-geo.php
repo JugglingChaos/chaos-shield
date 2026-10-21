@@ -2,10 +2,10 @@
 /**
  * Country blocking from a country header set by a CDN or the web server.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -30,10 +30,10 @@ final class Geo {
 	 */
 	public static function sources() {
 		return array(
-			''           => __( 'Off', 'sentinel-shield' ),
-			'cloudflare' => __( 'Cloudflare (CF-IPCountry header)', 'sentinel-shield' ),
-			'server'     => __( 'Web server or host (GEOIP_COUNTRY_CODE or X-Country-Code)', 'sentinel-shield' ),
-			'builtin'    => __( 'Built-in database (no account, updated weekly)', 'sentinel-shield' ),
+			''           => __( 'Off', 'chaos-shield' ),
+			'cloudflare' => __( 'Cloudflare (CF-IPCountry header)', 'chaos-shield' ),
+			'server'     => __( 'Web server or host (GEOIP_COUNTRY_CODE or X-Country-Code)', 'chaos-shield' ),
+			'builtin'    => __( 'Built-in database (no account, updated weekly)', 'chaos-shield' ),
 		);
 	}
 
@@ -138,7 +138,7 @@ final class Geo {
 			return;
 		}
 		Login_Guard::bump_stat( 'firewall_blocks' );
-		$throttle = 'sshield_geo_' . md5( Request::ip() );
+		$throttle = 'cshield_geo_' . md5( Request::ip() );
 		if ( ! Network::get_transient( $throttle ) ) {
 			Network::set_transient( $throttle, 1, HOUR_IN_SECONDS );
 			// Plain English: this runs before translations may be loaded.

@@ -2,10 +2,10 @@
 /**
  * Request helpers.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -61,12 +61,12 @@ final class Request {
 		}
 
 		/**
-		 * Filters the client IP Sentinel Shield uses for lockouts, lists and the firewall.
+		 * Filters the client IP Chaos Shield uses for lockouts, lists and the firewall.
 		 *
 		 * @param string $ip     Resolved IP.
 		 * @param string $remote Direct connection IP (REMOTE_ADDR).
 		 */
-		$ip       = (string) apply_filters( 'sshield_client_ip', $ip, $remote );
+		$ip       = (string) apply_filters( 'cshield_client_ip', $ip, $remote );
 		self::$ip = filter_var( $ip, FILTER_VALIDATE_IP ) ? $ip : '';
 		return self::$ip;
 	}

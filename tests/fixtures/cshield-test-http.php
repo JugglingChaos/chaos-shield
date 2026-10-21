@@ -1,15 +1,16 @@
 <?php
 /**
- * Plugin Name: Sentinel Shield test HTTP stand-in
+ * Plugin Name: Chaos Shield test HTTP stand-in
  * Description: TEST SITES ONLY. Answers outgoing requests to chosen hosts from a site option, so the tests never reach real services.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
 // Each entry of the sst_http_mock site option: host => code, body, and optionally
 // match + else, where else is the body used when the request body lacks match.
 // An entry with routes answers by "METHOD /path?query" prefix instead, longest first,
 // each route being code + body; anything unmatched gets a 404.
+// Runs late, so a test's own answer wins over other mocks on the site.
 add_filter(
 	'pre_http_request',
 	static function ( $pre, $args, $url ) {
@@ -63,7 +64,7 @@ add_filter(
 			'filename' => null,
 		);
 	},
-	10,
+	99,
 	3
 );
 

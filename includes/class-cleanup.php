@@ -2,10 +2,10 @@
 /**
  * Cleanup tools: quarantine, core file repair and a database scan.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -21,9 +21,9 @@ final class Cleanup {
 	 */
 	const REPAIRABLE = array( 'modified', 'missing', 'org_modified' );
 
-	const QUARANTINE_OPTION = 'sshield_quarantine';
-	const DB_RESULTS        = 'sshield_db_scan';
-	const DIR               = 'sshield-quarantine';
+	const QUARANTINE_OPTION = 'cshield_quarantine';
+	const DB_RESULTS        = 'cshield_db_scan';
+	const DIR               = 'cshield-quarantine';
 
 	/**
 	 * Absolute path of a finding's file, or '' when it is outside the site.
@@ -50,7 +50,7 @@ final class Cleanup {
 	private static function dir() {
 		$dir = wp_normalize_path( WP_CONTENT_DIR ) . '/' . self::DIR;
 		if ( ! is_dir( $dir ) && ! wp_mkdir_p( $dir ) ) {
-			return new \WP_Error( 'sshield_q_dir', __( 'Could not create the quarantine folder in wp-content. Check the folder permissions.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_q_dir', __( 'Could not create the quarantine folder in wp-content. Check the folder permissions.', 'chaos-shield' ) );
 		}
 		$guards = array(
 			'.htaccess'  => "Require all denied\nDeny from all\n",
@@ -84,18 +84,18 @@ final class Cleanup {
 	public static function quarantine( $finding_id ) {
 		$finding = self::finding( $finding_id );
 		if ( ! $finding ) {
-			return new \WP_Error( 'sshield_q_missing', __( 'That finding is no longer in the scan results. Run a new scan.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_q_missing', __( 'That finding is no longer in the scan results. Run a new scan.', 'chaos-shield' ) );
 		}
 		if ( in_array( $finding['rule'], self::REPAIRABLE, true ) ) {
-			return new \WP_Error( 'sshield_q_core', __( 'Official files are repaired, not quarantined.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_q_core', __( 'Official files are repaired, not quarantined.', 'chaos-shield' ) );
 		}
 		$path = self::path( $finding['file'] );
 		if ( ! $path || ! is_file( $path ) ) {
-			return new \WP_Error( 'sshield_q_gone', __( 'The file is no longer there.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_q_gone', __( 'The file is no longer there.', 'chaos-shield' ) );
 		}
-		$self = wp_normalize_path( SSHIELD_DIR );
+		$self = wp_normalize_path( CSHIELD_DIR );
 		if ( 'wp-config.php' === basename( $path ) || 0 === strpos( wp_normalize_path( $path ), $self ) ) {
-			return new \WP_Error( 'sshield_q_protected', __( 'This file cannot be quarantined from here.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_q_protected', __( 'This file cannot be quarantined from here.', 'chaos-shield' ) );
 		}
 		$dir = self::dir();
 		if ( is_wp_error( $dir ) ) {
@@ -105,7 +105,7 @@ final class Cleanup {
 		$stored = $dir . '/' . $id . '-' . sanitize_file_name( basename( $path ) ) . '.quarantined';
 		$hash   = (string) md5_file( $path );
 		if ( ! @rename( $path, $stored ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions.rename_rename -- Reported below.
-			return new \WP_Error( 'sshield_q_move', __( 'Could not move the file. Check the file permissions.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_q_move', __( 'Could not move the file. Check the file permissions.', 'chaos-shield' ) );
 		}
 		$q        = self::quarantined();
 		$q[ $id ] = array(
@@ -118,7 +118,7 @@ final class Cleanup {
 		Network::update_option( self::QUARANTINE_OPTION, $q, false );
 		self::drop_finding( $finding_id );
 		/* translators: %s: file. */
-		Events::add( 'scan', sprintf( __( 'Quarantined %s.', 'sentinel-shield' ), $finding['file'] ), Request::ip(), array( 'severity' => Events::NOTICE ) );
+		Events::add( 'scan', sprintf( __( 'Quarantined %s.', 'chaos-shield' ), $finding['file'] ), Request::ip(), array( 'severity' => Events::NOTICE ) );
 		return true;
 	}
 
@@ -131,18 +131,18 @@ final class Cleanup {
 	public static function restore( $id ) {
 		$q = self::quarantined();
 		if ( ! isset( $q[ $id ] ) ) {
-			return new \WP_Error( 'sshield_q_missing', __( 'Unknown quarantined file.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_q_missing', __( 'Unknown quarantined file.', 'chaos-shield' ) );
 		}
 		$path = self::path( $q[ $id ]['file'] );
 		if ( ! $path || file_exists( $path ) ) {
-			return new \WP_Error( 'sshield_q_exists', __( 'A file already exists at the original place, so nothing was restored.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_q_exists', __( 'A file already exists at the original place, so nothing was restored.', 'chaos-shield' ) );
 		}
 		wp_mkdir_p( dirname( $path ) );
 		if ( ! @rename( $q[ $id ]['stored'], $path ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions.rename_rename -- Reported below.
-			return new \WP_Error( 'sshield_q_move', __( 'Could not move the file back. Check the file permissions.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_q_move', __( 'Could not move the file back. Check the file permissions.', 'chaos-shield' ) );
 		}
 		/* translators: %s: file. */
-		Events::add( 'scan', sprintf( __( 'Restored %s from quarantine.', 'sentinel-shield' ), $q[ $id ]['file'] ), Request::ip(), array( 'severity' => Events::NOTICE ) );
+		Events::add( 'scan', sprintf( __( 'Restored %s from quarantine.', 'chaos-shield' ), $q[ $id ]['file'] ), Request::ip(), array( 'severity' => Events::NOTICE ) );
 		unset( $q[ $id ] );
 		Network::update_option( self::QUARANTINE_OPTION, $q, false );
 		return true;
@@ -158,7 +158,7 @@ final class Cleanup {
 		if ( isset( $q[ $id ] ) ) {
 			wp_delete_file( $q[ $id ]['stored'] );
 			/* translators: %s: file. */
-			Events::add( 'scan', sprintf( __( 'Deleted quarantined copy of %s.', 'sentinel-shield' ), $q[ $id ]['file'] ), Request::ip() );
+			Events::add( 'scan', sprintf( __( 'Deleted quarantined copy of %s.', 'chaos-shield' ), $q[ $id ]['file'] ), Request::ip() );
 			unset( $q[ $id ] );
 			Network::update_option( self::QUARANTINE_OPTION, $q, false );
 		}
@@ -174,7 +174,7 @@ final class Cleanup {
 		global $wp_version;
 		$finding = self::finding( $finding_id );
 		if ( ! $finding || ! in_array( $finding['rule'], self::REPAIRABLE, true ) ) {
-			return new \WP_Error( 'sshield_r_missing', __( 'That finding is not an official file, or it is gone. Run a new scan.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_r_missing', __( 'That finding is not an official file, or it is gone. Run a new scan.', 'chaos-shield' ) );
 		}
 		$file = $finding['file'];
 		if ( 'org_modified' === $finding['rule'] ) {
@@ -187,12 +187,12 @@ final class Cleanup {
 		} else {
 			$sums = Scanner::core_checksums();
 			if ( ! is_array( $sums ) || empty( $sums[ $file ] ) ) {
-				return new \WP_Error( 'sshield_r_sums', __( 'The official checksum for this file is not available, so it was not replaced.', 'sentinel-shield' ) );
+				return new \WP_Error( 'cshield_r_sums', __( 'The official checksum for this file is not available, so it was not replaced.', 'chaos-shield' ) );
 			}
 			$response = wp_remote_get( 'https://core.svn.wordpress.org/tags/' . rawurlencode( $wp_version ) . '/' . self::url_path( $file ), array( 'timeout' => 20 ) );
 			$body     = is_wp_error( $response ) ? '' : (string) wp_remote_retrieve_body( $response );
 			if ( 200 !== (int) wp_remote_retrieve_response_code( $response ) || md5( $body ) !== $sums[ $file ] ) {
-				return new \WP_Error( 'sshield_r_download', __( 'Could not download a copy that matches the official checksum. Reinstall WordPress from Dashboard > Updates instead.', 'sentinel-shield' ) );
+				return new \WP_Error( 'cshield_r_download', __( 'Could not download a copy that matches the official checksum. Reinstall WordPress from Dashboard > Updates instead.', 'chaos-shield' ) );
 			}
 		}
 		$path = self::path( $file );
@@ -211,11 +211,11 @@ final class Cleanup {
 		}
 		wp_mkdir_p( dirname( $path ) );
 		if ( false === file_put_contents( $path, $body ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writes a verified core file.
-			return new \WP_Error( 'sshield_r_write', __( 'Could not write the file. Check the file permissions.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_r_write', __( 'Could not write the file. Check the file permissions.', 'chaos-shield' ) );
 		}
 		self::drop_finding( $finding_id );
 		/* translators: %s: file. */
-		Events::add( 'scan', sprintf( __( 'Repaired %s from the official WordPress.org copy.', 'sentinel-shield' ), $file ), Request::ip(), array( 'severity' => Events::NOTICE ) );
+		Events::add( 'scan', sprintf( __( 'Repaired %s from the official WordPress.org copy.', 'chaos-shield' ), $file ), Request::ip(), array( 'severity' => Events::NOTICE ) );
 		return true;
 	}
 
@@ -226,7 +226,7 @@ final class Cleanup {
 	 * @return string|\WP_Error File contents.
 	 */
 	private static function official_copy( $source ) {
-		$fail = new \WP_Error( 'sshield_r_download', __( 'Could not download a copy that matches the official release. Reinstall the plugin or theme instead.', 'sentinel-shield' ) );
+		$fail = new \WP_Error( 'cshield_r_download', __( 'Could not download a copy that matches the official release. Reinstall the plugin or theme instead.', 'chaos-shield' ) );
 		if ( ! is_array( $source ) || empty( $source['slug'] ) ) {
 			return $fail;
 		}
@@ -323,7 +323,7 @@ final class Cleanup {
 					'where'   => 'post',
 					'id'      => (int) $post['ID'],
 					/* translators: 1: post type, 2: title. */
-					'title'   => sprintf( __( '%1$s "%2$s"', 'sentinel-shield' ), $post['post_type'], $post['post_title'] ),
+					'title'   => sprintf( __( '%1$s "%2$s"', 'chaos-shield' ), $post['post_type'], $post['post_title'] ),
 					'label'   => $hit['label'],
 					'snippet' => $hit['snippet'],
 					'edit'    => get_edit_post_link( (int) $post['ID'], 'raw' ),
@@ -340,7 +340,7 @@ final class Cleanup {
 		);
 		// phpcs:enable
 		foreach ( (array) $options as $option ) {
-			if ( 0 === strpos( $option['option_name'], 'sshield_' ) ) {
+			if ( 0 === strpos( $option['option_name'], 'cshield_' ) ) {
 				continue;
 			}
 			$hit = self::match_content( (string) $option['option_value'], $home );
@@ -349,7 +349,7 @@ final class Cleanup {
 					'where'   => 'option',
 					'id'      => 0,
 					/* translators: %s: option name. */
-					'title'   => sprintf( __( 'Setting %s', 'sentinel-shield' ), $option['option_name'] ),
+					'title'   => sprintf( __( 'Setting %s', 'chaos-shield' ), $option['option_name'] ),
 					'label'   => $hit['label'],
 					'snippet' => $hit['snippet'],
 					'edit'    => '',
@@ -368,8 +368,8 @@ final class Cleanup {
 					'where'   => 'option',
 					'id'      => 0,
 					/* translators: %s: option name. */
-					'title'   => sprintf( __( 'Setting %s', 'sentinel-shield' ), $name ),
-					'label'   => __( 'Site address contains code', 'sentinel-shield' ),
+					'title'   => sprintf( __( 'Setting %s', 'chaos-shield' ), $name ),
+					'label'   => __( 'Site address contains code', 'chaos-shield' ),
 					'snippet' => substr( $value, 0, 160 ),
 					'edit'    => admin_url( 'options-general.php' ),
 				);
@@ -387,7 +387,7 @@ final class Cleanup {
 		Events::add(
 			'scan',
 			/* translators: %d: number of findings. */
-			sprintf( __( 'Database scan finished: %d items need a look.', 'sentinel-shield' ), count( $findings ) ),
+			sprintf( __( 'Database scan finished: %d items need a look.', 'chaos-shield' ), count( $findings ) ),
 			Request::ip(),
 			array( 'severity' => $findings ? Events::NOTICE : Events::INFO )
 		);
@@ -413,10 +413,10 @@ final class Cleanup {
 	 */
 	public static function match_content( $content, $home ) {
 		$rules = array(
-			array( '/<script[^>]+src\s*=\s*["\']?(?:https?:)?\/\/([^\/"\'\s>]+)/i', __( 'Script loaded from another site', 'sentinel-shield' ), 'external' ),
-			array( '/<script\b[^>]*>[^<]{0,2000}?(?:eval\s*\(|String\.fromCharCode|atob\s*\(|unescape\s*\(|document\.write\s*\(\s*unescape)/i', __( 'Obfuscated inline script', 'sentinel-shield' ), '' ),
-			array( '/<iframe[^>]+(?:display\s*:\s*none|visibility\s*:\s*hidden|width\s*=\s*["\']?0["\'\s>]|height\s*=\s*["\']?0["\'\s>])/i', __( 'Hidden iframe', 'sentinel-shield' ), '' ),
-			array( '/\beval\s*\(\s*(?:base64_decode|gzinflate|str_rot13|atob)\s*\(/i', __( 'Code that decodes and runs hidden data', 'sentinel-shield' ), '' ),
+			array( '/<script[^>]+src\s*=\s*["\']?(?:https?:)?\/\/([^\/"\'\s>]+)/i', __( 'Script loaded from another site', 'chaos-shield' ), 'external' ),
+			array( '/<script\b[^>]*>[^<]{0,2000}?(?:eval\s*\(|String\.fromCharCode|atob\s*\(|unescape\s*\(|document\.write\s*\(\s*unescape)/i', __( 'Obfuscated inline script', 'chaos-shield' ), '' ),
+			array( '/<iframe[^>]+(?:display\s*:\s*none|visibility\s*:\s*hidden|width\s*=\s*["\']?0["\'\s>]|height\s*=\s*["\']?0["\'\s>])/i', __( 'Hidden iframe', 'chaos-shield' ), '' ),
+			array( '/\beval\s*\(\s*(?:base64_decode|gzinflate|str_rot13|atob)\s*\(/i', __( 'Code that decodes and runs hidden data', 'chaos-shield' ), '' ),
 		);
 		foreach ( $rules as $rule ) {
 			if ( ! preg_match( $rule[0], $content, $m, PREG_OFFSET_CAPTURE ) ) {
@@ -449,6 +449,6 @@ final class Cleanup {
 		 *
 		 * @param string[] $hosts Host names.
 		 */
-		return (array) apply_filters( 'sshield_trusted_script_hosts', $hosts );
+		return (array) apply_filters( 'cshield_trusted_script_hosts', $hosts );
 	}
 }

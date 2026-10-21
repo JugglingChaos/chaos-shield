@@ -2,10 +2,10 @@
 /**
  * Breached password checks through the Have I Been Pwned range API.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -18,8 +18,8 @@ defined( 'ABSPATH' ) || exit;
 final class Passwords {
 
 	const API           = 'https://api.pwnedpasswords.com/range/';
-	const BREACHED_META = '_sshield_pw_breached';
-	const CHECKED_META  = '_sshield_pw_checked';
+	const BREACHED_META = '_cshield_pw_breached';
+	const CHECKED_META  = '_cshield_pw_checked';
 
 	/**
 	 * Registers hooks.
@@ -98,7 +98,7 @@ final class Passwords {
 			Events::add(
 				'password',
 				/* translators: %s: username. */
-				sprintf( __( 'Administrator %s logged in with a password found in public data breaches.', 'sentinel-shield' ), $user->user_login ),
+				sprintf( __( 'Administrator %s logged in with a password found in public data breaches.', 'chaos-shield' ), $user->user_login ),
 				Request::ip(),
 				array(
 					'severity' => Events::CRITICAL,
@@ -123,16 +123,16 @@ final class Passwords {
 		}
 		printf(
 			'<div class="notice notice-error"><p><strong>%1$s</strong> %2$s <a href="%3$s">%4$s</a></p></div>',
-			esc_html__( 'Sentinel Shield:', 'sentinel-shield' ),
+			esc_html__( 'Chaos Shield:', 'chaos-shield' ),
 			esc_html(
 				sprintf(
 					/* translators: %s: number of breaches. */
-					_n( 'Your password has appeared in %s known data breach, so attackers will try it.', 'Your password has appeared in %s known data breaches, so attackers will try it.', $count, 'sentinel-shield' ),
+					_n( 'Your password has appeared in %s known data breach, so attackers will try it.', 'Your password has appeared in %s known data breaches, so attackers will try it.', $count, 'chaos-shield' ),
 					number_format_i18n( $count )
 				)
 			),
 			esc_url( admin_url( 'profile.php#password' ) ),
-			esc_html__( 'Change it now', 'sentinel-shield' )
+			esc_html__( 'Change it now', 'chaos-shield' )
 		);
 	}
 
@@ -147,14 +147,14 @@ final class Passwords {
 		$count = self::breach_count( $password );
 		if ( $count ) {
 			$errors->add(
-				'sshield_breached_password',
+				'cshield_breached_password',
 				sprintf(
 					/* translators: %s: number of breaches. */
 					_n(
 						'<strong>Error:</strong> This password has appeared in %s known data breach, so attackers will try it. Please choose a different one.',
 						'<strong>Error:</strong> This password has appeared in %s known data breaches, so attackers will try it. Please choose a different one.',
 						$count,
-						'sentinel-shield'
+						'chaos-shield'
 					),
 					number_format_i18n( $count )
 				),
@@ -179,7 +179,7 @@ final class Passwords {
 			array(
 				'timeout'    => 4,
 				'headers'    => array( 'Add-Padding' => 'true' ),
-				'user-agent' => 'SentinelShield/' . SSHIELD_VERSION,
+				'user-agent' => 'ChaosShield/' . CSHIELD_VERSION,
 			)
 		);
 		if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {

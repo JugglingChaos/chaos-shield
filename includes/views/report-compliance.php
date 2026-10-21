@@ -2,19 +2,19 @@
 /**
  * Printable security and compliance report.
  *
- * @package SentinelShield
+ * @package ChaosShield
  *
  * @var array $report days, since, checks, controls, admins, score, counts, notable.
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
-$sshield_site   = wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES );
-$sshield_format = get_option( 'date_format' );
-$sshield_full   = $sshield_format . ' ' . get_option( 'time_format' );
-$sshield_passed = count(
+$cshield_site   = wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES );
+$cshield_format = get_option( 'date_format' );
+$cshield_full   = $cshield_format . ' ' . get_option( 'time_format' );
+$cshield_passed = count(
 	array_filter(
 		$report['controls'],
 		static function ( $c ) {
@@ -22,23 +22,23 @@ $sshield_passed = count(
 		}
 	)
 );
-$sshield_names  = array(
-	'login'     => __( 'Logins and logouts', 'sentinel-shield' ),
-	'lockout'   => __( 'Lockouts', 'sentinel-shield' ),
-	'ban'       => __( 'Bans', 'sentinel-shield' ),
-	'blocked'   => __( 'Firewall blocks', 'sentinel-shield' ),
-	'user'      => __( 'User changes', 'sentinel-shield' ),
-	'password'  => __( 'Password events', 'sentinel-shield' ),
-	'content'   => __( 'Content changes', 'sentinel-shield' ),
-	'option'    => __( 'Site setting changes', 'sentinel-shield' ),
-	'settings'  => __( 'Security setting changes', 'sentinel-shield' ),
-	'plugin'    => __( 'Plugin changes', 'sentinel-shield' ),
-	'theme'     => __( 'Theme changes', 'sentinel-shield' ),
-	'scan'      => __( 'Scans', 'sentinel-shield' ),
-	'vuln'      => __( 'Vulnerabilities', 'sentinel-shield' ),
-	'privacy'   => __( 'Privacy requests', 'sentinel-shield' ),
-	'twofactor' => __( 'Two-factor events', 'sentinel-shield' ),
-	'system'    => __( 'System', 'sentinel-shield' ),
+$cshield_names  = array(
+	'login'     => __( 'Logins and logouts', 'chaos-shield' ),
+	'lockout'   => __( 'Lockouts', 'chaos-shield' ),
+	'ban'       => __( 'Bans', 'chaos-shield' ),
+	'blocked'   => __( 'Firewall blocks', 'chaos-shield' ),
+	'user'      => __( 'User changes', 'chaos-shield' ),
+	'password'  => __( 'Password events', 'chaos-shield' ),
+	'content'   => __( 'Content changes', 'chaos-shield' ),
+	'option'    => __( 'Site setting changes', 'chaos-shield' ),
+	'settings'  => __( 'Security setting changes', 'chaos-shield' ),
+	'plugin'    => __( 'Plugin changes', 'chaos-shield' ),
+	'theme'     => __( 'Theme changes', 'chaos-shield' ),
+	'scan'      => __( 'Scans', 'chaos-shield' ),
+	'vuln'      => __( 'Vulnerabilities', 'chaos-shield' ),
+	'privacy'   => __( 'Privacy requests', 'chaos-shield' ),
+	'twofactor' => __( 'Two-factor events', 'chaos-shield' ),
+	'system'    => __( 'System', 'chaos-shield' ),
 );
 ?><!doctype html>
 <html <?php language_attributes(); ?>>
@@ -49,7 +49,7 @@ $sshield_names  = array(
 <title>
 <?php
 /* translators: %s: site name. */
-echo esc_html( sprintf( __( 'Security and compliance report: %s', 'sentinel-shield' ), $sshield_site ) );
+echo esc_html( sprintf( __( 'Security and compliance report: %s', 'chaos-shield' ), $cshield_site ) );
 ?>
 </title>
 <style>
@@ -85,74 +85,74 @@ echo esc_html( sprintf( __( 'Security and compliance report: %s', 'sentinel-shie
 </head>
 <body>
 <div class="toolbar">
-	<a href="<?php echo esc_url( Admin::url( 'activity' ) ); ?>"><?php esc_html_e( 'Back to Sentinel Shield', 'sentinel-shield' ); ?></a>
-	<button type="button" onclick="window.print()"><?php esc_html_e( 'Print or save as PDF', 'sentinel-shield' ); ?></button>
+	<a href="<?php echo esc_url( Admin::url( 'activity' ) ); ?>"><?php esc_html_e( 'Back to Chaos Shield', 'chaos-shield' ); ?></a>
+	<button type="button" onclick="window.print()"><?php esc_html_e( 'Print or save as PDF', 'chaos-shield' ); ?></button>
 </div>
 <main>
-	<h1><?php esc_html_e( 'Security and compliance report', 'sentinel-shield' ); ?></h1>
+	<h1><?php esc_html_e( 'Security and compliance report', 'chaos-shield' ); ?></h1>
 	<p class="meta">
 		<?php
 		echo esc_html(
 			sprintf(
 				/* translators: 1: site name, 2: site address, 3: start date, 4: end date, 5: generated date and time. */
-				__( '%1$s (%2$s). Period %3$s to %4$s. Generated %5$s.', 'sentinel-shield' ),
-				$sshield_site,
+				__( '%1$s (%2$s). Period %3$s to %4$s. Generated %5$s.', 'chaos-shield' ),
+				$cshield_site,
 				home_url( '/' ),
-				wp_date( $sshield_format, $report['since'] ),
-				wp_date( $sshield_format ),
-				wp_date( $sshield_full )
+				wp_date( $cshield_format, $report['since'] ),
+				wp_date( $cshield_format ),
+				wp_date( $cshield_full )
 			)
 		);
 		?>
 	</p>
 
 	<div class="summary">
-		<div class="tile"><b><?php echo esc_html( $report['score'] ); ?>/100</b><span><?php esc_html_e( 'Security score', 'sentinel-shield' ); ?></span></div>
-		<div class="tile"><b><?php echo esc_html( $sshield_passed . ' / ' . count( $report['controls'] ) ); ?></b><span><?php esc_html_e( 'Controls in place', 'sentinel-shield' ); ?></span></div>
-		<div class="tile"><b><?php echo esc_html( number_format_i18n( array_sum( $report['counts'] ) ) ); ?></b><span><?php esc_html_e( 'Events logged in the period', 'sentinel-shield' ); ?></span></div>
-		<div class="tile"><b><?php echo esc_html( count( $report['admins'] ) ); ?></b><span><?php esc_html_e( 'Administrator accounts', 'sentinel-shield' ); ?></span></div>
+		<div class="tile"><b><?php echo esc_html( $report['score'] ); ?>/100</b><span><?php esc_html_e( 'Security score', 'chaos-shield' ); ?></span></div>
+		<div class="tile"><b><?php echo esc_html( $cshield_passed . ' / ' . count( $report['controls'] ) ); ?></b><span><?php esc_html_e( 'Controls in place', 'chaos-shield' ); ?></span></div>
+		<div class="tile"><b><?php echo esc_html( number_format_i18n( array_sum( $report['counts'] ) ) ); ?></b><span><?php esc_html_e( 'Events logged in the period', 'chaos-shield' ); ?></span></div>
+		<div class="tile"><b><?php echo esc_html( count( $report['admins'] ) ); ?></b><span><?php esc_html_e( 'Administrator accounts', 'chaos-shield' ); ?></span></div>
 	</div>
 
-	<h2><?php esc_html_e( 'Controls', 'sentinel-shield' ); ?></h2>
+	<h2><?php esc_html_e( 'Controls', 'chaos-shield' ); ?></h2>
 	<table>
-		<thead><tr><th><?php esc_html_e( 'Control', 'sentinel-shield' ); ?></th><th><?php esc_html_e( 'Status', 'sentinel-shield' ); ?></th><th><?php esc_html_e( 'Evidence', 'sentinel-shield' ); ?></th><th><?php esc_html_e( 'Helps with', 'sentinel-shield' ); ?></th></tr></thead>
+		<thead><tr><th><?php esc_html_e( 'Control', 'chaos-shield' ); ?></th><th><?php esc_html_e( 'Status', 'chaos-shield' ); ?></th><th><?php esc_html_e( 'Evidence', 'chaos-shield' ); ?></th><th><?php esc_html_e( 'Helps with', 'chaos-shield' ); ?></th></tr></thead>
 		<tbody>
-		<?php foreach ( $report['controls'] as $sshield_c ) : ?>
+		<?php foreach ( $report['controls'] as $cshield_c ) : ?>
 			<tr>
-				<td><strong><?php echo esc_html( $sshield_c['label'] ); ?></strong><br><span class="small"><?php echo esc_html( $sshield_c['area'] ); ?></span></td>
-				<td class="<?php echo $sshield_c['ok'] ? 'ok' : 'bad'; ?>"><?php echo $sshield_c['ok'] ? esc_html__( 'In place', 'sentinel-shield' ) : esc_html__( 'Gap', 'sentinel-shield' ); ?></td>
-				<td><?php echo esc_html( $sshield_c['evidence'] ); ?></td>
-				<td class="refs"><?php echo esc_html( $sshield_c['refs'] ); ?></td>
+				<td><strong><?php echo esc_html( $cshield_c['label'] ); ?></strong><br><span class="small"><?php echo esc_html( $cshield_c['area'] ); ?></span></td>
+				<td class="<?php echo $cshield_c['ok'] ? 'ok' : 'bad'; ?>"><?php echo $cshield_c['ok'] ? esc_html__( 'In place', 'chaos-shield' ) : esc_html__( 'Gap', 'chaos-shield' ); ?></td>
+				<td><?php echo esc_html( $cshield_c['evidence'] ); ?></td>
+				<td class="refs"><?php echo esc_html( $cshield_c['refs'] ); ?></td>
 			</tr>
 		<?php endforeach; ?>
 		</tbody>
 	</table>
-	<p class="small"><?php esc_html_e( 'References name the SOC 2 (2017 Trust Services Criteria) and ISO/IEC 27001:2022 Annex A controls this evidence supports. This report is evidence for an assessment, not a certification.', 'sentinel-shield' ); ?></p>
+	<p class="small"><?php esc_html_e( 'References name the SOC 2 (2017 Trust Services Criteria) and ISO/IEC 27001:2022 Annex A controls this evidence supports. This report is evidence for an assessment, not a certification.', 'chaos-shield' ); ?></p>
 
-	<h2><?php esc_html_e( 'Administrator accounts', 'sentinel-shield' ); ?></h2>
+	<h2><?php esc_html_e( 'Administrator accounts', 'chaos-shield' ); ?></h2>
 	<table>
-		<thead><tr><th><?php esc_html_e( 'User', 'sentinel-shield' ); ?></th><th><?php esc_html_e( 'Second factor', 'sentinel-shield' ); ?></th><th><?php esc_html_e( 'Last login', 'sentinel-shield' ); ?></th><th><?php esc_html_e( 'Password changed', 'sentinel-shield' ); ?></th></tr></thead>
+		<thead><tr><th><?php esc_html_e( 'User', 'chaos-shield' ); ?></th><th><?php esc_html_e( 'Second factor', 'chaos-shield' ); ?></th><th><?php esc_html_e( 'Last login', 'chaos-shield' ); ?></th><th><?php esc_html_e( 'Password changed', 'chaos-shield' ); ?></th></tr></thead>
 		<tbody>
-		<?php foreach ( $report['admins'] as $sshield_a ) : ?>
+		<?php foreach ( $report['admins'] as $cshield_a ) : ?>
 			<?php
-			$sshield_factors = array();
-			if ( $sshield_a['twofactor'] ) {
-				$sshield_factors[] = __( 'Authenticator app', 'sentinel-shield' );
+			$cshield_factors = array();
+			if ( $cshield_a['twofactor'] ) {
+				$cshield_factors[] = __( 'Authenticator app', 'chaos-shield' );
 			}
-			if ( $sshield_a['passkeys'] ) {
+			if ( $cshield_a['passkeys'] ) {
 				/* translators: %d: number of passkeys. */
-				$sshield_factors[] = sprintf( _n( '%d passkey', '%d passkeys', $sshield_a['passkeys'], 'sentinel-shield' ), $sshield_a['passkeys'] );
+				$cshield_factors[] = sprintf( _n( '%d passkey', '%d passkeys', $cshield_a['passkeys'], 'chaos-shield' ), $cshield_a['passkeys'] );
 			}
 			?>
 			<tr>
-				<td><strong><?php echo esc_html( $sshield_a['login'] ); ?></strong><br><span class="small"><?php echo esc_html( $sshield_a['email'] ); ?></span></td>
-				<td class="<?php echo $sshield_factors ? 'ok' : 'bad'; ?>"><?php echo $sshield_factors ? esc_html( implode( ', ', $sshield_factors ) ) : esc_html__( 'None', 'sentinel-shield' ); ?></td>
-				<td><?php echo $sshield_a['last_login'] ? esc_html( wp_date( $sshield_full, $sshield_a['last_login'] ) ) : esc_html__( 'Not in the log', 'sentinel-shield' ); ?></td>
+				<td><strong><?php echo esc_html( $cshield_a['login'] ); ?></strong><br><span class="small"><?php echo esc_html( $cshield_a['email'] ); ?></span></td>
+				<td class="<?php echo $cshield_factors ? 'ok' : 'bad'; ?>"><?php echo $cshield_factors ? esc_html( implode( ', ', $cshield_factors ) ) : esc_html__( 'None', 'chaos-shield' ); ?></td>
+				<td><?php echo $cshield_a['last_login'] ? esc_html( wp_date( $cshield_full, $cshield_a['last_login'] ) ) : esc_html__( 'Not in the log', 'chaos-shield' ); ?></td>
 				<td>
 					<?php
-					echo $sshield_a['pw_changed'] ? esc_html( wp_date( $sshield_format, $sshield_a['pw_changed'] ) ) : esc_html__( 'Unknown', 'sentinel-shield' );
-					if ( $sshield_a['reset_pending'] ) {
-						echo '<br><span class="bad">' . esc_html__( 'Reset pending', 'sentinel-shield' ) . '</span>';
+					echo $cshield_a['pw_changed'] ? esc_html( wp_date( $cshield_format, $cshield_a['pw_changed'] ) ) : esc_html__( 'Unknown', 'chaos-shield' );
+					if ( $cshield_a['reset_pending'] ) {
+						echo '<br><span class="bad">' . esc_html__( 'Reset pending', 'chaos-shield' ) . '</span>';
 					}
 					?>
 				</td>
@@ -161,46 +161,46 @@ echo esc_html( sprintf( __( 'Security and compliance report: %s', 'sentinel-shie
 		</tbody>
 	</table>
 
-	<h2><?php esc_html_e( 'Activity in the period', 'sentinel-shield' ); ?></h2>
+	<h2><?php esc_html_e( 'Activity in the period', 'chaos-shield' ); ?></h2>
 	<?php if ( $report['counts'] ) : ?>
 		<table>
-			<thead><tr><th><?php esc_html_e( 'Kind of event', 'sentinel-shield' ); ?></th><th><?php esc_html_e( 'Count', 'sentinel-shield' ); ?></th></tr></thead>
+			<thead><tr><th><?php esc_html_e( 'Kind of event', 'chaos-shield' ); ?></th><th><?php esc_html_e( 'Count', 'chaos-shield' ); ?></th></tr></thead>
 			<tbody>
 			<?php
 			arsort( $report['counts'] );
-			foreach ( $report['counts'] as $sshield_type => $sshield_n ) :
+			foreach ( $report['counts'] as $cshield_type => $cshield_n ) :
 				?>
-				<tr><td><?php echo esc_html( isset( $sshield_names[ $sshield_type ] ) ? $sshield_names[ $sshield_type ] : $sshield_type ); ?></td><td><?php echo esc_html( number_format_i18n( $sshield_n ) ); ?></td></tr>
+				<tr><td><?php echo esc_html( isset( $cshield_names[ $cshield_type ] ) ? $cshield_names[ $cshield_type ] : $cshield_type ); ?></td><td><?php echo esc_html( number_format_i18n( $cshield_n ) ); ?></td></tr>
 			<?php endforeach; ?>
 			</tbody>
 		</table>
 	<?php else : ?>
-		<p><?php esc_html_e( 'No events were logged in this period.', 'sentinel-shield' ); ?></p>
+		<p><?php esc_html_e( 'No events were logged in this period.', 'chaos-shield' ); ?></p>
 	<?php endif; ?>
 
-	<h2><?php esc_html_e( 'Notable events', 'sentinel-shield' ); ?></h2>
+	<h2><?php esc_html_e( 'Notable events', 'chaos-shield' ); ?></h2>
 	<?php if ( $report['notable'] ) : ?>
 		<table>
-			<thead><tr><th><?php esc_html_e( 'When', 'sentinel-shield' ); ?></th><th><?php esc_html_e( 'Event', 'sentinel-shield' ); ?></th><th><?php esc_html_e( 'IP', 'sentinel-shield' ); ?></th></tr></thead>
+			<thead><tr><th><?php esc_html_e( 'When', 'chaos-shield' ); ?></th><th><?php esc_html_e( 'Event', 'chaos-shield' ); ?></th><th><?php esc_html_e( 'IP', 'chaos-shield' ); ?></th></tr></thead>
 			<tbody>
-			<?php foreach ( $report['notable'] as $sshield_e ) : ?>
+			<?php foreach ( $report['notable'] as $cshield_e ) : ?>
 				<tr>
-					<td style="white-space:nowrap"><?php echo esc_html( wp_date( $sshield_full, (int) $sshield_e['time'] ) ); ?></td>
-					<td><?php echo ( Events::CRITICAL <= (int) $sshield_e['severity'] ? '<span class="bad">' . esc_html__( 'Critical', 'sentinel-shield' ) . '</span> ' : '' ) . esc_html( $sshield_e['message'] ); ?></td>
-					<td><?php echo esc_html( $sshield_e['ip'] ? $sshield_e['ip'] : '-' ); ?></td>
+					<td style="white-space:nowrap"><?php echo esc_html( wp_date( $cshield_full, (int) $cshield_e['time'] ) ); ?></td>
+					<td><?php echo ( Events::CRITICAL <= (int) $cshield_e['severity'] ? '<span class="bad">' . esc_html__( 'Critical', 'chaos-shield' ) . '</span> ' : '' ) . esc_html( $cshield_e['message'] ); ?></td>
+					<td><?php echo esc_html( $cshield_e['ip'] ? $cshield_e['ip'] : '-' ); ?></td>
 				</tr>
 			<?php endforeach; ?>
 			</tbody>
 		</table>
-		<p class="small"><?php esc_html_e( 'Events marked notice or critical. The full log can be exported to CSV from the Activity tab.', 'sentinel-shield' ); ?></p>
+		<p class="small"><?php esc_html_e( 'Events marked notice or critical. The full log can be exported to CSV from the Activity tab.', 'chaos-shield' ); ?></p>
 	<?php else : ?>
-		<p><?php esc_html_e( 'No notable events in this period.', 'sentinel-shield' ); ?></p>
+		<p><?php esc_html_e( 'No notable events in this period.', 'chaos-shield' ); ?></p>
 	<?php endif; ?>
 
 	<p class="small" style="margin-top:32px">
 		<?php
 		/* translators: %s: plugin version. */
-		echo esc_html( sprintf( __( 'Generated by Sentinel Shield %s.', 'sentinel-shield' ), SSHIELD_VERSION ) );
+		echo esc_html( sprintf( __( 'Generated by Chaos Shield %s.', 'chaos-shield' ), CSHIELD_VERSION ) );
 		?>
 	</p>
 </main>

@@ -1,13 +1,13 @@
-/* Sentinel Shield: "Sign in with a passkey" on the login page. */
+/* Chaos Shield: "Sign in with a passkey" on the login page. */
 ( function () {
 	'use strict';
-	var box = document.querySelector( '.sshield-pk-login' );
-	var cfg = window.sshieldPasskey;
+	var box = document.querySelector( '.cshield-pk-login' );
+	var cfg = window.cshieldPasskey;
 	if ( ! box || ! cfg || ! window.PublicKeyCredential || ! navigator.credentials ) {
 		return;
 	}
-	var btn = box.querySelector( '.sshield-pk-login__btn' );
-	var msg = box.querySelector( '.sshield-pk-login__msg' );
+	var btn = box.querySelector( '.cshield-pk-login__btn' );
+	var msg = box.querySelector( '.cshield-pk-login__msg' );
 	var submit = document.querySelector( '#loginform .submit' );
 	if ( submit ) {
 		submit.parentNode.insertBefore( box, submit.nextSibling );
@@ -55,7 +55,7 @@
 		btn.disabled = true;
 		msg.textContent = cfg.working;
 		var ticket;
-		post( { action: 'sshield_pk_login_options' } )
+		post( { action: 'cshield_pk_login_options' } )
 			.then( function ( res ) {
 				if ( ! res.success ) {
 					throw new Error( res.data && res.data.message );
@@ -68,7 +68,7 @@
 			.then( function ( cred ) {
 				var redirect = document.querySelector( 'input[name="redirect_to"]' );
 				return post( {
-					action: 'sshield_pk_login',
+					action: 'cshield_pk_login',
 					ticket: ticket,
 					id: toText( cred.rawId ),
 					clientDataJSON: toText( cred.response.clientDataJSON ),

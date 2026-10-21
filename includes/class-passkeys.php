@@ -2,10 +2,10 @@
 /**
  * Passkey login (WebAuthn).
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -17,8 +17,8 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Passkeys {
 
-	const META        = '_sshield_passkeys';
-	const INDEX       = 'sshield_passkey_index';
+	const META        = '_cshield_passkeys';
+	const INDEX       = 'cshield_passkey_index';
 	const TTL         = 300;
 	const MAX_PER_USR = 20;
 	const ALG_ES256   = -7;
@@ -31,11 +31,11 @@ final class Passkeys {
 		if ( ! self::active() ) {
 			return;
 		}
-		add_action( 'wp_ajax_sshield_pk_reg_options', array( $this, 'ajax_reg_options' ) );
-		add_action( 'wp_ajax_sshield_pk_register', array( $this, 'ajax_register' ) );
-		add_action( 'wp_ajax_sshield_pk_delete', array( $this, 'ajax_delete' ) );
-		add_action( 'wp_ajax_nopriv_sshield_pk_login_options', array( $this, 'ajax_login_options' ) );
-		add_action( 'wp_ajax_nopriv_sshield_pk_login', array( $this, 'ajax_login' ) );
+		add_action( 'wp_ajax_cshield_pk_reg_options', array( $this, 'ajax_reg_options' ) );
+		add_action( 'wp_ajax_cshield_pk_register', array( $this, 'ajax_register' ) );
+		add_action( 'wp_ajax_cshield_pk_delete', array( $this, 'ajax_delete' ) );
+		add_action( 'wp_ajax_nopriv_cshield_pk_login_options', array( $this, 'ajax_login_options' ) );
+		add_action( 'wp_ajax_nopriv_cshield_pk_login', array( $this, 'ajax_login' ) );
 		add_action( 'login_form', array( $this, 'login_button' ) );
 		add_action( 'login_enqueue_scripts', array( $this, 'login_assets' ) );
 		add_action( 'show_user_profile', array( $this, 'profile_section' ), 5 );
@@ -61,7 +61,7 @@ final class Passkeys {
 	public static function is_login_request() {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Only classifies the request.
 		$action = isset( $_REQUEST['action'] ) ? sanitize_key( wp_unslash( $_REQUEST['action'] ) ) : '';
-		return wp_doing_ajax() && in_array( $action, array( 'sshield_pk_login_options', 'sshield_pk_login' ), true );
+		return wp_doing_ajax() && in_array( $action, array( 'cshield_pk_login_options', 'cshield_pk_login' ), true );
 	}
 
 	/**
@@ -134,19 +134,19 @@ final class Passkeys {
 	 * Sends the options for creating a passkey.
 	 */
 	public function ajax_reg_options() {
-		check_ajax_referer( 'sshield_passkeys', 'nonce' );
+		check_ajax_referer( 'cshield_passkeys', 'nonce' );
 		$user = wp_get_current_user();
 		if ( ! $user->exists() ) {
-			wp_send_json_error( array( 'message' => __( 'Please sign in again.', 'sentinel-shield' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'Please sign in again.', 'chaos-shield' ) ), 403 );
 		}
 		if ( count( self::for_user( $user->ID ) ) >= self::MAX_PER_USR ) {
-			wp_send_json_error( array( 'message' => __( 'You have reached the limit of 20 passkeys. Remove one first.', 'sentinel-shield' ) ) );
+			wp_send_json_error( array( 'message' => __( 'You have reached the limit of 20 passkeys. Remove one first.', 'chaos-shield' ) ) );
 		}
 		// A passkey is a way in, so a stolen session alone must not be enough to add one.
-		$tries_key = 'sshield_pk_reauth_' . $user->ID;
+		$tries_key = 'cshield_pk_reauth_' . $user->ID;
 		$tries     = (int) Network::get_transient( $tries_key );
 		if ( $tries >= 5 ) {
-			wp_send_json_error( array( 'message' => __( 'Too many wrong passwords. Try again in 15 minutes.', 'sentinel-shield' ) ), 429 );
+			wp_send_json_error( array( 'message' => __( 'Too many wrong passwords. Try again in 15 minutes.', 'chaos-shield' ) ), 429 );
 		}
 		$password = isset( $_POST['password'] ) ? (string) wp_unslash( $_POST['password'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Passwords are compared, never stored or printed.
 		if ( '' === $password || ! wp_check_password( $password, $user->user_pass, $user->ID ) ) {
@@ -154,7 +154,7 @@ final class Passkeys {
 			Events::add(
 				'login',
 				/* translators: %s: username. */
-				sprintf( __( 'Wrong password when %s tried to add a passkey.', 'sentinel-shield' ), $user->user_login ),
+				sprintf( __( 'Wrong password when %s tried to add a passkey.', 'chaos-shield' ), $user->user_login ),
 				Request::ip(),
 				array(
 					'user_id'  => $user->ID,
@@ -162,11 +162,11 @@ final class Passkeys {
 					'action'   => 'auth.passkey_reauth_failed',
 				)
 			);
-			wp_send_json_error( array( 'message' => __( 'Enter your current password to add a passkey.', 'sentinel-shield' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'Enter your current password to add a passkey.', 'chaos-shield' ) ), 403 );
 		}
 		Network::delete_transient( $tries_key );
 		$challenge = random_bytes( 32 );
-		Network::set_transient( 'sshield_pk_reg_' . $user->ID, self::b64u_encode( $challenge ), self::TTL );
+		Network::set_transient( 'cshield_pk_reg_' . $user->ID, self::b64u_encode( $challenge ), self::TTL );
 
 		$exclude = array();
 		foreach ( array_keys( self::for_user( $user->ID ) ) as $id ) {
@@ -213,13 +213,13 @@ final class Passkeys {
 	 * Checks and saves a new passkey.
 	 */
 	public function ajax_register() {
-		check_ajax_referer( 'sshield_passkeys', 'nonce' );
+		check_ajax_referer( 'cshield_passkeys', 'nonce' );
 		$user = wp_get_current_user();
 		if ( ! $user->exists() ) {
-			wp_send_json_error( array( 'message' => __( 'Please sign in again.', 'sentinel-shield' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'Please sign in again.', 'chaos-shield' ) ), 403 );
 		}
-		$expected = Network::get_transient( 'sshield_pk_reg_' . $user->ID );
-		Network::delete_transient( 'sshield_pk_reg_' . $user->ID );
+		$expected = Network::get_transient( 'cshield_pk_reg_' . $user->ID );
+		Network::delete_transient( 'cshield_pk_reg_' . $user->ID );
 
 		$client = self::b64u_decode( self::post( 'clientDataJSON' ) );
 		$att    = self::b64u_decode( self::post( 'attestationObject' ) );
@@ -231,11 +231,11 @@ final class Passkeys {
 
 		$index = (array) Network::get_option( self::INDEX, array() );
 		if ( isset( $index[ $result['id'] ] ) ) {
-			wp_send_json_error( array( 'message' => __( 'This passkey is already registered.', 'sentinel-shield' ) ) );
+			wp_send_json_error( array( 'message' => __( 'This passkey is already registered.', 'chaos-shield' ) ) );
 		}
 		$keys                  = self::for_user( $user->ID );
 		$keys[ $result['id'] ] = array(
-			'name'       => '' !== $name ? mb_substr( $name, 0, 60 ) : __( 'Passkey', 'sentinel-shield' ),
+			'name'       => '' !== $name ? mb_substr( $name, 0, 60 ) : __( 'Passkey', 'chaos-shield' ),
 			'key'        => $result['pem'],
 			'alg'        => $result['alg'],
 			'sign_count' => $result['sign_count'],
@@ -247,23 +247,23 @@ final class Passkeys {
 		Network::update_option( self::INDEX, $index, false );
 
 		/* translators: 1: passkey name, 2: username. */
-		Events::add( 'login', sprintf( __( 'Passkey "%1$s" added for %2$s.', 'sentinel-shield' ), $keys[ $result['id'] ]['name'], $user->user_login ), Request::ip(), array( 'user_id' => $user->ID ) );
-		wp_send_json_success( array( 'message' => __( 'Passkey added. You can now sign in with it.', 'sentinel-shield' ) ) );
+		Events::add( 'login', sprintf( __( 'Passkey "%1$s" added for %2$s.', 'chaos-shield' ), $keys[ $result['id'] ]['name'], $user->user_login ), Request::ip(), array( 'user_id' => $user->ID ) );
+		wp_send_json_success( array( 'message' => __( 'Passkey added. You can now sign in with it.', 'chaos-shield' ) ) );
 	}
 
 	/**
 	 * Removes a passkey.
 	 */
 	public function ajax_delete() {
-		check_ajax_referer( 'sshield_passkeys', 'nonce' );
+		check_ajax_referer( 'cshield_passkeys', 'nonce' );
 		$user_id = absint( self::post( 'user' ) );
 		$id      = self::post( 'id' );
 		if ( ! $user_id || ! current_user_can( 'edit_user', $user_id ) ) {
-			wp_send_json_error( array( 'message' => __( 'You are not allowed to change this user.', 'sentinel-shield' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'You are not allowed to change this user.', 'chaos-shield' ) ), 403 );
 		}
 		$keys = self::for_user( $user_id );
 		if ( ! isset( $keys[ $id ] ) ) {
-			wp_send_json_error( array( 'message' => __( 'That passkey no longer exists.', 'sentinel-shield' ) ) );
+			wp_send_json_error( array( 'message' => __( 'That passkey no longer exists.', 'chaos-shield' ) ) );
 		}
 		$name = $keys[ $id ]['name'];
 		unset( $keys[ $id ] );
@@ -278,7 +278,7 @@ final class Passkeys {
 
 		$owner = get_userdata( $user_id );
 		/* translators: 1: passkey name, 2: username. */
-		Events::add( 'login', sprintf( __( 'Passkey "%1$s" removed from %2$s.', 'sentinel-shield' ), $name, $owner ? $owner->user_login : $user_id ), Request::ip() );
+		Events::add( 'login', sprintf( __( 'Passkey "%1$s" removed from %2$s.', 'chaos-shield' ), $name, $owner ? $owner->user_login : $user_id ), Request::ip() );
 		wp_send_json_success();
 	}
 
@@ -291,7 +291,7 @@ final class Passkeys {
 	 * @return array|\WP_Error id, pem, alg, sign_count.
 	 */
 	public static function verify_registration( $client_json, $att_object, $expected ) {
-		$fail   = new \WP_Error( 'sshield_pk', __( 'The passkey could not be verified. Please try again.', 'sentinel-shield' ) );
+		$fail   = new \WP_Error( 'cshield_pk', __( 'The passkey could not be verified. Please try again.', 'chaos-shield' ) );
 		$client = self::check_client( $client_json, 'webauthn.create', $expected );
 		if ( is_wp_error( $client ) ) {
 			return $client;
@@ -311,7 +311,7 @@ final class Passkeys {
 		}
 		$pem = self::cose_to_pem( $auth['cose'] );
 		if ( ! $pem ) {
-			return new \WP_Error( 'sshield_pk', __( 'This passkey uses a key type the site does not support.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_pk', __( 'This passkey uses a key type the site does not support.', 'chaos-shield' ) );
 		}
 		return array(
 			'id'         => self::b64u_encode( $auth['cred_id'] ),
@@ -329,11 +329,11 @@ final class Passkeys {
 	public function ajax_login_options() {
 		$ip = Request::ip();
 		if ( $ip && ! Firewall::allowlisted() && Login_Guard::locked_until( $ip ) ) {
-			wp_send_json_error( array( 'message' => __( 'Too many failed login attempts. Try again later.', 'sentinel-shield' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'Too many failed login attempts. Try again later.', 'chaos-shield' ) ), 403 );
 		}
 		$challenge = random_bytes( 32 );
 		$ticket    = wp_generate_password( 32, false );
-		Network::set_transient( 'sshield_pk_ch_' . $ticket, self::b64u_encode( $challenge ), self::TTL );
+		Network::set_transient( 'cshield_pk_ch_' . $ticket, self::b64u_encode( $challenge ), self::TTL );
 		wp_send_json_success(
 			array(
 				'ticket'    => $ticket,
@@ -354,10 +354,10 @@ final class Passkeys {
 	public function ajax_login() {
 		$ip = Request::ip();
 		if ( $ip && ! Firewall::allowlisted() && Login_Guard::locked_until( $ip ) ) {
-			wp_send_json_error( array( 'message' => __( 'Too many failed login attempts. Try again later.', 'sentinel-shield' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'Too many failed login attempts. Try again later.', 'chaos-shield' ) ), 403 );
 		}
 		$ticket = preg_replace( '/[^A-Za-z0-9]/', '', self::post( 'ticket' ) );
-		$key    = 'sshield_pk_ch_' . $ticket;
+		$key    = 'cshield_pk_ch_' . $ticket;
 		$expect = $ticket ? (string) Network::get_transient( $key ) : '';
 		if ( $ticket ) {
 			Network::delete_transient( $key );
@@ -377,15 +377,15 @@ final class Passkeys {
 				self::b64u_decode( self::post( 'signature' ) ),
 				$expect
 			)
-			: new \WP_Error( 'sshield_pk', __( 'This passkey is not registered on this site.', 'sentinel-shield' ) );
+			: new \WP_Error( 'cshield_pk', __( 'This passkey is not registered on this site.', 'chaos-shield' ) );
 
 		if ( is_wp_error( $result ) ) {
 			do_action( 'wp_login_failed', $user ? $user->user_login : '', $result );
-			if ( 'sshield_pk_clone' === $result->get_error_code() && $user ) {
+			if ( 'cshield_pk_clone' === $result->get_error_code() && $user ) {
 				Events::add(
 					'blocked',
 					/* translators: %s: username. */
-					sprintf( __( 'Refused a passkey for %s: its signature counter went backwards, which can mean a copied key.', 'sentinel-shield' ), $user->user_login ),
+					sprintf( __( 'Refused a passkey for %s: its signature counter went backwards, which can mean a copied key.', 'chaos-shield' ), $user->user_login ),
 					$ip,
 					array(
 						'user_id'  => $user->ID,
@@ -398,7 +398,7 @@ final class Passkeys {
 		}
 
 		if ( Password_Policy::forced( $user->ID ) ) {
-			wp_send_json_error( array( 'message' => __( 'An administrator asked you to choose a new password. Sign in with your password once to set it.', 'sentinel-shield' ) ) );
+			wp_send_json_error( array( 'message' => __( 'An administrator asked you to choose a new password. Sign in with your password once to set it.', 'chaos-shield' ) ) );
 		}
 
 		$keys[ $id ]['sign_count'] = $result['sign_count'];
@@ -438,11 +438,11 @@ final class Passkeys {
 		}
 		$key = openssl_pkey_get_public( (string) $stored['key'] );
 		if ( ! $key || 1 !== openssl_verify( $auth_data . hash( 'sha256', $client_json, true ), $signature, $key, OPENSSL_ALGO_SHA256 ) ) {
-			return new \WP_Error( 'sshield_pk', __( 'The passkey signature is not valid.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_pk', __( 'The passkey signature is not valid.', 'chaos-shield' ) );
 		}
 		$old = (int) $stored['sign_count'];
 		if ( ( $old || $auth['sign_count'] ) && $auth['sign_count'] <= $old ) {
-			return new \WP_Error( 'sshield_pk_clone', __( 'This passkey was refused because it may have been copied. Remove it and add it again.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_pk_clone', __( 'This passkey was refused because it may have been copied. Remove it and add it again.', 'chaos-shield' ) );
 		}
 		return array( 'sign_count' => $auth['sign_count'] );
 	}
@@ -460,13 +460,13 @@ final class Passkeys {
 	private static function check_client( $json, $type, $expected ) {
 		$data = json_decode( (string) $json, true );
 		if ( ! is_array( $data ) || ! isset( $data['type'], $data['challenge'], $data['origin'] ) || $type !== $data['type'] ) {
-			return new \WP_Error( 'sshield_pk', __( 'The passkey response was not understood.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_pk', __( 'The passkey response was not understood.', 'chaos-shield' ) );
 		}
 		if ( '' === $expected || ! hash_equals( $expected, rtrim( (string) $data['challenge'], '=' ) ) ) {
-			return new \WP_Error( 'sshield_pk', __( 'The passkey request expired. Please try again.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_pk', __( 'The passkey request expired. Please try again.', 'chaos-shield' ) );
 		}
 		if ( ! in_array( strtolower( (string) $data['origin'] ), self::origins(), true ) ) {
-			return new \WP_Error( 'sshield_pk', __( 'The passkey response came from a different site address.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_pk', __( 'The passkey response came from a different site address.', 'chaos-shield' ) );
 		}
 		return true;
 	}
@@ -479,16 +479,16 @@ final class Passkeys {
 	 * @return array|\WP_Error sign_count, and cred_id and cose when registering.
 	 */
 	private static function parse_auth_data( $data, $registration ) {
-		$fail = new \WP_Error( 'sshield_pk', __( 'The passkey could not be verified. Please try again.', 'sentinel-shield' ) );
+		$fail = new \WP_Error( 'cshield_pk', __( 'The passkey could not be verified. Please try again.', 'chaos-shield' ) );
 		if ( strlen( $data ) < 37 ) {
 			return $fail;
 		}
 		if ( ! hash_equals( hash( 'sha256', self::rp_id(), true ), substr( $data, 0, 32 ) ) ) {
-			return new \WP_Error( 'sshield_pk', __( 'The passkey belongs to a different site.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_pk', __( 'The passkey belongs to a different site.', 'chaos-shield' ) );
 		}
 		$flags = ord( $data[32] );
 		if ( ! ( $flags & 0x01 ) || ! ( $flags & 0x04 ) ) {
-			return new \WP_Error( 'sshield_pk', __( 'The device did not confirm it was you. Use your fingerprint, face or PIN when asked.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_pk', __( 'The device did not confirm it was you. Use your fingerprint, face or PIN when asked.', 'chaos-shield' ) );
 		}
 		$out = array( 'sign_count' => unpack( 'N', substr( $data, 33, 4 ) )[1] );
 		if ( ! $registration ) {
@@ -577,7 +577,7 @@ final class Passkeys {
 	 * @return string 32 bytes.
 	 */
 	private static function user_handle( $user_id ) {
-		return hash_hmac( 'sha256', 'sshield-passkey-' . (int) $user_id, wp_salt( 'auth' ), true );
+		return hash_hmac( 'sha256', 'cshield-passkey-' . (int) $user_id, wp_salt( 'auth' ), true );
 	}
 
 	/**
@@ -608,10 +608,10 @@ final class Passkeys {
 			return;
 		}
 		?>
-		<div class="sshield-pk-login" hidden>
-			<p class="sshield-pk-login__or"><span><?php esc_html_e( 'or', 'sentinel-shield' ); ?></span></p>
-			<button type="button" class="button button-large sshield-pk-login__btn"><?php esc_html_e( 'Sign in with a passkey', 'sentinel-shield' ); ?></button>
-			<p class="sshield-pk-login__msg" role="alert" aria-live="assertive"></p>
+		<div class="cshield-pk-login" hidden>
+			<p class="cshield-pk-login__or"><span><?php esc_html_e( 'or', 'chaos-shield' ); ?></span></p>
+			<button type="button" class="button button-large cshield-pk-login__btn"><?php esc_html_e( 'Sign in with a passkey', 'chaos-shield' ); ?></button>
+			<p class="cshield-pk-login__msg" role="alert" aria-live="assertive"></p>
 		</div>
 		<?php
 	}
@@ -623,17 +623,17 @@ final class Passkeys {
 		if ( ! self::secure_context() || ! self::user_count() ) {
 			return;
 		}
-		wp_enqueue_script( 'sshield-passkey-login', SSHIELD_URL . 'assets/js/passkey-login.js', array(), SSHIELD_VERSION, true );
+		wp_enqueue_script( 'cshield-passkey-login', CSHIELD_URL . 'assets/js/passkey-login.js', array(), CSHIELD_VERSION, true );
 		wp_localize_script(
-			'sshield-passkey-login',
-			'sshieldPasskey',
+			'cshield-passkey-login',
+			'cshieldPasskey',
 			array(
 				'ajax'    => admin_url( 'admin-ajax.php' ),
-				'working' => __( 'Waiting for your passkey…', 'sentinel-shield' ),
-				'failed'  => __( 'Passkey sign-in did not work. Try again or use your password.', 'sentinel-shield' ),
+				'working' => __( 'Waiting for your passkey…', 'chaos-shield' ),
+				'failed'  => __( 'Passkey sign-in did not work. Try again or use your password.', 'chaos-shield' ),
 			)
 		);
-		wp_enqueue_style( 'sshield-passkey-login', SSHIELD_URL . 'assets/css/passkey-login.css', array(), SSHIELD_VERSION );
+		wp_enqueue_style( 'cshield-passkey-login', CSHIELD_URL . 'assets/css/passkey-login.css', array(), CSHIELD_VERSION );
 	}
 
 	/**
@@ -645,23 +645,23 @@ final class Passkeys {
 		if ( ! in_array( $hook, array( 'profile.php', 'user-edit.php' ), true ) ) {
 			return;
 		}
-		wp_enqueue_script( 'sshield-passkey-profile', SSHIELD_URL . 'assets/js/passkey-profile.js', array(), SSHIELD_VERSION, true );
+		wp_enqueue_script( 'cshield-passkey-profile', CSHIELD_URL . 'assets/js/passkey-profile.js', array(), CSHIELD_VERSION, true );
 		wp_localize_script(
-			'sshield-passkey-profile',
-			'sshieldPasskey',
+			'cshield-passkey-profile',
+			'cshieldPasskey',
 			array(
 				'ajax'        => admin_url( 'admin-ajax.php' ),
-				'nonce'       => wp_create_nonce( 'sshield_passkeys' ),
-				'working'     => __( 'Follow the steps on your device…', 'sentinel-shield' ),
-				'password'    => __( 'Enter your current password to add a passkey.', 'sentinel-shield' ),
-				'failed'      => __( 'The passkey was not added.', 'sentinel-shield' ),
-				'exists'      => __( 'This device already has a passkey for your account.', 'sentinel-shield' ),
-				'cancelled'   => __( 'Cancelled. No passkey was added.', 'sentinel-shield' ),
-				'unsupported' => __( 'This browser cannot create passkeys.', 'sentinel-shield' ),
-				'confirm'     => __( 'Remove this passkey? It will no longer sign in to this site.', 'sentinel-shield' ),
+				'nonce'       => wp_create_nonce( 'cshield_passkeys' ),
+				'working'     => __( 'Follow the steps on your device…', 'chaos-shield' ),
+				'password'    => __( 'Enter your current password to add a passkey.', 'chaos-shield' ),
+				'failed'      => __( 'The passkey was not added.', 'chaos-shield' ),
+				'exists'      => __( 'This device already has a passkey for your account.', 'chaos-shield' ),
+				'cancelled'   => __( 'Cancelled. No passkey was added.', 'chaos-shield' ),
+				'unsupported' => __( 'This browser cannot create passkeys.', 'chaos-shield' ),
+				'confirm'     => __( 'Remove this passkey? It will no longer sign in to this site.', 'chaos-shield' ),
 			)
 		);
-		wp_enqueue_style( 'sshield-profile', SSHIELD_URL . 'assets/css/profile.css', array(), SSHIELD_VERSION );
+		wp_enqueue_style( 'cshield-profile', CSHIELD_URL . 'assets/css/profile.css', array(), CSHIELD_VERSION );
 	}
 
 	/**
@@ -676,22 +676,22 @@ final class Passkeys {
 			return;
 		}
 		?>
-		<div class="sshield-2fa sshield-pk" id="sshield-passkeys" data-user="<?php echo esc_attr( $user->ID ); ?>">
-			<h2><?php esc_html_e( 'Passkeys', 'sentinel-shield' ); ?></h2>
+		<div class="cshield-2fa cshield-pk" id="cshield-passkeys" data-user="<?php echo esc_attr( $user->ID ); ?>">
+			<h2><?php esc_html_e( 'Passkeys', 'chaos-shield' ); ?></h2>
 			<p class="description">
 				<?php
 				echo $own
-					? esc_html__( 'Sign in with your fingerprint, face or device PIN instead of a password. A passkey cannot be phished or reused on another site, and it counts as two-factor, so no code is asked.', 'sentinel-shield' )
-					: esc_html__( 'Passkeys this user can sign in with. Remove one if the device is lost.', 'sentinel-shield' );
+					? esc_html__( 'Sign in with your fingerprint, face or device PIN instead of a password. A passkey cannot be phished or reused on another site, and it counts as two-factor, so no code is asked.', 'chaos-shield' )
+					: esc_html__( 'Passkeys this user can sign in with. Remove one if the device is lost.', 'chaos-shield' );
 				?>
 			</p>
 			<?php if ( $keys ) : ?>
-				<table class="widefat striped sshield-pk__list">
+				<table class="widefat striped cshield-pk__list">
 					<thead>
 						<tr>
-							<th scope="col"><?php esc_html_e( 'Name', 'sentinel-shield' ); ?></th>
-							<th scope="col"><?php esc_html_e( 'Added', 'sentinel-shield' ); ?></th>
-							<th scope="col"><?php esc_html_e( 'Last used', 'sentinel-shield' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Name', 'chaos-shield' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Added', 'chaos-shield' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Last used', 'chaos-shield' ); ?></th>
 							<td></td>
 						</tr>
 					</thead>
@@ -700,8 +700,8 @@ final class Passkeys {
 							<tr>
 								<td><?php echo esc_html( $key['name'] ); ?></td>
 								<td><?php echo esc_html( wp_date( get_option( 'date_format' ), (int) $key['created'] ) ); ?></td>
-								<td><?php echo $key['last_used'] ? esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (int) $key['last_used'] ) ) : esc_html__( 'Never', 'sentinel-shield' ); ?></td>
-								<td class="sshield-pk__actions"><button type="button" class="button-link button-link-delete sshield-pk__remove" data-id="<?php echo esc_attr( $id ); ?>"><?php esc_html_e( 'Remove', 'sentinel-shield' ); ?></button></td>
+								<td><?php echo $key['last_used'] ? esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (int) $key['last_used'] ) ) : esc_html__( 'Never', 'chaos-shield' ); ?></td>
+								<td class="cshield-pk__actions"><button type="button" class="button-link button-link-delete cshield-pk__remove" data-id="<?php echo esc_attr( $id ); ?>"><?php esc_html_e( 'Remove', 'chaos-shield' ); ?></button></td>
 							</tr>
 						<?php endforeach; ?>
 					</tbody>
@@ -709,18 +709,18 @@ final class Passkeys {
 			<?php endif; ?>
 			<?php if ( $own ) : ?>
 				<?php if ( ! self::secure_context() ) : ?>
-					<p><?php esc_html_e( 'Passkeys need the site to run on HTTPS.', 'sentinel-shield' ); ?></p>
+					<p><?php esc_html_e( 'Passkeys need the site to run on HTTPS.', 'chaos-shield' ); ?></p>
 				<?php else : ?>
-					<p class="sshield-pk__add">
-						<label for="sshield-pk-name" class="screen-reader-text"><?php esc_html_e( 'Passkey name', 'sentinel-shield' ); ?></label>
-						<input type="text" id="sshield-pk-name" class="regular-text" maxlength="60" placeholder="<?php esc_attr_e( 'Name, such as Work laptop', 'sentinel-shield' ); ?>">
-						<label for="sshield-pk-password" class="screen-reader-text"><?php esc_html_e( 'Current password', 'sentinel-shield' ); ?></label>
-						<input type="password" id="sshield-pk-password" class="regular-text" autocomplete="current-password" placeholder="<?php esc_attr_e( 'Current password', 'sentinel-shield' ); ?>">
-						<button type="button" class="button sshield-pk__create"><?php esc_html_e( 'Add a passkey', 'sentinel-shield' ); ?></button>
+					<p class="cshield-pk__add">
+						<label for="cshield-pk-name" class="screen-reader-text"><?php esc_html_e( 'Passkey name', 'chaos-shield' ); ?></label>
+						<input type="text" id="cshield-pk-name" class="regular-text" maxlength="60" placeholder="<?php esc_attr_e( 'Name, such as Work laptop', 'chaos-shield' ); ?>">
+						<label for="cshield-pk-password" class="screen-reader-text"><?php esc_html_e( 'Current password', 'chaos-shield' ); ?></label>
+						<input type="password" id="cshield-pk-password" class="regular-text" autocomplete="current-password" placeholder="<?php esc_attr_e( 'Current password', 'chaos-shield' ); ?>">
+						<button type="button" class="button cshield-pk__create"><?php esc_html_e( 'Add a passkey', 'chaos-shield' ); ?></button>
 					</p>
 				<?php endif; ?>
 			<?php endif; ?>
-			<p class="sshield-pk__msg" role="status" aria-live="polite"></p>
+			<p class="cshield-pk__msg" role="status" aria-live="polite"></p>
 		</div>
 		<?php
 	}

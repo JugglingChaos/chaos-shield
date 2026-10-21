@@ -2,10 +2,10 @@
 /**
  * Cloudflare Turnstile or hCaptcha on the login, lost password and registration forms.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -15,7 +15,7 @@ defined( 'ABSPATH' ) || exit;
 final class Captcha {
 
 	const VERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
-	const SECRET     = 'sshield_turnstile_secret';
+	const SECRET     = 'cshield_turnstile_secret';
 
 	/**
 	 * The supported services.
@@ -41,7 +41,7 @@ final class Captcha {
 				'class'    => 'h-captcha',
 				'field'    => 'h-captcha-response',
 				'key'      => 'hcaptcha_site_key',
-				'secret'   => 'sshield_hcaptcha_secret',
+				'secret'   => 'cshield_hcaptcha_secret',
 				'key_test' => '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i',
 			),
 		);
@@ -118,7 +118,7 @@ final class Captcha {
 		$d    = self::details( $provider );
 		$body = array(
 			'secret'   => (string) $secret,
-			'response' => '' !== $token ? (string) $token : 'sshield-connection-test',
+			'response' => '' !== $token ? (string) $token : 'cshield-connection-test',
 		);
 		if ( 'hcaptcha' === $provider ) {
 			$body['sitekey'] = (string) $site_key;
@@ -139,7 +139,7 @@ final class Captcha {
 		$data = json_decode( (string) wp_remote_retrieve_body( $response ), true );
 		if ( ! is_array( $data ) ) {
 			/* translators: %d: HTTP status code. */
-			return new \WP_Error( 'sshield_captcha_http', sprintf( __( 'The service answered HTTP %d.', 'sentinel-shield' ), (int) wp_remote_retrieve_response_code( $response ) ) );
+			return new \WP_Error( 'cshield_captcha_http', sprintf( __( 'The service answered HTTP %d.', 'chaos-shield' ), (int) wp_remote_retrieve_response_code( $response ) ) );
 		}
 		return array(
 			'success' => ! empty( $data['success'] ),
@@ -169,7 +169,7 @@ final class Captcha {
 	 */
 	public function script() {
 		// phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- The provider serves the current version at this address.
-		wp_enqueue_script( 'sshield-captcha', self::details()['script'], array(), null, array( 'strategy' => 'defer' ) );
+		wp_enqueue_script( 'cshield-captcha', self::details()['script'], array(), null, array( 'strategy' => 'defer' ) );
 	}
 
 	/**
@@ -238,18 +238,18 @@ final class Captcha {
 		$d = self::details();
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- The challenge token is the proof here.
 		$token  = isset( $_POST[ $d['field'] ] ) ? sanitize_text_field( wp_unslash( $_POST[ $d['field'] ] ) ) : '';
-		$failed = new \WP_Error( 'sshield_captcha', __( '<strong>Error:</strong> Please complete the security check and try again.', 'sentinel-shield' ) );
+		$failed = new \WP_Error( 'cshield_captcha', __( '<strong>Error:</strong> Please complete the security check and try again.', 'chaos-shield' ) );
 		if ( '' === $token ) {
 			return $failed;
 		}
 		$result = self::siteverify( self::provider(), (string) Settings::get( $d['key'] ), (string) Totp::open( Network::get_option( $d['secret'] ) ), $token );
 		if ( is_wp_error( $result ) ) {
 			// Fail open: a provider outage must not lock every administrator out. Login limits still apply.
-			$throttle = 'sshield_captcha_down';
+			$throttle = 'cshield_captcha_down';
 			if ( ! Network::get_transient( $throttle ) ) {
 				Network::set_transient( $throttle, 1, HOUR_IN_SECONDS );
 				/* translators: %s: service name, such as hCaptcha. */
-				Events::add( 'system', sprintf( __( '%s could not be reached, so logins were allowed without the security check.', 'sentinel-shield' ), $d['name'] ), '', array( 'severity' => Events::NOTICE ) );
+				Events::add( 'system', sprintf( __( '%s could not be reached, so logins were allowed without the security check.', 'chaos-shield' ), $d['name'] ), '', array( 'severity' => Events::NOTICE ) );
 			}
 			return null;
 		}

@@ -1,4 +1,4 @@
-=== Sentinel Shield ===
+=== Chaos Shield ===
 Contributors: jugglingchaos
 Tags: security, firewall, two-factor, audit log, malware scanner
 Requires at least: 6.4
@@ -12,7 +12,7 @@ Lightweight security hub: hardening, passkeys and two-factor login, a firewall w
 
 == Description ==
 
-Sentinel Shield gives you a single dashboard for the security basics, without slowing your site down.
+Chaos Shield gives you a single dashboard for the security basics, without slowing your site down.
 
 **Hardening, one switch each**
 
@@ -37,7 +37,7 @@ New and reset passwords that appear in public data breaches are refused, and adm
 
 **Known vulnerability alerts**
 
-Works out of the box, with no account, key or second plugin. Every day Sentinel Shield checks WordPress, every plugin and every theme against WPVulnerability.net, a free and open database built from public sources such as CVE records. Affected items show on the Scan tab with severity, CVE, CVSS score, the fixed version and an Update now button, count against the security score and trigger an email. Plugins and themes that were closed on WordPress.org or not updated in two years are flagged too. Only slugs and your WordPress version are sent, never your site address.
+Works out of the box, with no account, key or second plugin. Every day Chaos Shield checks WordPress, every plugin and every theme against WPVulnerability.net, a free and open database built from public sources such as CVE records. Affected items show on the Scan tab with severity, CVE, CVSS score, the fixed version and an Update now button, count against the security score and trigger an email. Plugins and themes that were closed on WordPress.org or not updated in two years are flagged too. Only slugs and your WordPress version are sent, never your site address.
 
 **Threat intelligence blocklist**
 
@@ -53,7 +53,7 @@ Watch requests as they happen: blocked requests, logins, XML-RPC calls and missi
 
 **Login page protection**
 
-* Move the login page to a secret address. wp-login.php and wp-admin then answer 404 to visitors who are not logged in. The address is emailed to you when it changes; `define( 'SSHIELD_DISABLE_LOGIN_SLUG', true );` in wp-config.php switches it off if you lose it.
+* Move the login page to a secret address. wp-login.php and wp-admin then answer 404 to visitors who are not logged in. The address is emailed to you when it changes; `define( 'CSHIELD_DISABLE_LOGIN_SLUG', true );` in wp-config.php switches it off if you lose it.
 * Optional CAPTCHA on the login, lost password and registration forms, with Cloudflare Turnstile or hCaptcha. Connecting opens the service's sign-up page in a small window beside the dashboard and checks the keys with a live test challenge before switching it on. If the service cannot be reached during a login, the login is allowed and the outage is logged, so you are never locked out by a third party.
 * See every signed-in administrator session, with IP and browser, and sign out any of them remotely.
 
@@ -118,7 +118,7 @@ Block a list of countries, or allow only the countries you list, for the login p
 
 **Traffic map and built-in country lookup**
 
-The Live traffic tab shows a world heatmap of where requests, blocks and logins come from, with a top countries table. Countries come from a public domain IP to country database (ip-location-db, compiled from the regional internet registries, BGP routing data and operator geofeeds) that Sentinel Shield downloads once a week into your uploads folder and searches locally in microseconds. No account, no key, and no visitor data is sent anywhere. The same database can drive country blocking, so that no longer needs Cloudflare or a host header. The map uses Natural Earth country shapes (public domain).
+The Live traffic tab shows a world heatmap of where requests, blocks and logins come from, with a top countries table. Countries come from a public domain IP to country database (ip-location-db, compiled from the regional internet registries, BGP routing data and operator geofeeds) that Chaos Shield downloads once a week into your uploads folder and searches locally in microseconds. No account, no key, and no visitor data is sent anywhere. The same database can drive country blocking, so that no longer needs Cloudflare or a host header. The map uses Natural Earth country shapes (public domain).
 
 **Built-in SIEM**
 
@@ -146,7 +146,7 @@ A match opens an incident with a severity, the evidence events and the ATT&CK te
 
 **Backups and restore points**
 
-* Before a plugin or theme updates, before a file is repaired from WordPress.org and before Sentinel Shield settings change, a restore point saves what is about to be replaced. One click on the Backups tab puts it back, and the state from just before is saved too, so a restore can be undone.
+* Before a plugin or theme updates, before a file is repaired from WordPress.org and before Chaos Shield settings change, a restore point saves what is about to be replaced. One click on the Backups tab puts it back, and the state from just before is saved too, so a restore can be undone.
 * Make a restore point of wp-config.php, .htaccess and the settings by hand before you try something risky.
 * Download the whole database as a compressed SQL file, ready for phpMyAdmin, Adminer or `wp db import`.
 * Export the settings and import them on another site. The receiving site keeps its login address and never blocks the importer's own IP.
@@ -165,7 +165,7 @@ The Edge tab brings the free parts of a CDN's security that a plugin can do itse
 
 **Multisite networks**
 
-Network activate Sentinel Shield and the whole network shares one set of settings, one activity log, one ban list and one set of background jobs, managed by super admins from Network Admin. A lockout earned on one site holds on all of them, because they share one login. The log, the SIEM search (`site:shop`) and the CSV export show which site each event happened on. Site administrators do not see the plugin screens and cannot change its settings, while two-factor and passkeys keep working on every site's profile page.
+Network activate Chaos Shield and the whole network shares one set of settings, one activity log, one ban list and one set of background jobs, managed by super admins from Network Admin. A lockout earned on one site holds on all of them, because they share one login. The log, the SIEM search (`site:shop`) and the CSV export show which site each event happened on. Site administrators do not see the plugin screens and cannot change its settings, while two-factor and passkeys keep working on every site's profile page.
 
 **Security score**
 
@@ -173,7 +173,7 @@ A weighted score from 0 to 100 based on HTTPS, pending updates, debug output, th
 
 **Hub for several sites**
 
-Install Sentinel Shield on each site, create a hub key on its Hub tab, and connect it from the site you use as your hub. The Hub tab then shows every site's score, open checks, scan findings and lockouts in one list.
+Install Chaos Shield on each site, create a hub key on its Hub tab, and connect it from the site you use as your hub. The Hub tab then shows every site's score, open checks, scan findings and lockouts in one list.
 
 * Uptime checks every five minutes with response time and 24 hour uptime, plus HTTPS certificate expiry and trust, with an email when a site goes down, comes back, or its certificate has less than 14 days left.
 * With a key that allows actions, start scans, release lockouts and bans, and push your hardening settings (switches, login and rate limits, password policy) to one site or all of them. Login addresses, IP lists and email settings are never pushed.
@@ -185,15 +185,15 @@ A small widget on the main WordPress dashboard shows the score, failed logins an
 
 = REST API =
 
-Routes live under `/wp-json/sentinel-shield/v1/` (or `?rest_route=/sentinel-shield/v1/` without pretty permalinks).
+Routes live under `/wp-json/chaos-shield/v1/` (or `?rest_route=/chaos-shield/v1/` without pretty permalinks).
 
-* Read: `GET /status`, `GET /events`, `GET /scan`, `GET /lockouts`. Accepts a logged-in administrator or a request signed with the hub key (`X-Sentinel-Time`, `X-Sentinel-Nonce`, `X-Sentinel-Signature`), so the key itself never travels. The older `X-Sentinel-Key` header still works.
+* Read: `GET /status`, `GET /events`, `GET /scan`, `GET /lockouts`. Accepts a logged-in administrator or a request signed with the hub key (`X-Chaos-Time`, `X-Chaos-Nonce`, `X-Chaos-Signature`), so the key itself never travels. The older `X-Chaos-Key` header still works.
 * Write: `POST /scan`, `POST /scan/step`, `DELETE /lockouts/{ip}`, `POST /blocklist`, `GET` and `POST /settings`. Needs an administrator, for example with an application password. The hub key can never write.
 * A wrong hub key counts as a failed login, so guessing gets the caller locked out.
 
 = Behind a proxy or CDN =
 
-By default Sentinel Shield reads the visitor IP from REMOTE_ADDR, because forwarded headers can be faked. Under Access you can choose Cloudflare, X-Forwarded-For or X-Real-IP, and the header is only believed when the connection comes from a trusted proxy: by default a private network address, plus Cloudflare's published ranges for the Cloudflare header. List your proxy IPs if they are public. The dashboard warns you when requests arrive through a proxy that is not configured or not trusted.
+By default Chaos Shield reads the visitor IP from REMOTE_ADDR, because forwarded headers can be faked. Under Access you can choose Cloudflare, X-Forwarded-For or X-Real-IP, and the header is only believed when the connection comes from a trusted proxy: by default a private network address, plus Cloudflare's published ranges for the Cloudflare header. List your proxy IPs if they are public. The dashboard warns you when requests arrive through a proxy that is not configured or not trusted.
 
 = Two-factor and changed security keys =
 
@@ -205,20 +205,20 @@ The plugin source (not the release zip) has an integration suite in `tests/` tha
 
 = Filters =
 
-* `sshield_client_ip` - the client IP used for login limits.
-* `sshield_security_headers` - the array of security headers sent.
-* `sshield_critical_files` - the files whose fingerprints are watched, by name, with path, group, text (keep a copy to compare and put back) and appear (report the file appearing).
-* `sshield_firewall_rules` - the firewall rules, keyed by id. Each has `label`, `info`, `pattern`, `score` (5 blocks, 3 adds up), `targets` (all, path, agent or file) and an optional `staff` flag to keep checking post content from authors and editors.
-* `sshield_scan_signatures` - the malware signatures used by the file scan.
-* `sshield_check_pages` - the page addresses the daily page check loads (up to 8).
-* `sshield_exposure_paths` - the addresses asked for by the exposed files check, by id, with path and kind.
-* `sshield_attack_mode` (action) - runs with true or false when under attack mode switches on or off.
+* `cshield_client_ip` - the client IP used for login limits.
+* `cshield_security_headers` - the array of security headers sent.
+* `cshield_critical_files` - the files whose fingerprints are watched, by name, with path, group, text (keep a copy to compare and put back) and appear (report the file appearing).
+* `cshield_firewall_rules` - the firewall rules, keyed by id. Each has `label`, `info`, `pattern`, `score` (5 blocks, 3 adds up), `targets` (all, path, agent or file) and an optional `staff` flag to keep checking post content from authors and editors.
+* `cshield_scan_signatures` - the malware signatures used by the file scan.
+* `cshield_check_pages` - the page addresses the daily page check loads (up to 8).
+* `cshield_exposure_paths` - the addresses asked for by the exposed files check, by id, with path and kind.
+* `cshield_attack_mode` (action) - runs with true or false when under attack mode switches on or off.
 
 == Installation ==
 
 1. Upload the plugin zip from Plugins > Add New > Upload Plugin.
 2. Activate it. Recommended protections switch on immediately.
-3. Open Sentinel Shield in the admin menu to see your score.
+3. Open Chaos Shield in the admin menu to see your score.
 
 == Frequently Asked Questions ==
 
@@ -244,11 +244,11 @@ Nothing that identifies your site's users, unless you turn on log forwarding, wh
 
 = Does it replace Cloudflare? =
 
-No, it works alongside it. A plugin can only answer requests that reach your server, so a flood big enough to fill the server's connection, a worldwide cache and free certificates still need Cloudflare, another CDN or your host. Sentinel Shield covers what a plugin can do (under attack mode, the script monitor, HTTPS and exposure checks) and, once connected, pushes its bans to Cloudflare so they are stopped at the edge. Other services can read the ban list address.
+No, it works alongside it. A plugin can only answer requests that reach your server, so a flood big enough to fill the server's connection, a worldwide cache and free certificates still need Cloudflare, another CDN or your host. Chaos Shield covers what a plugin can do (under attack mode, the script monitor, HTTPS and exposure checks) and, once connected, pushes its bans to Cloudflare so they are stopped at the edge. Other services can read the ban list address.
 
 = Why do sign-ups open in a separate window? =
 
-Cloudflare, hCaptcha, Slack and the other services do not allow their pages inside another site, so they cannot open within WordPress. Sentinel Shield opens them in a small window next to the dashboard instead, keeps the steps and the paste boxes in WordPress, and checks the result before saving it. If your browser blocks the window, a link opens it in a new tab.
+Cloudflare, hCaptcha, Slack and the other services do not allow their pages inside another site, so they cannot open within WordPress. Chaos Shield opens them in a small window next to the dashboard instead, keeps the steps and the paste boxes in WordPress, and checks the result before saving it. If your browser blocks the window, a link opens it in a new tab.
 
 = Can I still sign in with my password after adding a passkey? =
 
@@ -269,6 +269,7 @@ Usually not. Current NIST guidance (SP 800-63B) recommends long passwords, breac
 == Changelog ==
 
 = 1.12.0 =
+* Renamed from Sentinel Shield to Chaos Shield, with a new folder, text domain and code prefixes. Settings from an earlier Sentinel Shield install do not carry over.
 * New Edge tab: under attack mode with a one-second browser check that switches on by itself during a flood.
 * Page script monitor with alerts for new, changed and harmful looking scripts, and a Content Security Policy in report-only or enforce mode.
 * HTTPS checks for the certificate, the http redirect and mixed content, with safe switches to send visitors to HTTPS and upgrade mixed content.
@@ -305,7 +306,7 @@ Usually not. Current NIST guidance (SP 800-63B) recommends long passwords, breac
 * Fewer false positives on everyday text such as "select one from the menu" or code samples in posts.
 
 = 1.7.0 =
-* Multisite: network activate Sentinel Shield to protect every site with one set of settings, one log, one ban list and one set of background jobs, managed from Network Admin. Lockouts and bans hold across the network. The log, SIEM search and CSV export name the site of each event. Site administrators can no longer see or change the plugin.
+* Multisite: network activate Chaos Shield to protect every site with one set of settings, one log, one ban list and one set of background jobs, managed from Network Admin. Lockouts and bans hold across the network. The log, SIEM search and CSV export name the site of each event. Site administrators can no longer see or change the plugin.
 * New Backups tab with restore points taken before plugin and theme updates, file repairs and settings changes, restorable in one click and undoable.
 * Download a compressed database backup.
 * Export settings and import them on another site.
@@ -315,7 +316,7 @@ Usually not. Current NIST guidance (SP 800-63B) recommends long passwords, breac
 = 1.6.2 =
 Security release after a full internal audit. Updating is recommended.
 
-* Fixed: when a password reset was forced or a password had expired, signing in with the old password led straight to the reset form. Now Sentinel Shield emails a reset link instead, so a leaked password alone cannot be used to set a new one.
+* Fixed: when a password reset was forced or a password had expired, signing in with the old password led straight to the reset form. Now Chaos Shield emails a reset link instead, so a leaked password alone cannot be used to set a new one.
 * Fixed: the hub sent the site key with every request. It now signs requests with it, only connects over HTTPS or a private network, and does not follow redirects.
 * Fixed: a proxy header with no trusted proxies listed was believed from anyone. It now only counts from private network proxies and Cloudflare's own ranges unless you list others.
 * Fixed: "Allow only the listed countries" let in visitors whose country was unknown, for example by going around Cloudflare. They are now kept out, except private network visitors and while the built-in database downloads. Country headers anyone can send now only count from a trusted proxy.

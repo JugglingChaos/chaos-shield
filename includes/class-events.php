@@ -2,10 +2,10 @@
 /**
  * Security activity log, stored in its own table.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -15,8 +15,8 @@ defined( 'ABSPATH' ) || exit;
 final class Events {
 
 	const DB_VERSION        = '3';
-	const DB_VERSION_OPTION = 'sshield_db_version';
-	const LEGACY_OPTION     = 'sshield_events';
+	const DB_VERSION_OPTION = 'cshield_db_version';
+	const LEGACY_OPTION     = 'cshield_events';
 
 	const INFO     = 1;
 	const NOTICE   = 2;
@@ -28,7 +28,7 @@ final class Events {
 	 * @return string
 	 */
 	public static function table() {
-		return Network::table( 'sshield_log' );
+		return Network::table( 'cshield_log' );
 	}
 
 	/**
@@ -109,7 +109,7 @@ final class Events {
 				'fields' => 'ids',
 			)
 		) as $blog_id ) {
-			$old = $wpdb->get_blog_prefix( $blog_id ) . 'sshield_log';
+			$old = $wpdb->get_blog_prefix( $blog_id ) . 'cshield_log';
 			if ( $old === $table || $old !== $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $old ) ) ) ) { // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- One-off migration.
 				continue;
 			}
@@ -163,7 +163,7 @@ final class Events {
 		 *
 		 * @param array $event id, created, type, severity, user_id, ip, message, action, subject, blog_id.
 		 */
-		do_action( 'sshield_event', $data );
+		do_action( 'cshield_event', $data );
 	}
 
 	/**

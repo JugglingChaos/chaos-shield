@@ -2,10 +2,10 @@
 /**
  * Live traffic.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -19,7 +19,7 @@ defined( 'ABSPATH' ) || exit;
 final class Traffic {
 
 	const DB_VERSION        = '1';
-	const DB_VERSION_OPTION = 'sshield_traffic_db';
+	const DB_VERSION_OPTION = 'cshield_traffic_db';
 	const KEEP              = DAY_IN_SECONDS;
 	const MAX_ROWS          = 20000;
 
@@ -48,7 +48,7 @@ final class Traffic {
 		self::$armed = true;
 		// Registered while the plugin loads, so requests the firewall stops early are recorded too.
 		register_shutdown_function( array( __CLASS__, 'record' ) );
-		add_action( 'wp_ajax_sshield_traffic', array( __CLASS__, 'ajax' ) );
+		add_action( 'wp_ajax_cshield_traffic', array( __CLASS__, 'ajax' ) );
 	}
 
 	/**
@@ -57,7 +57,7 @@ final class Traffic {
 	 * @return string
 	 */
 	public static function table() {
-		return Network::table( 'sshield_traffic' );
+		return Network::table( 'cshield_traffic' );
 	}
 
 	/**
@@ -133,7 +133,7 @@ final class Traffic {
 		$file   = basename( $path );
 
 		// Noise nobody needs to watch.
-		if ( 'wp-cron.php' === $file || ( 'admin-ajax.php' === $file && in_array( self::ajax_action(), array( 'heartbeat', 'sshield_traffic', 'sshield_scan' ), true ) ) ) {
+		if ( 'wp-cron.php' === $file || ( 'admin-ajax.php' === $file && in_array( self::ajax_action(), array( 'heartbeat', 'cshield_traffic', 'cshield_scan' ), true ) ) ) {
 			return null;
 		}
 
@@ -221,10 +221,10 @@ final class Traffic {
 	 * Drops old rows every ten minutes at most.
 	 */
 	private static function maybe_prune() {
-		if ( Network::get_transient( 'sshield_traffic_pruned' ) ) {
+		if ( Network::get_transient( 'cshield_traffic_pruned' ) ) {
 			return;
 		}
-		Network::set_transient( 'sshield_traffic_pruned', 1, 10 * MINUTE_IN_SECONDS );
+		Network::set_transient( 'cshield_traffic_pruned', 1, 10 * MINUTE_IN_SECONDS );
 		global $wpdb;
 		$table = self::table();
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Own table.
@@ -320,7 +320,7 @@ final class Traffic {
 		static $world = null;
 		if ( null === $world ) {
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file.
-			$json  = file_get_contents( SSHIELD_DIR . 'assets/data/world.json' );
+			$json  = file_get_contents( CSHIELD_DIR . 'assets/data/world.json' );
 			$world = $json ? json_decode( $json, true ) : null;
 			$world = is_array( $world ) ? $world : array(
 				'w'      => 1000,
@@ -362,11 +362,11 @@ final class Traffic {
 	 */
 	public static function labels() {
 		return array(
-			'human'    => __( 'Visitor', 'sentinel-shield' ),
-			'bot'      => __( 'Bot', 'sentinel-shield' ),
-			'blocked'  => __( 'Blocked', 'sentinel-shield' ),
-			'login'    => __( 'Login', 'sentinel-shield' ),
-			'notfound' => __( 'Not found', 'sentinel-shield' ),
+			'human'    => __( 'Visitor', 'chaos-shield' ),
+			'bot'      => __( 'Bot', 'chaos-shield' ),
+			'blocked'  => __( 'Blocked', 'chaos-shield' ),
+			'login'    => __( 'Login', 'chaos-shield' ),
+			'notfound' => __( 'Not found', 'chaos-shield' ),
 		);
 	}
 
@@ -377,7 +377,7 @@ final class Traffic {
 		if ( ! current_user_can( Network::cap() ) ) {
 			wp_send_json_error( null, 403 );
 		}
-		check_ajax_referer( 'sshield_traffic' );
+		check_ajax_referer( 'cshield_traffic' );
 		$kind    = isset( $_POST['kind'] ) ? sanitize_key( wp_unslash( $_POST['kind'] ) ) : 'all';
 		$after   = isset( $_POST['after'] ) ? absint( $_POST['after'] ) : 0;
 		$country = isset( $_POST['country'] ) ? strtoupper( sanitize_key( wp_unslash( $_POST['country'] ) ) ) : '';
@@ -407,20 +407,20 @@ final class Traffic {
 		$self   = Request::ip() === $row['ip'];
 		$block  = '';
 		if ( $row['ip'] && ! $self ) {
-			$block = '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="sshield-inline-form">'
-				. '<input type="hidden" name="action" value="sshield_block">'
+			$block = '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="cshield-inline-form">'
+				. '<input type="hidden" name="action" value="cshield_block">'
 				. '<input type="hidden" name="back" value="traffic">'
 				. '<input type="hidden" name="ip" value="' . esc_attr( $row['ip'] ) . '">'
-				. wp_nonce_field( 'sshield_block', '_wpnonce', true, false )
-				. '<button type="submit" class="sshield-link sshield-link--danger">' . esc_html__( 'Block IP', 'sentinel-shield' ) . '</button></form>';
+				. wp_nonce_field( 'cshield_block', '_wpnonce', true, false )
+				. '<button type="submit" class="cshield-link cshield-link--danger">' . esc_html__( 'Block IP', 'chaos-shield' ) . '</button></form>';
 		}
-		return '<tr data-id="' . esc_attr( $row['id'] ) . '" class="sshield-traffic--' . esc_attr( $row['kind'] ) . '">'
-			. '<td><span class="sshield-pill sshield-pill--' . esc_attr( $row['kind'] ) . '">' . esc_html( isset( $labels[ $row['kind'] ] ) ? $labels[ $row['kind'] ] : $row['kind'] ) . '</span></td>'
+		return '<tr data-id="' . esc_attr( $row['id'] ) . '" class="cshield-traffic--' . esc_attr( $row['kind'] ) . '">'
+			. '<td><span class="cshield-pill cshield-pill--' . esc_attr( $row['kind'] ) . '">' . esc_html( isset( $labels[ $row['kind'] ] ) ? $labels[ $row['kind'] ] : $row['kind'] ) . '</span></td>'
 			. '<td title="' . esc_attr( wp_date( 'Y-m-d H:i:s', (int) $row['created'] ) ) . '">' . esc_html( wp_date( get_option( 'time_format' ), (int) $row['created'] ) ) . '</td>'
-			. '<td><code>' . esc_html( $row['ip'] ) . '</code>' . ( $row['country'] ? ' <span class="sshield-small">' . esc_html( $row['country'] ) . '</span>' : '' ) . ( $user ? '<br><span class="sshield-small">' . esc_html( $user->user_login ) . '</span>' : '' ) . '</td>'
-			. '<td class="sshield-traffic__req"><code>' . esc_html( $row['method'] . ' ' . $row['uri'] ) . '</code><br><span class="sshield-small" title="' . esc_attr( $row['agent'] ) . '">' . esc_html( wp_html_excerpt( $row['agent'], 80, '…' ) ) . '</span></td>'
+			. '<td><code>' . esc_html( $row['ip'] ) . '</code>' . ( $row['country'] ? ' <span class="cshield-small">' . esc_html( $row['country'] ) . '</span>' : '' ) . ( $user ? '<br><span class="cshield-small">' . esc_html( $user->user_login ) . '</span>' : '' ) . '</td>'
+			. '<td class="cshield-traffic__req"><code>' . esc_html( $row['method'] . ' ' . $row['uri'] ) . '</code><br><span class="cshield-small" title="' . esc_attr( $row['agent'] ) . '">' . esc_html( wp_html_excerpt( $row['agent'], 80, '…' ) ) . '</span></td>'
 			. '<td>' . esc_html( $row['status'] ) . '</td>'
-			. '<td class="sshield-right">' . $block . '</td>'
+			. '<td class="cshield-right">' . $block . '</td>'
 			. '</tr>';
 	}
 

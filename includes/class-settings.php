@@ -2,10 +2,10 @@
 /**
  * Settings storage.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Settings {
 
-	const OPTION = 'sshield_settings';
+	const OPTION = 'cshield_settings';
 
 	/**
 	 * Cached settings for the current request.
@@ -38,124 +38,124 @@ final class Settings {
 	public static function modules() {
 		$modules  = array(
 			'disable_xmlrpc'        => array(
-				'label'       => __( 'Disable XML-RPC', 'sentinel-shield' ),
-				'description' => __( 'Blocks xmlrpc.php and pingbacks, a common brute-force and DDoS amplification target.', 'sentinel-shield' ),
+				'label'       => __( 'Disable XML-RPC', 'chaos-shield' ),
+				'description' => __( 'Blocks xmlrpc.php and pingbacks, a common brute-force and DDoS amplification target.', 'chaos-shield' ),
 			),
 			'disable_file_edit'     => array(
-				'label'       => __( 'Disable file editor', 'sentinel-shield' ),
-				'description' => __( 'Removes the theme and plugin code editors from wp-admin so a stolen login cannot inject code.', 'sentinel-shield' ),
+				'label'       => __( 'Disable file editor', 'chaos-shield' ),
+				'description' => __( 'Removes the theme and plugin code editors from wp-admin so a stolen login cannot inject code.', 'chaos-shield' ),
 			),
 			'hide_version'          => array(
-				'label'       => __( 'Hide WordPress version', 'sentinel-shield' ),
-				'description' => __( 'Strips the version from page markup, feeds and asset URLs to slow down targeted scans.', 'sentinel-shield' ),
+				'label'       => __( 'Hide WordPress version', 'chaos-shield' ),
+				'description' => __( 'Strips the version from page markup, feeds and asset URLs to slow down targeted scans.', 'chaos-shield' ),
 			),
 			'block_user_enum'       => array(
-				'label'       => __( 'Block user enumeration', 'sentinel-shield' ),
-				'description' => __( 'Stops visitors from listing usernames through ?author= URLs, the REST API and sitemaps.', 'sentinel-shield' ),
+				'label'       => __( 'Block user enumeration', 'chaos-shield' ),
+				'description' => __( 'Stops visitors from listing usernames through ?author= URLs, the REST API and sitemaps.', 'chaos-shield' ),
 			),
 			'security_headers'      => array(
-				'label'       => __( 'Security headers', 'sentinel-shield' ),
-				'description' => __( 'Sends nosniff, frame, referrer and permissions headers, plus HSTS when the site runs on HTTPS.', 'sentinel-shield' ),
+				'label'       => __( 'Security headers', 'chaos-shield' ),
+				'description' => __( 'Sends nosniff, frame, referrer and permissions headers, plus HSTS when the site runs on HTTPS.', 'chaos-shield' ),
 			),
 			'limit_login'           => array(
-				'label'       => __( 'Limit login attempts', 'sentinel-shield' ),
-				'description' => __( 'Temporarily locks out an IP address after repeated failed logins.', 'sentinel-shield' ),
+				'label'       => __( 'Limit login attempts', 'chaos-shield' ),
+				'description' => __( 'Temporarily locks out an IP address after repeated failed logins.', 'chaos-shield' ),
 			),
 			'generic_login_errors'  => array(
-				'label'       => __( 'Generic login errors', 'sentinel-shield' ),
-				'description' => __( 'Shows one neutral message on failed logins so attackers cannot tell whether a username exists.', 'sentinel-shield' ),
+				'label'       => __( 'Generic login errors', 'chaos-shield' ),
+				'description' => __( 'Shows one neutral message on failed logins so attackers cannot tell whether a username exists.', 'chaos-shield' ),
 			),
 			'two_factor'            => array(
-				'label'       => __( 'Two-factor login', 'sentinel-shield' ),
-				'description' => __( 'Lets each user add an authenticator app code to their login from their profile page.', 'sentinel-shield' ),
+				'label'       => __( 'Two-factor login', 'chaos-shield' ),
+				'description' => __( 'Lets each user add an authenticator app code to their login from their profile page.', 'chaos-shield' ),
 			),
 			'firewall'              => array(
-				'label'       => __( 'Request firewall', 'sentinel-shield' ),
-				'description' => __( 'Scores every part of each request, from the address to form fields, JSON, cookies and uploads, for SQL, script, code and command injection, path traversal and attack tools, and blocks clear attacks. Tune it on the Firewall tab.', 'sentinel-shield' ),
+				'label'       => __( 'Request firewall', 'chaos-shield' ),
+				'description' => __( 'Scores every part of each request, from the address to form fields, JSON, cookies and uploads, for SQL, script, code and command injection, path traversal and attack tools, and blocks clear attacks. Tune it on the Firewall tab.', 'chaos-shield' ),
 			),
 			'auto_ban'              => array(
-				'label'       => __( 'Auto-ban repeat attackers', 'sentinel-shield' ),
-				'description' => __( 'Bans an IP from the whole site when it keeps getting locked out or keeps tripping the firewall.', 'sentinel-shield' ),
+				'label'       => __( 'Auto-ban repeat attackers', 'chaos-shield' ),
+				'description' => __( 'Bans an IP from the whole site when it keeps getting locked out or keeps tripping the firewall.', 'chaos-shield' ),
 			),
 			'block_404_probes'      => array(
-				'label'       => __( 'Block 404 probing', 'sentinel-shield' ),
-				'description' => __( 'Bans bots that request many missing pages in a few minutes while hunting for vulnerable files.', 'sentinel-shield' ),
+				'label'       => __( 'Block 404 probing', 'chaos-shield' ),
+				'description' => __( 'Bans bots that request many missing pages in a few minutes while hunting for vulnerable files.', 'chaos-shield' ),
 			),
 			'breached_passwords'    => array(
-				'label'       => __( 'Block breached passwords', 'sentinel-shield' ),
-				'description' => __( 'Refuses new passwords found in public data breaches and warns administrators whose current password is breached. Uses the Have I Been Pwned range API, which never receives the password.', 'sentinel-shield' ),
+				'label'       => __( 'Block breached passwords', 'chaos-shield' ),
+				'description' => __( 'Refuses new passwords found in public data breaches and warns administrators whose current password is breached. Uses the Have I Been Pwned range API, which never receives the password.', 'chaos-shield' ),
 			),
 			'password_policy'       => array(
-				'label'       => __( 'Password policy', 'sentinel-shield' ),
-				'description' => __( 'Requires long, varied passwords for the roles you choose, and can make passwords expire. Set the rules below.', 'sentinel-shield' ),
+				'label'       => __( 'Password policy', 'chaos-shield' ),
+				'description' => __( 'Requires long, varied passwords for the roles you choose, and can make passwords expire. Set the rules below.', 'chaos-shield' ),
 			),
 			'audit_trail'           => array(
-				'label'       => __( 'Detailed audit trail', 'sentinel-shield' ),
-				'description' => __( 'Also logs content changes, core site settings, profile, email and password changes, logouts, failed logins and privacy requests.', 'sentinel-shield' ),
+				'label'       => __( 'Detailed audit trail', 'chaos-shield' ),
+				'description' => __( 'Also logs content changes, core site settings, profile, email and password changes, logouts, failed logins and privacy requests.', 'chaos-shield' ),
 			),
 			'passkeys'              => array(
-				'label'       => __( 'Passkey login', 'sentinel-shield' ),
-				'description' => __( 'Lets users add passkeys on their profile and sign in with a fingerprint, face or device PIN. Needs HTTPS.', 'sentinel-shield' ),
+				'label'       => __( 'Passkey login', 'chaos-shield' ),
+				'description' => __( 'Lets users add passkeys on their profile and sign in with a fingerprint, face or device PIN. Needs HTTPS.', 'chaos-shield' ),
 			),
 			'rate_limit'            => array(
-				'label'       => __( 'Rate limiting', 'sentinel-shield' ),
-				'description' => __( 'Answers 429 to an IP that sends too many login, API, AJAX or search requests in a minute, and bans IPs that keep doing it.', 'sentinel-shield' ),
+				'label'       => __( 'Rate limiting', 'chaos-shield' ),
+				'description' => __( 'Answers 429 to an IP that sends too many login, API, AJAX or search requests in a minute, and bans IPs that keep doing it.', 'chaos-shield' ),
 			),
 			'country_block'         => array(
-				'label'       => __( 'Country blocking', 'sentinel-shield' ),
-				'description' => __( 'Blocks or allows visitors by country, for the whole site or only the login page. Set the countries under Access.', 'sentinel-shield' ),
+				'label'       => __( 'Country blocking', 'chaos-shield' ),
+				'description' => __( 'Blocks or allows visitors by country, for the whole site or only the login page. Set the countries under Access.', 'chaos-shield' ),
 			),
 			'captcha'               => array(
-				'label'       => __( 'Login CAPTCHA', 'sentinel-shield' ),
-				'description' => __( 'Adds a Cloudflare Turnstile or hCaptcha check to the login, lost password and registration forms. Connect one under Login page below; both are free.', 'sentinel-shield' ),
+				'label'       => __( 'Login CAPTCHA', 'chaos-shield' ),
+				'description' => __( 'Adds a Cloudflare Turnstile or hCaptcha check to the login, lost password and registration forms. Connect one under Login page below; both are free.', 'chaos-shield' ),
 			),
 			'visitor_help'          => array(
-				'label'       => __( 'Visitor help', 'sentinel-shield' ),
-				'description' => __( 'Shows blocked and locked-out visitors a clear page with a help assistant and a way to ask you for access, and adds sign-in help to the login page. Set it up under Visitor help.', 'sentinel-shield' ),
+				'label'       => __( 'Visitor help', 'chaos-shield' ),
+				'description' => __( 'Shows blocked and locked-out visitors a clear page with a help assistant and a way to ask you for access, and adds sign-in help to the login page. Set it up under Visitor help.', 'chaos-shield' ),
 			),
 			'file_watch'            => array(
-				'label'       => __( 'Critical file watch', 'sentinel-shield' ),
-				'description' => __( 'Fingerprints wp-config.php, .htaccess, drop-ins, must-use plugins and key core files every hour, and alerts you the moment one changes.', 'sentinel-shield' ),
+				'label'       => __( 'Critical file watch', 'chaos-shield' ),
+				'description' => __( 'Fingerprints wp-config.php, .htaccess, drop-ins, must-use plugins and key core files every hour, and alerts you the moment one changes.', 'chaos-shield' ),
 			),
 			'attack_auto'           => array(
-				'label'       => __( 'Automatic under attack mode', 'sentinel-shield' ),
-				'description' => __( 'When blocked requests pile up, puts a one-second browser check in front of the site until the flood stops, so bots cannot keep the server busy. Set it up on the Edge tab.', 'sentinel-shield' ),
+				'label'       => __( 'Automatic under attack mode', 'chaos-shield' ),
+				'description' => __( 'When blocked requests pile up, puts a one-second browser check in front of the site until the flood stops, so bots cannot keep the server busy. Set it up on the Edge tab.', 'chaos-shield' ),
 			),
 			'script_watch'          => array(
-				'label'       => __( 'Page script monitor', 'sentinel-shield' ),
-				'description' => __( 'Lists every script your pages load and alerts you when a new or suspicious one appears, the usual sign of a card skimmer or injected ads.', 'sentinel-shield' ),
+				'label'       => __( 'Page script monitor', 'chaos-shield' ),
+				'description' => __( 'Lists every script your pages load and alerts you when a new or suspicious one appears, the usual sign of a card skimmer or injected ads.', 'chaos-shield' ),
 			),
 			'exposure_check'        => array(
-				'label'       => __( 'Exposed files and keys check', 'sentinel-shield' ),
-				'description' => __( 'Checks every day that backups, database dumps, logs, .env and .git cannot be downloaded, and that no secret keys show in your pages.', 'sentinel-shield' ),
+				'label'       => __( 'Exposed files and keys check', 'chaos-shield' ),
+				'description' => __( 'Checks every day that backups, database dumps, logs, .env and .git cannot be downloaded, and that no secret keys show in your pages.', 'chaos-shield' ),
 			),
 			'vuln_check'            => array(
-				'label'       => __( 'Vulnerability alerts', 'sentinel-shield' ),
-				'description' => __( 'Checks WordPress, your plugins and your themes every day against the free WPVulnerability database, and flags plugins that were closed or abandoned. No account or key needed.', 'sentinel-shield' ),
+				'label'       => __( 'Vulnerability alerts', 'chaos-shield' ),
+				'description' => __( 'Checks WordPress, your plugins and your themes every day against the free WPVulnerability database, and flags plugins that were closed or abandoned. No account or key needed.', 'chaos-shield' ),
 			),
 			'threat_feed'           => array(
-				'label'       => __( 'Threat intelligence blocklist', 'sentinel-shield' ),
-				'description' => __( 'Blocks networks run by criminals and spammers, using the free Spamhaus DROP list, refreshed daily. Can also block Tor exit nodes.', 'sentinel-shield' ),
+				'label'       => __( 'Threat intelligence blocklist', 'chaos-shield' ),
+				'description' => __( 'Blocks networks run by criminals and spammers, using the free Spamhaus DROP list, refreshed daily. Can also block Tor exit nodes.', 'chaos-shield' ),
 			),
 			'live_traffic'          => array(
-				'label'       => __( 'Live traffic', 'sentinel-shield' ),
-				'description' => __( 'Shows who is on the site right now: logins, blocked requests, missing pages and, if you choose, every visit. Kept for 24 hours.', 'sentinel-shield' ),
+				'label'       => __( 'Live traffic', 'chaos-shield' ),
+				'description' => __( 'Shows who is on the site right now: logins, blocked requests, missing pages and, if you choose, every visit. Kept for 24 hours.', 'chaos-shield' ),
 			),
 			'geo_db'                => array(
-				'label'       => __( 'Built-in country lookup', 'sentinel-shield' ),
-				'description' => __( 'Finds the country of each visitor for the traffic map and country rules, using a free public domain database downloaded once a week (about 25 MB, no account). Nothing about your visitors leaves the site.', 'sentinel-shield' ),
+				'label'       => __( 'Built-in country lookup', 'chaos-shield' ),
+				'description' => __( 'Finds the country of each visitor for the traffic map and country rules, using a free public domain database downloaded once a week (about 25 MB, no account). Nothing about your visitors leaves the site.', 'chaos-shield' ),
 			),
 			'siem'                  => array(
-				'label'       => __( 'SIEM detections', 'sentinel-shield' ),
-				'description' => __( 'Correlates the activity log in real time to spot attacks in progress, such as a login after brute force or risky changes from a new IP, and opens incidents you can work through on the SIEM tab.', 'sentinel-shield' ),
+				'label'       => __( 'SIEM detections', 'chaos-shield' ),
+				'description' => __( 'Correlates the activity log in real time to spot attacks in progress, such as a login after brute force or risky changes from a new IP, and opens incidents you can work through on the SIEM tab.', 'chaos-shield' ),
 			),
 			'restore_points'        => array(
-				'label'       => __( 'Restore points', 'sentinel-shield' ),
-				'description' => __( 'Saves a copy of a plugin or theme before it updates, of a file before it is repaired and of these settings before they change, so you can put them back from the Backups tab. Kept for 30 days.', 'sentinel-shield' ),
+				'label'       => __( 'Restore points', 'chaos-shield' ),
+				'description' => __( 'Saves a copy of a plugin or theme before it updates, of a file before it is repaired and of these settings before they change, so you can put them back from the Backups tab. Kept for 30 days.', 'chaos-shield' ),
 			),
 			'disable_app_passwords' => array(
-				'label'       => __( 'Disable application passwords', 'sentinel-shield' ),
-				'description' => __( 'Turns off REST API application passwords. Leave off if an app or service signs in with them.', 'sentinel-shield' ),
+				'label'       => __( 'Disable application passwords', 'chaos-shield' ),
+				'description' => __( 'Turns off REST API application passwords. Leave off if an app or service signs in with them.', 'chaos-shield' ),
 			),
 		);
 		$defaults = self::defaults();
@@ -294,19 +294,19 @@ final class Settings {
 	 */
 	public static function alerts() {
 		return array(
-			'alert_admin_login'    => __( 'An administrator logs in from a new IP address', 'sentinel-shield' ),
-			'alert_new_admin'      => __( 'A new administrator account appears, or a user is promoted to administrator', 'sentinel-shield' ),
-			'alert_plugin_changes' => __( 'A plugin or theme is installed, activated or deleted', 'sentinel-shield' ),
-			'alert_scan'           => __( 'A scan finds modified core files or suspicious code', 'sentinel-shield' ),
-			'alert_lockouts'       => __( 'An IP address is locked out or banned (can be noisy)', 'sentinel-shield' ),
-			'alert_weekly_report'  => __( 'A weekly security report', 'sentinel-shield' ),
-			'alert_vulns'          => __( 'Installed software has a newly published vulnerability', 'sentinel-shield' ),
-			'alert_uptime'         => __( 'A site connected to the hub goes down, or a certificate is about to expire', 'sentinel-shield' ),
-			'alert_incidents'      => __( 'A SIEM detection opens an incident (high and critical by default)', 'sentinel-shield' ),
-			'alert_help'           => __( 'A blocked visitor asks you for access', 'sentinel-shield' ),
-			'alert_attack'         => __( 'Under attack mode switches on during a flood', 'sentinel-shield' ),
-			'alert_scripts'        => __( 'A new or suspicious script appears on your pages', 'sentinel-shield' ),
-			'alert_exposure'       => __( 'A backup, log, key or other private file can be downloaded', 'sentinel-shield' ),
+			'alert_admin_login'    => __( 'An administrator logs in from a new IP address', 'chaos-shield' ),
+			'alert_new_admin'      => __( 'A new administrator account appears, or a user is promoted to administrator', 'chaos-shield' ),
+			'alert_plugin_changes' => __( 'A plugin or theme is installed, activated or deleted', 'chaos-shield' ),
+			'alert_scan'           => __( 'A scan finds modified core files or suspicious code', 'chaos-shield' ),
+			'alert_lockouts'       => __( 'An IP address is locked out or banned (can be noisy)', 'chaos-shield' ),
+			'alert_weekly_report'  => __( 'A weekly security report', 'chaos-shield' ),
+			'alert_vulns'          => __( 'Installed software has a newly published vulnerability', 'chaos-shield' ),
+			'alert_uptime'         => __( 'A site connected to the hub goes down, or a certificate is about to expire', 'chaos-shield' ),
+			'alert_incidents'      => __( 'A SIEM detection opens an incident (high and critical by default)', 'chaos-shield' ),
+			'alert_help'           => __( 'A blocked visitor asks you for access', 'chaos-shield' ),
+			'alert_attack'         => __( 'Under attack mode switches on during a flood', 'chaos-shield' ),
+			'alert_scripts'        => __( 'A new or suspicious script appears on your pages', 'chaos-shield' ),
+			'alert_exposure'       => __( 'A backup, log, key or other private file can be downloaded', 'chaos-shield' ),
 		);
 	}
 
@@ -345,12 +345,12 @@ final class Settings {
 		} elseif ( in_array( wp_parse_url( $webhook, PHP_URL_SCHEME ), array( 'http', 'https' ), true ) && wp_parse_url( $webhook, PHP_URL_HOST ) ) {
 			$clean['forward_webhook'] = esc_url_raw( $webhook );
 		} else {
-			self::$errors[] = __( 'The webhook address must start with https:// or http://. It was not saved.', 'sentinel-shield' );
+			self::$errors[] = __( 'The webhook address must start with https:// or http://. It was not saved.', 'chaos-shield' );
 		}
 		$clean['forward_secret'] = isset( $input['forward_secret'] ) ? substr( sanitize_text_field( (string) $input['forward_secret'] ), 0, 128 ) : '';
 		$syslog                  = Forwarder::clean_syslog( isset( $input['forward_syslog'] ) ? (string) $input['forward_syslog'] : '' );
 		if ( false === $syslog ) {
-			self::$errors[] = __( 'The syslog server must look like udp://logs.example.com:514 or tcp://10.0.0.5:6514, or be "local". It was not saved.', 'sentinel-shield' );
+			self::$errors[] = __( 'The syslog server must look like udp://logs.example.com:514 or tcp://10.0.0.5:6514, or be "local". It was not saved.', 'chaos-shield' );
 		} else {
 			$clean['forward_syslog'] = $syslog;
 		}
@@ -416,10 +416,10 @@ final class Settings {
 	 */
 	public static function proxy_headers() {
 		return array(
-			''                      => __( 'None, use the direct connection (REMOTE_ADDR)', 'sentinel-shield' ),
-			'HTTP_CF_CONNECTING_IP' => __( 'Cloudflare (CF-Connecting-IP)', 'sentinel-shield' ),
-			'HTTP_X_FORWARDED_FOR'  => __( 'Load balancer or proxy (X-Forwarded-For)', 'sentinel-shield' ),
-			'HTTP_X_REAL_IP'        => __( 'Nginx proxy (X-Real-IP)', 'sentinel-shield' ),
+			''                      => __( 'None, use the direct connection (REMOTE_ADDR)', 'chaos-shield' ),
+			'HTTP_CF_CONNECTING_IP' => __( 'Cloudflare (CF-Connecting-IP)', 'chaos-shield' ),
+			'HTTP_X_FORWARDED_FOR'  => __( 'Load balancer or proxy (X-Forwarded-For)', 'chaos-shield' ),
+			'HTTP_X_REAL_IP'        => __( 'Nginx proxy (X-Real-IP)', 'chaos-shield' ),
 		);
 	}
 
@@ -707,7 +707,7 @@ final class Settings {
 			Events::add(
 				'settings',
 				/* translators: %s: list of protections. */
-				sprintf( __( 'Protection switched off: %s.', 'sentinel-shield' ), implode( ', ', $off ) ),
+				sprintf( __( 'Protection switched off: %s.', 'chaos-shield' ), implode( ', ', $off ) ),
 				Request::ip(),
 				array(
 					'severity' => Events::NOTICE,

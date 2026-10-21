@@ -2,10 +2,10 @@
 /**
  * Login attempt limiting and generic login errors.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -14,8 +14,8 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Login_Guard {
 
-	const LOCKOUTS_OPTION = 'sshield_lockouts';
-	const STATS_OPTION    = 'sshield_stats';
+	const LOCKOUTS_OPTION = 'cshield_lockouts';
+	const STATS_OPTION    = 'cshield_stats';
 
 	/**
 	 * Registers hooks.
@@ -46,8 +46,8 @@ final class Login_Guard {
 		$revealing = array( 'invalid_username', 'invalid_email', 'incorrect_password' );
 		if ( array_intersect( $revealing, $user->get_error_codes() ) ) {
 			return new \WP_Error(
-				'sshield_invalid_login',
-				__( '<strong>Error:</strong> The login details you entered are incorrect.', 'sentinel-shield' )
+				'cshield_invalid_login',
+				__( '<strong>Error:</strong> The login details you entered are incorrect.', 'chaos-shield' )
 			);
 		}
 		return $user;
@@ -86,14 +86,14 @@ final class Login_Guard {
 		}
 		$minutes = max( 1, (int) ceil( ( $until - time() ) / MINUTE_IN_SECONDS ) );
 		return new \WP_Error(
-			'sshield_locked_out',
+			'cshield_locked_out',
 			sprintf(
 				/* translators: %d: minutes until the lockout ends. */
 				_n(
 					'<strong>Error:</strong> Too many failed login attempts. Try again in %d minute.',
 					'<strong>Error:</strong> Too many failed login attempts. Try again in %d minutes.',
 					$minutes,
-					'sentinel-shield'
+					'chaos-shield'
 				),
 				$minutes
 			)
@@ -107,7 +107,7 @@ final class Login_Guard {
 	 * @param \WP_Error|null $error    Why the login failed.
 	 */
 	public function record_failure( $username, $error = null ) {
-		if ( $error instanceof \WP_Error && 'sshield_reset_required' === $error->get_error_code() ) {
+		if ( $error instanceof \WP_Error && 'cshield_reset_required' === $error->get_error_code() ) {
 			return; // Right password, but a new one is due: not a failure.
 		}
 		$ip = Request::ip();
@@ -137,7 +137,7 @@ final class Login_Guard {
 			'lockout',
 			sprintf(
 				/* translators: 1: number of attempts, 2: attempted username, 3: lockout minutes. */
-				__( 'Locked out after %1$d failed logins (last username tried: %2$s) for %3$d minutes.', 'sentinel-shield' ),
+				__( 'Locked out after %1$d failed logins (last username tried: %2$s) for %3$d minutes.', 'chaos-shield' ),
 				$count,
 				sanitize_user( $username ),
 				$minutes
@@ -152,10 +152,10 @@ final class Login_Guard {
 		Alerts::send(
 			'alert_lockouts',
 			/* translators: %s: IP address. */
-			sprintf( __( 'IP %s locked out', 'sentinel-shield' ), $ip ),
+			sprintf( __( 'IP %s locked out', 'chaos-shield' ), $ip ),
 			sprintf(
 				/* translators: 1: IP address, 2: attempts, 3: username, 4: minutes. */
-				__( '%1$s was locked out after %2$d failed logins. The last username tried was "%3$s". The lockout lasts %4$d minutes.', 'sentinel-shield' ),
+				__( '%1$s was locked out after %2$d failed logins. The last username tried was "%3$s". The lockout lasts %4$d minutes.', 'chaos-shield' ),
 				$ip,
 				$count,
 				sanitize_user( $username ),
@@ -283,6 +283,6 @@ final class Login_Guard {
 	 * @return string
 	 */
 	private static function attempts_key( $ip ) {
-		return 'sshield_att_' . md5( $ip );
+		return 'cshield_att_' . md5( $ip );
 	}
 }

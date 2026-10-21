@@ -2,10 +2,10 @@
 /**
  * Core file integrity check and malware scan.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -14,12 +14,12 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Scanner {
 
-	const STATE_OPTION   = 'sshield_scan_state';
-	const RESULTS_OPTION = 'sshield_scan_results';
-	const IGNORE_OPTION  = 'sshield_scan_ignored';
-	const CRON_STEP      = 'sshield_scan_continue';
-	const BASELINE       = 'sshield_file_baseline';
-	const EXPECTED       = 'sshield_expected_changes';
+	const STATE_OPTION   = 'cshield_scan_state';
+	const RESULTS_OPTION = 'cshield_scan_results';
+	const IGNORE_OPTION  = 'cshield_scan_ignored';
+	const CRON_STEP      = 'cshield_scan_continue';
+	const BASELINE       = 'cshield_file_baseline';
+	const EXPECTED       = 'cshield_expected_changes';
 	const MAX_FILES      = 60000;
 	const MAX_BYTES      = 2097152;
 
@@ -117,7 +117,7 @@ final class Scanner {
 		}
 
 		// Everything that can run as PHP inside wp-content, except this plugin.
-		$self = '@content/' . trim( substr( wp_normalize_path( WP_PLUGIN_DIR ), strlen( wp_normalize_path( WP_CONTENT_DIR ) ) ), '/' ) . '/' . dirname( plugin_basename( SSHIELD_FILE ) ) . '/';
+		$self = '@content/' . trim( substr( wp_normalize_path( WP_PLUGIN_DIR ), strlen( wp_normalize_path( WP_CONTENT_DIR ) ) ), '/' ) . '/' . dirname( plugin_basename( CSHIELD_FILE ) ) . '/';
 		foreach ( self::walk( WP_CONTENT_DIR, true ) as $file ) {
 			if ( 0 !== strpos( $file, $self ) ) {
 				$queue[] = 'm|' . $file;
@@ -247,7 +247,7 @@ final class Scanner {
 			'scan',
 			sprintf(
 				/* translators: 1: files scanned, 2: number of findings. */
-				__( 'Scan finished: %1$d files checked, %2$d issues found.', 'sentinel-shield' ),
+				__( 'Scan finished: %1$d files checked, %2$d issues found.', 'chaos-shield' ),
 				$state['scanned'],
 				count( $open )
 			),
@@ -266,8 +266,8 @@ final class Scanner {
 			Alerts::send(
 				'alert_scan',
 				/* translators: %d: number of issues. */
-				sprintf( _n( 'Scan found %d issue', 'Scan found %d issues', count( $open ), 'sentinel-shield' ), count( $open ) ),
-				__( 'The latest Sentinel Shield scan found files that need a look:', 'sentinel-shield' ) . "\n\n" . implode( "\n", $lines ),
+				sprintf( _n( 'Scan found %d issue', 'Scan found %d issues', count( $open ), 'chaos-shield' ), count( $open ) ),
+				__( 'The latest Chaos Shield scan found files that need a look:', 'chaos-shield' ) . "\n\n" . implode( "\n", $lines ),
 				md5( wp_json_encode( wp_list_pluck( $open, 'id' ) ) )
 			);
 		}
@@ -351,8 +351,8 @@ final class Scanner {
 				'rule'     => $rule,
 				'severity' => 'medium',
 				'label'    => null === $old
-					? __( 'New PHP file since the last scan, not added by an update', 'sentinel-shield' )
-					: __( 'File changed since the last scan, not by an update', 'sentinel-shield' ),
+					? __( 'New PHP file since the last scan, not added by an update', 'chaos-shield' )
+					: __( 'File changed since the last scan, not by an update', 'chaos-shield' ),
 				'line'     => 0,
 				'snippet'  => '',
 				'hash'     => $hash,
@@ -458,13 +458,13 @@ final class Scanner {
 
 		if ( 'c' === $kind ) {
 			if ( ! file_exists( $path ) ) {
-				return self::finding( $file, 'missing', 'medium', __( 'Core file is missing', 'sentinel-shield' ), '' );
+				return self::finding( $file, 'missing', 'medium', __( 'Core file is missing', 'chaos-shield' ), '' );
 			}
 			if ( md5_file( $path ) === $parts[2] ) {
 				return null;
 			}
 			$malware = self::match_signatures( $file, $path );
-			return $malware ? $malware : self::finding( $file, 'modified', 'high', __( 'Core file differs from the official WordPress copy', 'sentinel-shield' ), $path );
+			return $malware ? $malware : self::finding( $file, 'modified', 'high', __( 'Core file differs from the official WordPress copy', 'chaos-shield' ), $path );
 		}
 
 		if ( 'x' === $kind ) {
@@ -473,7 +473,7 @@ final class Scanner {
 			}
 			return preg_match( '/\.(?:php|phtml)$/i', $file ) && ! preg_match( '/^(?:phpinfo|info|adminer)/i', basename( $file ) )
 				? null
-				: self::finding( $file, 'exposed', preg_match( '/(?:debug\.log|error_log)$/', $file ) ? 'medium' : 'high', __( 'Backup, log or secret file that anyone may be able to download', 'sentinel-shield' ), $path );
+				: self::finding( $file, 'exposed', preg_match( '/(?:debug\.log|error_log)$/', $file ) ? 'medium' : 'high', __( 'Backup, log or secret file that anyone may be able to download', 'chaos-shield' ), $path );
 		}
 
 		if ( ! is_readable( $path ) ) {
@@ -485,10 +485,10 @@ final class Scanner {
 			return $malware;
 		}
 		if ( 'u' === $kind ) {
-			return self::finding( $file, 'unknown', 'medium', __( 'File in a WordPress core folder that WordPress did not ship', 'sentinel-shield' ), $path );
+			return self::finding( $file, 'unknown', 'medium', __( 'File in a WordPress core folder that WordPress did not ship', 'chaos-shield' ), $path );
 		}
 		if ( preg_match( '#^@content/uploads/#', $file ) ) {
-			return self::finding( $file, 'php_upload', 'medium', __( 'PHP file inside the uploads folder', 'sentinel-shield' ), $path );
+			return self::finding( $file, 'php_upload', 'medium', __( 'PHP file inside the uploads folder', 'chaos-shield' ), $path );
 		}
 		return self::check_official( $file, $path, $state );
 	}
@@ -574,11 +574,11 @@ final class Scanner {
 		}
 		$rel = $m[3];
 		if ( ! isset( $sums[ $rel ] ) ) {
-			$finding = self::finding( $file, 'org_unknown', 'medium', __( 'PHP file that is not part of the official WordPress.org release', 'sentinel-shield' ), $path );
+			$finding = self::finding( $file, 'org_unknown', 'medium', __( 'PHP file that is not part of the official WordPress.org release', 'chaos-shield' ), $path );
 		} elseif ( in_array( md5_file( $path ), $sums[ $rel ], true ) ) {
 			return null;
 		} else {
-			$finding = self::finding( $file, 'org_modified', 'high', __( 'File differs from the official WordPress.org release', 'sentinel-shield' ), $path );
+			$finding = self::finding( $file, 'org_modified', 'high', __( 'File differs from the official WordPress.org release', 'chaos-shield' ), $path );
 		}
 		$finding['source'] = array(
 			'type'    => $type,
@@ -601,7 +601,7 @@ final class Scanner {
 	 * @return array|false Relative path => list of md5 hashes, or false when the release is not on WordPress.org.
 	 */
 	public static function official_sums( $type, $slug, $version ) {
-		$key    = 'sshield_osum_' . md5( $type . '|' . $slug . '|' . $version );
+		$key    = 'cshield_osum_' . md5( $type . '|' . $slug . '|' . $version );
 		$cached = Network::get_transient( $key );
 		if ( false !== $cached ) {
 			return is_array( $cached ) ? $cached : false;
@@ -656,7 +656,7 @@ final class Scanner {
 			return array();
 		}
 		require_once ABSPATH . 'wp-admin/includes/file.php';
-		$tmp      = wp_tempnam( 'sshield-theme' );
+		$tmp      = wp_tempnam( 'cshield-theme' );
 		$response = wp_remote_get(
 			'https://downloads.wordpress.org/theme/' . rawurlencode( $slug ) . '.' . rawurlencode( $version ) . '.zip',
 			array(
@@ -698,42 +698,42 @@ final class Scanner {
 	public static function signatures() {
 		$signatures = array(
 			'eval_decode'   => array(
-				'label'    => __( 'Runs hidden code (eval of decoded data)', 'sentinel-shield' ),
+				'label'    => __( 'Runs hidden code (eval of decoded data)', 'chaos-shield' ),
 				'severity' => 'high',
 				'pattern'  => '/\b(?:eval|assert)\s*\(\s*(?:@\s*)?(?:base64_decode|gzinflate|gzuncompress|gzdecode|str_rot13|strrev|rawurldecode|hex2bin)\s*\(/i',
 			),
 			'request_exec'  => array(
-				'label'    => __( 'Runs commands or code sent by visitors', 'sentinel-shield' ),
+				'label'    => __( 'Runs commands or code sent by visitors', 'chaos-shield' ),
 				'severity' => 'high',
 				'pattern'  => '/\b(?:system|exec|shell_exec|passthru|popen|proc_open|eval|assert|create_function)\s*\(\s*(?:@\s*)?(?:stripslashes\s*\(\s*|base64_decode\s*\(\s*)?\$_(?:GET|POST|REQUEST|COOKIE|SERVER)\b/i',
 			),
 			'request_call'  => array(
-				'label'    => __( 'Calls a function named by visitor input', 'sentinel-shield' ),
+				'label'    => __( 'Calls a function named by visitor input', 'chaos-shield' ),
 				'severity' => 'high',
 				'pattern'  => '/\$_(?:GET|POST|REQUEST|COOKIE)\s*\[[^\]]{1,40}\]\s*\(/',
 			),
 			'preg_e'        => array(
-				'label'    => __( 'preg_replace with the /e code execution modifier', 'sentinel-shield' ),
+				'label'    => __( 'preg_replace with the /e code execution modifier', 'chaos-shield' ),
 				'severity' => 'high',
 				'pattern'  => '/preg_replace\s*\(\s*([\'"])([^\w\s\\\\]).{0,300}?\2[imsxuADSUXJ]*e[imsxuADSUXJ]*\1\s*,/i',
 			),
 			'webshell'      => array(
-				'label'    => __( 'Known web shell marker', 'sentinel-shield' ),
+				'label'    => __( 'Known web shell marker', 'chaos-shield' ),
 				'severity' => 'high',
 				'pattern'  => '/(?:FilesMan|c99shell|r57shell|b374k|IndoXploit|WSOsetcookie|wso_version|Weevely|AnonymousFox|\bgaestebuch_shell)/i',
 			),
 			'hex_eval'      => array(
-				'label'    => __( 'Function name hidden with escape codes', 'sentinel-shield' ),
+				'label'    => __( 'Function name hidden with escape codes', 'chaos-shield' ),
 				'severity' => 'medium',
 				'pattern'  => '/(?:\\\\x65\\\\x76\\\\x61\\\\x6c|\\\\145\\\\166\\\\141\\\\154|\\\\x62\\\\x61\\\\x73\\\\x65\\\\x36\\\\x34|\\\\x73\\\\x79\\\\x73\\\\x74\\\\x65\\\\x6d)/i',
 			),
 			'globals_obf'   => array(
-				'label'    => __( 'Obfuscated globals access', 'sentinel-shield' ),
+				'label'    => __( 'Obfuscated globals access', 'chaos-shield' ),
 				'severity' => 'medium',
 				'pattern'  => '/\$\{\s*[\'"]\\\\x47|\$GLOBALS\s*\[\s*[\'"]\\\\x[0-9a-f]{2}/i',
 			),
 			'upload_writer' => array(
-				'label'    => __( 'Writes visitor input straight to a file', 'sentinel-shield' ),
+				'label'    => __( 'Writes visitor input straight to a file', 'chaos-shield' ),
 				'severity' => 'medium',
 				'pattern'  => '/\b(?:file_put_contents|fwrite|fputs)\s*\([^;]{0,120}\$_(?:GET|POST|REQUEST|COOKIE)\b/i',
 			),
@@ -744,7 +744,7 @@ final class Scanner {
 		 *
 		 * @param array $signatures Key => [ label, severity (high|medium), pattern ].
 		 */
-		return (array) apply_filters( 'sshield_scan_signatures', $signatures );
+		return (array) apply_filters( 'cshield_scan_signatures', $signatures );
 	}
 
 	/**
@@ -776,7 +776,7 @@ final class Scanner {
 
 		// Huge encoded blobs next to a code runner are a classic dropper pattern.
 		if ( preg_match( '/[\'"][A-Za-z0-9+\/=]{3000,}[\'"]/', $content ) && preg_match( '/\b(?:eval|assert|create_function|gzinflate|base64_decode)\s*\(/i', $content ) ) {
-			return self::finding( $file, 'encoded_blob', 'medium', __( 'Large encoded data block next to code that decodes or runs it', 'sentinel-shield' ), $path );
+			return self::finding( $file, 'encoded_blob', 'medium', __( 'Large encoded data block next to code that decodes or runs it', 'chaos-shield' ), $path );
 		}
 		return null;
 	}
@@ -815,7 +815,7 @@ final class Scanner {
 	public static function core_checksums() {
 		global $wp_version;
 		$locale = get_locale();
-		$key    = 'sshield_sums_' . md5( $wp_version . $locale );
+		$key    = 'cshield_sums_' . md5( $wp_version . $locale );
 		$cached = Network::get_transient( $key );
 		if ( is_array( $cached ) ) {
 			return $cached;

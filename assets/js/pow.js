@@ -1,7 +1,7 @@
-/* Sentinel Shield browser check: finds a number that makes SHA-256 of the challenge start with zeros, then sends it. */
+/* Chaos Shield browser check: finds a number that makes SHA-256 of the challenge start with zeros, then sends it. */
 ( function () {
 	'use strict';
-	var cfg = window.sshieldPow;
+	var cfg = window.cshieldPow;
 	var form = document.getElementById( 'ssh-pow' );
 	if ( ! cfg || ! form ) {
 		return;
@@ -81,7 +81,7 @@
 		var stop = Date.now() + 40;
 		while ( Date.now() < stop ) {
 			if ( first( prefix + nonce ) < limit ) {
-				form.elements.sshield_nonce.value = String( nonce );
+				form.elements.cshield_nonce.value = String( nonce );
 				form.submit();
 				return;
 			}

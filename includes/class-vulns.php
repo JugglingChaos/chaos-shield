@@ -2,10 +2,10 @@
 /**
  * Known vulnerability alerts and abandoned plugin warnings.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -19,10 +19,10 @@ defined( 'ABSPATH' ) || exit;
 final class Vulns {
 
 	const API          = 'https://www.wpvulnerability.net/';
-	const RESULT       = 'sshield_vulns';
-	const CACHE        = 'sshield_vuln_cache';
-	const SEEN_OPTION  = 'sshield_vulns_seen';
-	const REFRESH_HOOK = 'sshield_vuln_refresh';
+	const RESULT       = 'cshield_vulns';
+	const CACHE        = 'cshield_vuln_cache';
+	const SEEN_OPTION  = 'cshield_vulns_seen';
+	const REFRESH_HOOK = 'cshield_vuln_refresh';
 	const FRESH        = 72000;
 	const ABANDONED    = 63072000;
 
@@ -41,8 +41,8 @@ final class Vulns {
 	 * Drops the Wordfence key and feed matches kept by 1.2 to 1.4, then checks soon.
 	 */
 	public static function upgrade() {
-		if ( false !== Network::get_option( 'sshield_wf_key' ) || ( false === Network::get_option( self::CACHE ) && self::result() && ! isset( self::result()['stale'] ) ) ) {
-			Network::delete_option( 'sshield_wf_key' );
+		if ( false !== Network::get_option( 'cshield_wf_key' ) || ( false === Network::get_option( self::CACHE ) && self::result() && ! isset( self::result()['stale'] ) ) ) {
+			Network::delete_option( 'cshield_wf_key' );
 			Network::delete_option( self::RESULT );
 			Network::update_option( self::CACHE, array(), false );
 			self::schedule_soon();
@@ -216,7 +216,7 @@ final class Vulns {
 		$error = '';
 		if ( $failed ) {
 			/* translators: %s: error message. */
-			$error = sprintf( __( 'Some items could not be checked and will be retried: %s', 'sentinel-shield' ), $failed[0] );
+			$error = sprintf( __( 'Some items could not be checked and will be retried: %s', 'chaos-shield' ), $failed[0] );
 		}
 		$old = self::result();
 		Network::update_option(
@@ -232,7 +232,7 @@ final class Vulns {
 		);
 		if ( $failed && count( $failed ) === count( $installed ) ) {
 			Events::add( 'system', $error, '', array( 'severity' => Events::NOTICE ) );
-			return new \WP_Error( 'sshield_vuln_api', $error );
+			return new \WP_Error( 'cshield_vuln_api', $error );
 		}
 		if ( $pending ) {
 			return false;
@@ -270,7 +270,7 @@ final class Vulns {
 			self::API . $path . '/',
 			array(
 				'timeout'    => 8,
-				'user-agent' => 'SentinelShield/' . SSHIELD_VERSION,
+				'user-agent' => 'ChaosShield/' . CSHIELD_VERSION,
 				'headers'    => array( 'Accept' => 'application/json' ),
 			)
 		);
@@ -281,7 +281,7 @@ final class Vulns {
 		$data = json_decode( (string) wp_remote_retrieve_body( $response ), true );
 		if ( 200 !== $code || ! is_array( $data ) ) {
 			/* translators: %d: HTTP status code. */
-			return new \WP_Error( 'sshield_vuln_http', sprintf( __( 'The vulnerability database answered with HTTP %d.', 'sentinel-shield' ), $code ) );
+			return new \WP_Error( 'cshield_vuln_http', sprintf( __( 'The vulnerability database answered with HTTP %d.', 'chaos-shield' ), $code ) );
 		}
 		$body  = isset( $data['data'] ) && is_array( $data['data'] ) ? $data['data'] : array();
 		$vulns = array();
@@ -418,15 +418,15 @@ final class Vulns {
 		Events::add(
 			'vuln',
 			/* translators: %d: number of vulnerabilities. */
-			sprintf( _n( '%d new known vulnerability affects this site.', '%d new known vulnerabilities affect this site.', count( $new ), 'sentinel-shield' ), count( $new ) ),
+			sprintf( _n( '%d new known vulnerability affects this site.', '%d new known vulnerabilities affect this site.', count( $new ), 'chaos-shield' ), count( $new ) ),
 			'',
 			array( 'severity' => Events::CRITICAL )
 		);
 		Alerts::send(
 			'alert_vulns',
 			/* translators: %d: number of vulnerabilities. */
-			sprintf( _n( '%d known vulnerability on your site', '%d known vulnerabilities on your site', count( $new ), 'sentinel-shield' ), count( $new ) ),
-			__( 'Installed software on your site has publicly known security holes. Update it as soon as you can:', 'sentinel-shield' ) . "\n\n" . implode( "\n", $lines ),
+			sprintf( _n( '%d known vulnerability on your site', '%d known vulnerabilities on your site', count( $new ), 'chaos-shield' ), count( $new ) ),
+			__( 'Installed software on your site has publicly known security holes. Update it as soon as you can:', 'chaos-shield' ) . "\n\n" . implode( "\n", $lines ),
 			md5( implode( ',', wp_list_pluck( $new, 'id' ) ) )
 		);
 	}
@@ -440,16 +440,16 @@ final class Vulns {
 	public static function fix_text( array $item ) {
 		if ( ! empty( $item['patched_versions'] ) ) {
 			/* translators: %s: versions. */
-			return sprintf( __( 'fixed in %s', 'sentinel-shield' ), implode( ', ', $item['patched_versions'] ) );
+			return sprintf( __( 'fixed in %s', 'chaos-shield' ), implode( ', ', $item['patched_versions'] ) );
 		}
 		if ( ! empty( $item['after'] ) ) {
 			/* translators: %s: version. */
-			return sprintf( __( 'fixed in a release after %s', 'sentinel-shield' ), $item['after'] );
+			return sprintf( __( 'fixed in a release after %s', 'chaos-shield' ), $item['after'] );
 		}
 		if ( ! empty( $item['newest'] ) ) {
-			return __( 'update to the newest version', 'sentinel-shield' );
+			return __( 'update to the newest version', 'chaos-shield' );
 		}
-		return __( 'no fix released yet', 'sentinel-shield' );
+		return __( 'no fix released yet', 'chaos-shield' );
 	}
 
 	/**
@@ -460,13 +460,13 @@ final class Vulns {
 	 */
 	public static function severity_label( $code ) {
 		$labels = array(
-			'c' => __( 'Critical', 'sentinel-shield' ),
-			'h' => __( 'High', 'sentinel-shield' ),
-			'm' => __( 'Medium', 'sentinel-shield' ),
-			'l' => __( 'Low', 'sentinel-shield' ),
-			'n' => __( 'Info', 'sentinel-shield' ),
+			'c' => __( 'Critical', 'chaos-shield' ),
+			'h' => __( 'High', 'chaos-shield' ),
+			'm' => __( 'Medium', 'chaos-shield' ),
+			'l' => __( 'Low', 'chaos-shield' ),
+			'n' => __( 'Info', 'chaos-shield' ),
 		);
-		return isset( $labels[ $code ] ) ? $labels[ $code ] : __( 'Vulnerable', 'sentinel-shield' );
+		return isset( $labels[ $code ] ) ? $labels[ $code ] : __( 'Vulnerable', 'chaos-shield' );
 	}
 
 	/**

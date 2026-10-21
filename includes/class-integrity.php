@@ -2,10 +2,10 @@
 /**
  * Fingerprints of critical files, checked every hour.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -20,9 +20,9 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Integrity {
 
-	const OPTION   = 'sshield_integrity';
-	const HOOK     = 'sshield_integrity_check';
-	const ACTION   = 'sshield_integrity';
+	const OPTION   = 'cshield_integrity';
+	const HOOK     = 'cshield_integrity_check';
+	const ACTION   = 'cshield_integrity';
 	const MAX_TEXT = 65536;
 
 	/**
@@ -129,7 +129,7 @@ final class Integrity {
 		 *
 		 * @param array $list Name => path, group, text, appear.
 		 */
-		return (array) apply_filters( 'sshield_critical_files', $list );
+		return (array) apply_filters( 'cshield_critical_files', $list );
 	}
 
 	/**
@@ -139,11 +139,11 @@ final class Integrity {
 	 */
 	public static function groups() {
 		return array(
-			'config' => __( 'Site and server config', 'sentinel-shield' ),
-			'core'   => __( 'WordPress core, runs on every request', 'sentinel-shield' ),
-			'dropin' => __( 'Drop-in, loads before plugins', 'sentinel-shield' ),
-			'mu'     => __( 'Must-use plugin, always runs', 'sentinel-shield' ),
-			'theme'  => __( 'Active theme', 'sentinel-shield' ),
+			'config' => __( 'Site and server config', 'chaos-shield' ),
+			'core'   => __( 'WordPress core, runs on every request', 'chaos-shield' ),
+			'dropin' => __( 'Drop-in, loads before plugins', 'chaos-shield' ),
+			'mu'     => __( 'Must-use plugin, always runs', 'chaos-shield' ),
+			'theme'  => __( 'Active theme', 'chaos-shield' ),
 		);
 	}
 
@@ -281,7 +281,7 @@ final class Integrity {
 			Events::add(
 				'scan',
 				/* translators: %s: list of files. */
-				sprintf( __( 'Critical file changed: %s.', 'sentinel-shield' ), implode( ', ', $fresh ) ),
+				sprintf( __( 'Critical file changed: %s.', 'chaos-shield' ), implode( ', ', $fresh ) ),
 				'',
 				array(
 					'severity' => Events::CRITICAL,
@@ -292,8 +292,8 @@ final class Integrity {
 			Alerts::send(
 				'alert_scan',
 				/* translators: %d: number of files. */
-				sprintf( _n( '%d critical file changed', '%d critical files changed', count( $fresh ), 'sentinel-shield' ), count( $fresh ) ),
-				__( 'These files no longer match their accepted fingerprint. If you did not change them, treat this as a break-in:', 'sentinel-shield' ) . "\n\n" . implode( "\n", $lines ) . "\n\n" . Network::admin_url( 'admin.php?page=' . Admin::SLUG . '&tab=scan#sshield-integrity' ),
+				sprintf( _n( '%d critical file changed', '%d critical files changed', count( $fresh ), 'chaos-shield' ), count( $fresh ) ),
+				__( 'These files no longer match their accepted fingerprint. If you did not change them, treat this as a break-in:', 'chaos-shield' ) . "\n\n" . implode( "\n", $lines ) . "\n\n" . Network::admin_url( 'admin.php?page=' . Admin::SLUG . '&tab=scan#cshield-integrity' ),
 				'integrity-' . md5( wp_json_encode( wp_list_pluck( array_intersect_key( $state['files'], array_flip( $fresh ) ), 'now' ) ) )
 			);
 		}
@@ -310,13 +310,13 @@ final class Integrity {
 		$base = $entry['base'];
 		$now  = $entry['now'];
 		if ( empty( $now['exists'] ) ) {
-			return __( 'deleted', 'sentinel-shield' );
+			return __( 'deleted', 'chaos-shield' );
 		}
 		if ( empty( $base['exists'] ) ) {
-			return __( 'new file', 'sentinel-shield' );
+			return __( 'new file', 'chaos-shield' );
 		}
 		/* translators: 1: old size in bytes, 2: new size in bytes. */
-		return sprintf( __( 'contents changed (%1$s to %2$s bytes)', 'sentinel-shield' ), number_format_i18n( $base['size'] ), number_format_i18n( $now['size'] ) );
+		return sprintf( __( 'contents changed (%1$s to %2$s bytes)', 'chaos-shield' ), number_format_i18n( $base['size'] ), number_format_i18n( $now['size'] ) );
 	}
 
 	/**
@@ -488,12 +488,12 @@ final class Integrity {
 		$state = self::state();
 		$files = self::files();
 		if ( ! isset( $state['files'][ $name ], $files[ $name ] ) || empty( $state['files'][ $name ]['now'] ) ) {
-			return new \WP_Error( 'sshield_int_none', __( 'That file has nothing to put back.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_int_none', __( 'That file has nothing to put back.', 'chaos-shield' ) );
 		}
 		$base = $state['files'][ $name ]['base'];
 		$path = $files[ $name ]['path'];
 		if ( ! empty( $base['exists'] ) && ! isset( $base['text'] ) ) {
-			return new \WP_Error( 'sshield_int_text', __( 'Only config files can be put back from here. Use a restore point or a repair from the scan for this one.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_int_text', __( 'Only config files can be put back from here. Use a restore point or a repair from the scan for this one.', 'chaos-shield' ) );
 		}
 		if ( is_file( $path ) ) {
 			$point = Restore_Points::create( 'repair', $name, array( $path ), array(), false );
@@ -508,12 +508,12 @@ final class Integrity {
 			$ok = false !== file_put_contents( $path, $base['text'] ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Puts back the accepted copy on request.
 		}
 		if ( ! $ok ) {
-			return new \WP_Error( 'sshield_int_write', __( 'Could not write the file. Check its permissions.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_int_write', __( 'Could not write the file. Check its permissions.', 'chaos-shield' ) );
 		}
 		Events::add(
 			'scan',
 			/* translators: %s: file name. */
-			sprintf( __( 'Put back the accepted version of %s.', 'sentinel-shield' ), $name ),
+			sprintf( __( 'Put back the accepted version of %s.', 'chaos-shield' ), $name ),
 			Request::ip(),
 			array(
 				'severity' => Events::NOTICE,
@@ -545,12 +545,12 @@ final class Integrity {
 		}
 		nocache_headers();
 		header( 'Content-Type: application/json; charset=utf-8' );
-		header( 'Content-Disposition: attachment; filename="sentinel-shield-fingerprints-' . gmdate( 'Y-m-d' ) . '.json"' );
+		header( 'Content-Disposition: attachment; filename="chaos-shield-fingerprints-' . gmdate( 'Y-m-d' ) . '.json"' );
 		echo wp_json_encode( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- A JSON download.
 			array(
 				'site'    => network_home_url(),
 				'made'    => gmdate( 'c' ),
-				'version' => SSHIELD_VERSION,
+				'version' => CSHIELD_VERSION,
 				'files'   => $out,
 			),
 			JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES
@@ -563,7 +563,7 @@ final class Integrity {
 	 */
 	public static function handle() {
 		if ( ! current_user_can( Network::cap() ) ) {
-			wp_die( esc_html__( 'You are not allowed to do that.', 'sentinel-shield' ), 403 );
+			wp_die( esc_html__( 'You are not allowed to do that.', 'chaos-shield' ), 403 );
 		}
 		check_admin_referer( self::ACTION );
 		$op   = isset( $_POST['op'] ) ? sanitize_key( wp_unslash( $_POST['op'] ) ) : '';
@@ -577,9 +577,9 @@ final class Integrity {
 				'scan',
 				'accept' === $op
 					/* translators: %s: file name. */
-					? sprintf( __( 'Accepted the change to %s as the new fingerprint.', 'sentinel-shield' ), $name )
+					? sprintf( __( 'Accepted the change to %s as the new fingerprint.', 'chaos-shield' ), $name )
 					/* translators: %d: number of files. */
-					: sprintf( __( 'Accepted %d changed critical files as their new fingerprints.', 'sentinel-shield' ), $count ),
+					: sprintf( __( 'Accepted %d changed critical files as their new fingerprints.', 'chaos-shield' ), $count ),
 				Request::ip(),
 				array(
 					'severity' => Events::NOTICE,
@@ -591,7 +591,7 @@ final class Integrity {
 		} elseif ( 'restore' === $op ) {
 			$done = self::restore( $name );
 			if ( is_wp_error( $done ) ) {
-				Network::set_transient( 'sshield_error_' . get_current_user_id(), $done->get_error_message(), MINUTE_IN_SECONDS );
+				Network::set_transient( 'cshield_error_' . get_current_user_id(), $done->get_error_message(), MINUTE_IN_SECONDS );
 				$note = '';
 			} else {
 				$note = 'int_restored';
@@ -599,7 +599,7 @@ final class Integrity {
 		} else {
 			self::check();
 		}
-		wp_safe_redirect( Admin::url( 'scan', $note ? array( 'sshield_notice' => $note ) : array() ) . '#sshield-integrity' );
+		wp_safe_redirect( Admin::url( 'scan', $note ? array( 'cshield_notice' => $note ) : array() ) . '#cshield-integrity' );
 		exit;
 	}
 }

@@ -2,10 +2,10 @@
 /**
  * Database backup download and settings export and import.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -28,11 +28,11 @@ final class Backup {
 		global $wpdb;
 		$tables = $wpdb->get_col( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $wpdb->base_prefix ) . '%' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- Backup reads every table.
 		if ( ! $tables ) {
-			return new \WP_Error( 'sshield_db_none', __( 'No WordPress tables were found to back up.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_db_none', __( 'No WordPress tables were found to back up.', 'chaos-shield' ) );
 		}
 		Events::add(
 			'system',
-			__( 'A database backup was downloaded.', 'sentinel-shield' ),
+			__( 'A database backup was downloaded.', 'chaos-shield' ),
 			Request::ip(),
 			array(
 				'severity' => Events::NOTICE,
@@ -56,7 +56,7 @@ final class Backup {
 		$out = static function ( $text ) use ( $gzip ) {
 			echo $gzip ? deflate_add( $gzip, $text, ZLIB_NO_FLUSH ) : $text; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- A file download, not HTML.
 		};
-		$out( "-- Sentinel Shield database backup\n-- Site: " . network_home_url() . "\n-- Made: " . gmdate( 'c' ) . "\n\nSET NAMES " . ( $wpdb->charset ? $wpdb->charset : 'utf8mb4' ) . ";\nSET FOREIGN_KEY_CHECKS = 0;\nSET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO';\n\n" );
+		$out( "-- Chaos Shield database backup\n-- Site: " . network_home_url() . "\n-- Made: " . gmdate( 'c' ) . "\n\nSET NAMES " . ( $wpdb->charset ? $wpdb->charset : 'utf8mb4' ) . ";\nSET FOREIGN_KEY_CHECKS = 0;\nSET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO';\n\n" );
 		foreach ( $tables as $table ) {
 			$table  = (string) $table;
 			$quoted = '`' . str_replace( '`', '``', $table ) . '`';
@@ -94,18 +94,18 @@ final class Backup {
 	}
 
 	/**
-	 * Downloads the Sentinel Shield settings as JSON.
+	 * Downloads the Chaos Shield settings as JSON.
 	 */
 	public static function export_settings() {
-		Events::add( 'settings', __( 'Sentinel Shield settings were exported.', 'sentinel-shield' ), Request::ip(), array( 'action' => 'data.export_settings' ) );
+		Events::add( 'settings', __( 'Chaos Shield settings were exported.', 'chaos-shield' ), Request::ip(), array( 'action' => 'data.export_settings' ) );
 		nocache_headers();
 		header( 'Content-Type: application/json; charset=utf-8' );
-		header( 'Content-Disposition: attachment; filename="sentinel-shield-settings-' . gmdate( 'Y-m-d' ) . '.json"' );
+		header( 'Content-Disposition: attachment; filename="chaos-shield-settings-' . gmdate( 'Y-m-d' ) . '.json"' );
 		header( 'X-Content-Type-Options: nosniff' );
 		echo wp_json_encode( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- A JSON download.
 			array(
-				'plugin'   => 'sentinel-shield',
-				'version'  => SSHIELD_VERSION,
+				'plugin'   => 'chaos-shield',
+				'version'  => CSHIELD_VERSION,
 				'exported' => gmdate( 'c' ),
 				'site'     => network_home_url(),
 				'settings' => Network::get_option( Settings::OPTION, array() ),
@@ -126,21 +126,21 @@ final class Backup {
 	 * @return true|\WP_Error
 	 */
 	public static function import_settings( array $upload ) {
-		$bad = new \WP_Error( 'sshield_import', __( 'That file is not a Sentinel Shield settings export.', 'sentinel-shield' ) );
+		$bad = new \WP_Error( 'cshield_import', __( 'That file is not a Chaos Shield settings export.', 'chaos-shield' ) );
 		if ( empty( $upload['tmp_name'] ) || ! empty( $upload['error'] ) || ! is_uploaded_file( $upload['tmp_name'] ) || (int) $upload['size'] > self::MAX_IMPORT ) {
 			return $bad;
 		}
 		$data = json_decode( (string) file_get_contents( $upload['tmp_name'] ), true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reads the uploaded file.
-		if ( ! is_array( $data ) || 'sentinel-shield' !== ( isset( $data['plugin'] ) ? $data['plugin'] : '' ) || empty( $data['settings'] ) || ! is_array( $data['settings'] ) ) {
+		if ( ! is_array( $data ) || 'chaos-shield' !== ( isset( $data['plugin'] ) ? $data['plugin'] : '' ) || empty( $data['settings'] ) || ! is_array( $data['settings'] ) ) {
 			return $bad;
 		}
 		$clean = self::clean( $data['settings'] );
-		Restore_Points::create( 'import', __( 'Sentinel Shield settings', 'sentinel-shield' ) );
+		Restore_Points::create( 'import', __( 'Chaos Shield settings', 'chaos-shield' ) );
 		Settings::import( $clean );
 		Events::add(
 			'settings',
 			/* translators: %s: site the settings came from. */
-			sprintf( __( 'Sentinel Shield settings were imported from %s.', 'sentinel-shield' ), isset( $data['site'] ) ? esc_url_raw( (string) $data['site'] ) : '?' ),
+			sprintf( __( 'Chaos Shield settings were imported from %s.', 'chaos-shield' ), isset( $data['site'] ) ? esc_url_raw( (string) $data['site'] ) : '?' ),
 			Request::ip(),
 			array(
 				'severity' => Events::NOTICE,

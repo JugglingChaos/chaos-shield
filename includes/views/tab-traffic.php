@@ -2,57 +2,57 @@
 /**
  * Live traffic tab.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
 // phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only view state.
-$sshield_kind    = isset( $_GET['kind'] ) ? sanitize_key( $_GET['kind'] ) : 'all';
-$sshield_country = isset( $_GET['country'] ) ? strtoupper( sanitize_key( $_GET['country'] ) ) : '';
+$cshield_kind    = isset( $_GET['kind'] ) ? sanitize_key( $_GET['kind'] ) : 'all';
+$cshield_country = isset( $_GET['country'] ) ? strtoupper( sanitize_key( $_GET['country'] ) ) : '';
 // phpcs:enable
-$sshield_country = preg_match( '/^[A-Z]{2}$/', $sshield_country ) ? $sshield_country : '';
-$sshield_kind    = in_array( $sshield_kind, Traffic::kinds(), true ) ? $sshield_kind : 'all';
-$sshield_on      = Settings::enabled( 'live_traffic' );
-$sshield_rows    = $sshield_on ? Traffic::rows( $sshield_kind, 0, 100, $sshield_country ) : array();
-$sshield_counts  = $sshield_on ? Traffic::counts() : array();
-$sshield_labels  = Traffic::labels();
-$sshield_tf      = Threat_Feed::status();
-$sshield_stats   = Login_Guard::stats();
-$sshield_world   = Traffic::world();
-$sshield_geo     = $sshield_on ? Traffic::by_country() : array();
+$cshield_country = preg_match( '/^[A-Z]{2}$/', $cshield_country ) ? $cshield_country : '';
+$cshield_kind    = in_array( $cshield_kind, Traffic::kinds(), true ) ? $cshield_kind : 'all';
+$cshield_on      = Settings::enabled( 'live_traffic' );
+$cshield_rows    = $cshield_on ? Traffic::rows( $cshield_kind, 0, 100, $cshield_country ) : array();
+$cshield_counts  = $cshield_on ? Traffic::counts() : array();
+$cshield_labels  = Traffic::labels();
+$cshield_tf      = Threat_Feed::status();
+$cshield_stats   = Login_Guard::stats();
+$cshield_world   = Traffic::world();
+$cshield_geo     = $cshield_on ? Traffic::by_country() : array();
 ?>
-<div class="sshield-grid">
-	<?php if ( $sshield_on ) : ?>
-		<?php require SSHIELD_DIR . 'includes/views/traffic-map.php'; ?>
+<div class="cshield-grid">
+	<?php if ( $cshield_on ) : ?>
+		<?php require CSHIELD_DIR . 'includes/views/traffic-map.php'; ?>
 	<?php endif; ?>
-	<section id="sshield-traffic" class="sshield-card sshield-card--full sshield-traffic" data-kind="<?php echo esc_attr( $sshield_kind ); ?>" data-country="<?php echo esc_attr( $sshield_country ); ?>" data-last="<?php echo esc_attr( $sshield_rows ? $sshield_rows[0]['id'] : 0 ); ?>">
-		<div class="sshield-card__head">
+	<section id="cshield-traffic" class="cshield-card cshield-card--full cshield-traffic" data-kind="<?php echo esc_attr( $cshield_kind ); ?>" data-country="<?php echo esc_attr( $cshield_country ); ?>" data-last="<?php echo esc_attr( $cshield_rows ? $cshield_rows[0]['id'] : 0 ); ?>">
+		<div class="cshield-card__head">
 			<div>
-				<h2><?php esc_html_e( 'Live traffic', 'sentinel-shield' ); ?></h2>
+				<h2><?php esc_html_e( 'Live traffic', 'chaos-shield' ); ?></h2>
 				<p>
 					<?php
-					if ( ! $sshield_on ) {
-						esc_html_e( 'Live traffic is switched off under Hardening.', 'sentinel-shield' );
+					if ( ! $cshield_on ) {
+						esc_html_e( 'Live traffic is switched off under Hardening.', 'chaos-shield' );
 					} elseif ( 'all' === Settings::get( 'traffic_mode' ) ) {
-						esc_html_e( 'Every visit from the last 24 hours. New requests appear on their own.', 'sentinel-shield' );
+						esc_html_e( 'Every visit from the last 24 hours. New requests appear on their own.', 'chaos-shield' );
 					} else {
-						esc_html_e( 'Blocked requests, logins and missing pages from the last 24 hours. New requests appear on their own. To see every visit, change the mode under Hardening.', 'sentinel-shield' );
+						esc_html_e( 'Blocked requests, logins and missing pages from the last 24 hours. New requests appear on their own. To see every visit, change the mode under Hardening.', 'chaos-shield' );
 					}
 					?>
 				</p>
 			</div>
-			<?php if ( $sshield_on ) : ?>
-				<label class="sshield-live"><input type="checkbox" class="sshield-live__toggle" checked> <span class="sshield-live__dot" aria-hidden="true"></span><?php esc_html_e( 'Live', 'sentinel-shield' ); ?></label>
+			<?php if ( $cshield_on ) : ?>
+				<label class="cshield-live"><input type="checkbox" class="cshield-live__toggle" checked> <span class="cshield-live__dot" aria-hidden="true"></span><?php esc_html_e( 'Live', 'chaos-shield' ); ?></label>
 			<?php endif; ?>
 		</div>
 
-		<?php if ( $sshield_on ) : ?>
-			<nav class="sshield-chips" aria-label="<?php esc_attr_e( 'Filter traffic', 'sentinel-shield' ); ?>">
-				<a href="<?php echo esc_url( Admin::url( 'traffic', $sshield_country ? array( 'country' => $sshield_country ) : array() ) ); ?>" class="sshield-chip<?php echo 'all' === $sshield_kind ? ' is-active' : ''; ?>"><?php esc_html_e( 'All', 'sentinel-shield' ); ?> <span data-count="all"><?php echo esc_html( number_format_i18n( array_sum( $sshield_counts ) ) ); ?></span></a>
-				<?php foreach ( $sshield_labels as $sshield_k => $sshield_label ) : ?>
+		<?php if ( $cshield_on ) : ?>
+			<nav class="cshield-chips" aria-label="<?php esc_attr_e( 'Filter traffic', 'chaos-shield' ); ?>">
+				<a href="<?php echo esc_url( Admin::url( 'traffic', $cshield_country ? array( 'country' => $cshield_country ) : array() ) ); ?>" class="cshield-chip<?php echo 'all' === $cshield_kind ? ' is-active' : ''; ?>"><?php esc_html_e( 'All', 'chaos-shield' ); ?> <span data-count="all"><?php echo esc_html( number_format_i18n( array_sum( $cshield_counts ) ) ); ?></span></a>
+				<?php foreach ( $cshield_labels as $cshield_k => $cshield_label ) : ?>
 					<a href="
 					<?php
 					echo esc_url(
@@ -60,69 +60,69 @@ $sshield_geo     = $sshield_on ? Traffic::by_country() : array();
 							'traffic',
 							array_filter(
 								array(
-									'kind'    => $sshield_k,
-									'country' => $sshield_country,
+									'kind'    => $cshield_k,
+									'country' => $cshield_country,
 								)
 							)
 						)
 					);
 					?>
-								" class="sshield-chip<?php echo $sshield_k === $sshield_kind ? ' is-active' : ''; ?>"><?php echo esc_html( $sshield_label ); ?> <span data-count="<?php echo esc_attr( $sshield_k ); ?>"><?php echo esc_html( number_format_i18n( $sshield_counts[ $sshield_k ] ) ); ?></span></a>
+								" class="cshield-chip<?php echo $cshield_k === $cshield_kind ? ' is-active' : ''; ?>"><?php echo esc_html( $cshield_label ); ?> <span data-count="<?php echo esc_attr( $cshield_k ); ?>"><?php echo esc_html( number_format_i18n( $cshield_counts[ $cshield_k ] ) ); ?></span></a>
 				<?php endforeach; ?>
 			</nav>
-			<?php if ( $sshield_country ) : ?>
-				<p class="sshield-filter-note">
+			<?php if ( $cshield_country ) : ?>
+				<p class="cshield-filter-note">
 					<?php
 					/* translators: %s: country name. */
-					echo esc_html( sprintf( __( 'Only traffic from %s.', 'sentinel-shield' ), Geo_Db::name( $sshield_country, isset( $sshield_world['shapes'][ $sshield_country ] ) ? $sshield_world['shapes'][ $sshield_country ]['n'] : ( isset( $sshield_world['dots'][ $sshield_country ] ) ? $sshield_world['dots'][ $sshield_country ]['n'] : $sshield_country ) ) ) );
+					echo esc_html( sprintf( __( 'Only traffic from %s.', 'chaos-shield' ), Geo_Db::name( $cshield_country, isset( $cshield_world['shapes'][ $cshield_country ] ) ? $cshield_world['shapes'][ $cshield_country ]['n'] : ( isset( $cshield_world['dots'][ $cshield_country ] ) ? $cshield_world['dots'][ $cshield_country ]['n'] : $cshield_country ) ) ) );
 					?>
-					<a class="sshield-link" href="<?php echo esc_url( Admin::url( 'traffic', 'all' !== $sshield_kind ? array( 'kind' => $sshield_kind ) : array() ) ); ?>"><?php esc_html_e( 'Show every country', 'sentinel-shield' ); ?></a>
+					<a class="cshield-link" href="<?php echo esc_url( Admin::url( 'traffic', 'all' !== $cshield_kind ? array( 'kind' => $cshield_kind ) : array() ) ); ?>"><?php esc_html_e( 'Show every country', 'chaos-shield' ); ?></a>
 				</p>
 			<?php endif; ?>
-			<div class="sshield-table-wrap">
-				<table class="sshield-table sshield-table--traffic">
-					<thead><tr><th><?php esc_html_e( 'Type', 'sentinel-shield' ); ?></th><th><?php esc_html_e( 'Time', 'sentinel-shield' ); ?></th><th><?php esc_html_e( 'Visitor', 'sentinel-shield' ); ?></th><th><?php esc_html_e( 'Request', 'sentinel-shield' ); ?></th><th><?php esc_html_e( 'Status', 'sentinel-shield' ); ?></th><th></th></tr></thead>
+			<div class="cshield-table-wrap">
+				<table class="cshield-table cshield-table--traffic">
+					<thead><tr><th><?php esc_html_e( 'Type', 'chaos-shield' ); ?></th><th><?php esc_html_e( 'Time', 'chaos-shield' ); ?></th><th><?php esc_html_e( 'Visitor', 'chaos-shield' ); ?></th><th><?php esc_html_e( 'Request', 'chaos-shield' ); ?></th><th><?php esc_html_e( 'Status', 'chaos-shield' ); ?></th><th></th></tr></thead>
 					<tbody>
 						<?php
-						foreach ( $sshield_rows as $sshield_row ) {
-							echo Traffic::row_html( $sshield_row ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in row_html().
+						foreach ( $cshield_rows as $cshield_row ) {
+							echo Traffic::row_html( $cshield_row ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in row_html().
 						}
 						?>
 					</tbody>
 				</table>
 			</div>
-			<p class="sshield-empty"<?php echo $sshield_rows ? ' hidden' : ''; ?>><?php esc_html_e( 'Nothing recorded yet. Requests show up here as they happen.', 'sentinel-shield' ); ?></p>
+			<p class="cshield-empty"<?php echo $cshield_rows ? ' hidden' : ''; ?>><?php esc_html_e( 'Nothing recorded yet. Requests show up here as they happen.', 'chaos-shield' ); ?></p>
 		<?php endif; ?>
 	</section>
 
-	<section class="sshield-card">
-		<h2><?php esc_html_e( 'Threat blocklist', 'sentinel-shield' ); ?></h2>
-		<p class="sshield-stat"><?php echo esc_html( number_format_i18n( isset( $sshield_stats['threat_blocks'] ) ? $sshield_stats['threat_blocks'] : 0 ) ); ?></p>
-		<p class="sshield-small">
+	<section class="cshield-card">
+		<h2><?php esc_html_e( 'Threat blocklist', 'chaos-shield' ); ?></h2>
+		<p class="cshield-stat"><?php echo esc_html( number_format_i18n( isset( $cshield_stats['threat_blocks'] ) ? $cshield_stats['threat_blocks'] : 0 ) ); ?></p>
+		<p class="cshield-small">
 			<?php
 			if ( ! Settings::enabled( 'threat_feed' ) ) {
-				esc_html_e( 'Requests stopped by the threat blocklist in the last day. It is switched off under Hardening.', 'sentinel-shield' );
+				esc_html_e( 'Requests stopped by the threat blocklist in the last day. It is switched off under Hardening.', 'chaos-shield' );
 			} else {
-				$sshield_names = array();
-				foreach ( Threat_Feed::sources() as $sshield_sk => $sshield_src ) {
-					if ( $sshield_src['on'] && ! empty( $sshield_tf['counts'][ $sshield_sk ] ) ) {
+				$cshield_names = array();
+				foreach ( Threat_Feed::sources() as $cshield_sk => $cshield_src ) {
+					if ( $cshield_src['on'] && ! empty( $cshield_tf['counts'][ $cshield_sk ] ) ) {
 						/* translators: 1: list name, 2: number of networks. */
-						$sshield_names[] = sprintf( __( '%1$s (%2$s networks)', 'sentinel-shield' ), $sshield_src['label'], number_format_i18n( $sshield_tf['counts'][ $sshield_sk ] ) );
+						$cshield_names[] = sprintf( __( '%1$s (%2$s networks)', 'chaos-shield' ), $cshield_src['label'], number_format_i18n( $cshield_tf['counts'][ $cshield_sk ] ) );
 					}
 				}
 				echo esc_html(
-					$sshield_names
+					$cshield_names
 						/* translators: %s: list names. */
-						? sprintf( __( 'Requests stopped by the threat blocklist in the last day. Lists in use: %s.', 'sentinel-shield' ), implode( ', ', $sshield_names ) )
-						: __( 'Requests stopped by the threat blocklist in the last day. The lists have not been downloaded yet.', 'sentinel-shield' )
+						? sprintf( __( 'Requests stopped by the threat blocklist in the last day. Lists in use: %s.', 'chaos-shield' ), implode( ', ', $cshield_names ) )
+						: __( 'Requests stopped by the threat blocklist in the last day. The lists have not been downloaded yet.', 'chaos-shield' )
 				);
 			}
 			?>
 		</p>
 	</section>
-	<section class="sshield-card">
-		<h2><?php esc_html_e( 'Firewall', 'sentinel-shield' ); ?></h2>
-		<p class="sshield-stat"><?php echo esc_html( number_format_i18n( isset( $sshield_stats['firewall_blocks'] ) ? $sshield_stats['firewall_blocks'] : 0 ) ); ?></p>
-		<p class="sshield-small"><?php esc_html_e( 'Requests stopped in the last day by the firewall rules, bans and the block list.', 'sentinel-shield' ); ?></p>
+	<section class="cshield-card">
+		<h2><?php esc_html_e( 'Firewall', 'chaos-shield' ); ?></h2>
+		<p class="cshield-stat"><?php echo esc_html( number_format_i18n( isset( $cshield_stats['firewall_blocks'] ) ? $cshield_stats['firewall_blocks'] : 0 ) ); ?></p>
+		<p class="cshield-small"><?php esc_html_e( 'Requests stopped in the last day by the firewall rules, bans and the block list.', 'chaos-shield' ); ?></p>
 	</section>
 </div>

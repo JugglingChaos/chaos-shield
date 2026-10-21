@@ -2,10 +2,10 @@
 /**
  * Under attack mode: a quick browser check in front of the site during a flood.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -20,10 +20,10 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Attack_Mode {
 
-	const OPTION = 'sshield_attack';
-	const SECRET = 'sshield_attack_secret';
-	const COOKIE = 'sshield_pass';
-	const EVENT  = 'sshield_attack_changed';
+	const OPTION = 'cshield_attack';
+	const SECRET = 'cshield_attack_secret';
+	const COOKIE = 'cshield_pass';
+	const EVENT  = 'cshield_attack_changed';
 	const LASTS  = HOUR_IN_SECONDS;
 	const PASS   = 12 * HOUR_IN_SECONDS;
 	const ZEROS  = 4;
@@ -154,10 +154,10 @@ final class Attack_Mode {
 			$state = self::state();
 			Alerts::send(
 				'alert_attack',
-				__( 'Your site is under attack', 'sentinel-shield' ),
+				__( 'Your site is under attack', 'chaos-shield' ),
 				sprintf(
 					/* translators: 1: site address, 2: what was seen. */
-					__( "Under attack mode is now on for %1\$s: %2\$s\n\nVisitors see a short browser check before each first page view, and bots are kept out. It switches itself off an hour after the flood stops; you can switch it off on the Edge tab.\n\nA flood large enough to fill your server's connection has to be stopped before it reaches the server. Connect Cloudflare on the Edge tab to switch on its own Under Attack mode at the same time.", 'sentinel-shield' ),
+					__( "Under attack mode is now on for %1\$s: %2\$s\n\nVisitors see a short browser check before each first page view, and bots are kept out. It switches itself off an hour after the flood stops; you can switch it off on the Edge tab.\n\nA flood large enough to fill your server's connection has to be stopped before it reaches the server. Connect Cloudflare on the Edge tab to switch on its own Under Attack mode at the same time.", 'chaos-shield' ),
 					home_url(),
 					$state['reason']
 				),
@@ -169,7 +169,7 @@ final class Attack_Mode {
 		 *
 		 * @param bool $on Whether it is on now.
 		 */
-		do_action( 'sshield_attack_mode', $on );
+		do_action( 'cshield_attack_mode', $on );
 	}
 
 	/**
@@ -180,7 +180,7 @@ final class Attack_Mode {
 			return;
 		}
 		$limit = (int) Settings::get( 'attack_threshold' );
-		$count = self::count( 'sshield_atk_' . (int) floor( time() / 60 ) );
+		$count = self::count( 'cshield_atk_' . (int) floor( time() / 60 ) );
 		if ( $limit <= 0 || $count < $limit ) {
 			return;
 		}
@@ -204,8 +204,8 @@ final class Attack_Mode {
 	 */
 	private static function count( $key ) {
 		if ( wp_using_ext_object_cache() ) {
-			wp_cache_add( $key, 0, 'sshield', 2 * MINUTE_IN_SECONDS );
-			return (int) wp_cache_incr( $key, 1, 'sshield' );
+			wp_cache_add( $key, 0, 'cshield', 2 * MINUTE_IN_SECONDS );
+			return (int) wp_cache_incr( $key, 1, 'cshield' );
 		}
 		$value = (int) Network::get_transient( $key ) + 1;
 		Network::set_transient( $key, $value, 2 * MINUTE_IN_SECONDS );
@@ -328,9 +328,9 @@ final class Attack_Mode {
 			return;
 		}
 		// phpcs:disable WordPress.Security.NonceVerification.Missing -- The challenge is signed and checked in solved().
-		if ( isset( $_POST['sshield_pow'], $_POST['sshield_nonce'] ) ) {
-			$challenge = sanitize_text_field( wp_unslash( $_POST['sshield_pow'] ) );
-			$nonce     = sanitize_text_field( wp_unslash( $_POST['sshield_nonce'] ) );
+		if ( isset( $_POST['cshield_pow'], $_POST['cshield_nonce'] ) ) {
+			$challenge = sanitize_text_field( wp_unslash( $_POST['cshield_pow'] ) );
+			$nonce     = sanitize_text_field( wp_unslash( $_POST['cshield_nonce'] ) );
 			// phpcs:enable
 			if ( self::solved( $challenge, $nonce ) ) {
 				$expires = time() + self::PASS;
@@ -376,23 +376,23 @@ final class Attack_Mode {
 			header( 'Content-Type: text/html; charset=utf-8' );
 		}
 		$site  = wp_specialchars_decode( (string) get_option( 'blogname' ), ENT_QUOTES );
-		$title = __( 'Checking your browser', 'sentinel-shield' );
+		$title = __( 'Checking your browser', 'chaos-shield' );
 		$data  = array(
 			'c'     => self::challenge(),
 			'zeros' => self::ZEROS,
-			'slow'  => __( 'Still checking. This can take a few seconds on older devices.', 'sentinel-shield' ),
+			'slow'  => __( 'Still checking. This can take a few seconds on older devices.', 'chaos-shield' ),
 		);
 		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Every value below is escaped where it is built.
 		echo '<!doctype html><html lang="' . esc_attr( (string) get_bloginfo( 'language' ) ) . '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex">'
 			. '<title>' . esc_html( $title ) . '</title><style>' . Help::asset( 'css' ) . '.ssh-wait{display:flex;align-items:center;gap:12px;margin:18px 0 4px}.ssh-spin{width:22px;height:22px;border-radius:50%;border:3px solid var(--ssh-line);border-top-color:var(--ssh-accent);animation:ssh-spin .8s linear infinite}@keyframes ssh-spin{to{transform:rotate(360deg)}}@media (prefers-reduced-motion:reduce){.ssh-spin{animation:none}}</style></head>'
 			. '<body class="ssh-page" style="--ssh-accent:' . esc_attr( (string) Settings::get( 'help_color' ) ) . '"><main class="ssh-card">'
 			. '<p class="ssh-site">' . esc_html( $site ) . '</p>'
-			. '<h1>' . esc_html( $title ) . '</h1><p class="ssh-lead">' . esc_html__( 'The site is getting a lot of unusual traffic, so it checks that you are a person with a real browser. This happens once and takes about a second.', 'sentinel-shield' ) . '</p>'
-			. '<form method="post" id="ssh-pow"><input type="hidden" name="sshield_pow" value="' . esc_attr( $data['c'] ) . '"><input type="hidden" name="sshield_nonce" value=""></form>'
-			. '<div class="ssh-wait" role="status"><span class="ssh-spin" aria-hidden="true"></span><span id="ssh-pow-msg">' . esc_html__( 'Checking…', 'sentinel-shield' ) . '</span></div>'
-			. '<noscript><p class="ssh-lead">' . esc_html__( 'Turn on JavaScript and reload the page to continue.', 'sentinel-shield' ) . '</p></noscript>'
-			. '<p class="ssh-foot">' . esc_html__( 'Protected by Sentinel Shield', 'sentinel-shield' ) . '</p></main>'
-			. '<script>window.sshieldPow=' . wp_json_encode( $data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT ) . ';</script>'
+			. '<h1>' . esc_html( $title ) . '</h1><p class="ssh-lead">' . esc_html__( 'The site is getting a lot of unusual traffic, so it checks that you are a person with a real browser. This happens once and takes about a second.', 'chaos-shield' ) . '</p>'
+			. '<form method="post" id="ssh-pow"><input type="hidden" name="cshield_pow" value="' . esc_attr( $data['c'] ) . '"><input type="hidden" name="cshield_nonce" value=""></form>'
+			. '<div class="ssh-wait" role="status"><span class="ssh-spin" aria-hidden="true"></span><span id="ssh-pow-msg">' . esc_html__( 'Checking…', 'chaos-shield' ) . '</span></div>'
+			. '<noscript><p class="ssh-lead">' . esc_html__( 'Turn on JavaScript and reload the page to continue.', 'chaos-shield' ) . '</p></noscript>'
+			. '<p class="ssh-foot">' . esc_html__( 'Protected by Chaos Shield', 'chaos-shield' ) . '</p></main>'
+			. '<script>window.cshieldPow=' . wp_json_encode( $data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT ) . ';</script>'
 			. '<script>' . self::script() . '</script></body></html>';
 		// phpcs:enable
 		exit;
@@ -404,7 +404,7 @@ final class Attack_Mode {
 	 * @return string
 	 */
 	private static function script() {
-		$path = SSHIELD_DIR . 'assets/js/pow.js';
+		$path = CSHIELD_DIR . 'assets/js/pow.js';
 		return is_readable( $path ) ? (string) file_get_contents( $path ) : ''; // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- The plugin's own asset, inlined.
 	}
 
@@ -415,9 +415,9 @@ final class Attack_Mode {
 	 */
 	public static function manual( $on ) {
 		if ( $on ) {
-			self::turn_on( false, __( 'Under attack mode switched on by an administrator.', 'sentinel-shield' ) );
+			self::turn_on( false, __( 'Under attack mode switched on by an administrator.', 'chaos-shield' ) );
 		} else {
-			self::turn_off( __( 'Under attack mode switched off by an administrator.', 'sentinel-shield' ) );
+			self::turn_off( __( 'Under attack mode switched off by an administrator.', 'chaos-shield' ) );
 		}
 	}
 }

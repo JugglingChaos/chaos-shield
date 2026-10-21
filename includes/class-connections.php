@@ -2,10 +2,10 @@
 /**
  * Outside services: CAPTCHA keys and team chat webhooks, connected without leaving WordPress.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -18,10 +18,10 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Connections {
 
-	const AJAX        = 'sshield_connect';
-	const CHAT_URL    = 'sshield_chat_webhook';
-	const CHAT_STATUS = 'sshield_chat_status';
-	const CHECKED     = 'sshield_connections_checked';
+	const AJAX        = 'cshield_connect';
+	const CHAT_URL    = 'cshield_chat_webhook';
+	const CHAT_STATUS = 'cshield_chat_status';
+	const CHECKED     = 'cshield_connections_checked';
 
 	/**
 	 * Every service, with where to sign up and the steps to follow there.
@@ -34,109 +34,109 @@ final class Connections {
 			'turnstile'  => array(
 				'kind'   => 'captcha',
 				'name'   => 'Cloudflare Turnstile',
-				'blurb'  => __( 'Free and private: most visitors never see a puzzle.', 'sentinel-shield' ),
+				'blurb'  => __( 'Free and private: most visitors never see a puzzle.', 'chaos-shield' ),
 				'open'   => 'https://dash.cloudflare.com/?to=/:account/turnstile',
-				'button' => __( 'Open Cloudflare', 'sentinel-shield' ),
+				'button' => __( 'Open Cloudflare', 'chaos-shield' ),
 				'steps'  => array(
-					__( 'Sign in, or create a free Cloudflare account. Your site does not need to use Cloudflare.', 'sentinel-shield' ),
+					__( 'Sign in, or create a free Cloudflare account. Your site does not need to use Cloudflare.', 'chaos-shield' ),
 					/* translators: %s: this site's host name. */
-					sprintf( __( 'Choose Add widget, name it after this site and add the hostname %s. Leave the mode on Managed.', 'sentinel-shield' ), $host ),
-					__( 'Copy the Site Key and the Secret Key into the boxes here.', 'sentinel-shield' ),
+					sprintf( __( 'Choose Add widget, name it after this site and add the hostname %s. Leave the mode on Managed.', 'chaos-shield' ), $host ),
+					__( 'Copy the Site Key and the Secret Key into the boxes here.', 'chaos-shield' ),
 				),
 				'fields' => array(
-					'site_key' => __( 'Site key', 'sentinel-shield' ),
-					'secret'   => __( 'Secret key', 'sentinel-shield' ),
+					'site_key' => __( 'Site key', 'chaos-shield' ),
+					'secret'   => __( 'Secret key', 'chaos-shield' ),
 				),
 			),
 			'hcaptcha'   => array(
 				'kind'   => 'captcha',
 				'name'   => 'hCaptcha',
-				'blurb'  => __( 'Free, and an option where Cloudflare is not wanted.', 'sentinel-shield' ),
+				'blurb'  => __( 'Free, and an option where Cloudflare is not wanted.', 'chaos-shield' ),
 				'open'   => 'https://dashboard.hcaptcha.com/sites',
-				'button' => __( 'Open hCaptcha', 'sentinel-shield' ),
+				'button' => __( 'Open hCaptcha', 'chaos-shield' ),
 				'steps'  => array(
-					__( 'Sign in, or sign up for the free plan.', 'sentinel-shield' ),
+					__( 'Sign in, or sign up for the free plan.', 'chaos-shield' ),
 					/* translators: %s: this site's host name. */
-					sprintf( __( 'Under Sites, choose New site, add the hostname %s and copy its Sitekey.', 'sentinel-shield' ), $host ),
-					__( 'Open your account settings, copy the Secret under Secrets, and paste both here.', 'sentinel-shield' ),
+					sprintf( __( 'Under Sites, choose New site, add the hostname %s and copy its Sitekey.', 'chaos-shield' ), $host ),
+					__( 'Open your account settings, copy the Secret under Secrets, and paste both here.', 'chaos-shield' ),
 				),
 				'fields' => array(
-					'site_key' => __( 'Sitekey', 'sentinel-shield' ),
-					'secret'   => __( 'Secret', 'sentinel-shield' ),
+					'site_key' => __( 'Sitekey', 'chaos-shield' ),
+					'secret'   => __( 'Secret', 'chaos-shield' ),
 				),
 			),
 			'cloudflare' => array(
 				'kind'   => 'edge',
 				'name'   => 'Cloudflare',
-				'blurb'  => __( 'Free plan: stops floods and banned IPs before they reach your server.', 'sentinel-shield' ),
+				'blurb'  => __( 'Free plan: stops floods and banned IPs before they reach your server.', 'chaos-shield' ),
 				'open'   => 'https://dash.cloudflare.com/profile/api-tokens',
-				'button' => __( 'Open Cloudflare', 'sentinel-shield' ),
+				'button' => __( 'Open Cloudflare', 'chaos-shield' ),
 				'steps'  => array(
 					/* translators: %s: this site's host name. */
-					sprintf( __( 'Sign in. If %s is not on Cloudflare yet, add it first under Add a domain (the free plan is enough) and follow the steps to point the domain at Cloudflare.', 'sentinel-shield' ), $host ),
-					__( 'Choose Create Token, then Create Custom Token. Name it Sentinel Shield.', 'sentinel-shield' ),
-					__( 'Add these permissions, all under Zone: Zone, Read; Zone Settings, Edit; Firewall Services, Edit; Cache Purge, Purge.', 'sentinel-shield' ),
-					__( 'Under Zone Resources, include this site\'s zone. Create the token, copy it and paste it here.', 'sentinel-shield' ),
+					sprintf( __( 'Sign in. If %s is not on Cloudflare yet, add it first under Add a domain (the free plan is enough) and follow the steps to point the domain at Cloudflare.', 'chaos-shield' ), $host ),
+					__( 'Choose Create Token, then Create Custom Token. Name it Chaos Shield.', 'chaos-shield' ),
+					__( 'Add these permissions, all under Zone: Zone, Read; Zone Settings, Edit; Firewall Services, Edit; Cache Purge, Purge.', 'chaos-shield' ),
+					__( 'Under Zone Resources, include this site\'s zone. Create the token, copy it and paste it here.', 'chaos-shield' ),
 				),
-				'fields' => array( 'token' => __( 'API token', 'sentinel-shield' ) ),
+				'fields' => array( 'token' => __( 'API token', 'chaos-shield' ) ),
 			),
 			'slack'      => array(
 				'kind'    => 'chat',
 				'name'    => 'Slack',
-				'blurb'   => __( 'Alerts in a Slack channel.', 'sentinel-shield' ),
+				'blurb'   => __( 'Alerts in a Slack channel.', 'chaos-shield' ),
 				'open'    => 'https://api.slack.com/apps?new_app=1',
-				'button'  => __( 'Open Slack', 'sentinel-shield' ),
+				'button'  => __( 'Open Slack', 'chaos-shield' ),
 				'steps'   => array(
-					__( 'Choose From scratch, name the app Sentinel Shield and pick your workspace.', 'sentinel-shield' ),
-					__( 'Open Incoming Webhooks, switch it on, then choose Add New Webhook and pick the channel.', 'sentinel-shield' ),
-					__( 'Copy the webhook URL and paste it here.', 'sentinel-shield' ),
+					__( 'Choose From scratch, name the app Chaos Shield and pick your workspace.', 'chaos-shield' ),
+					__( 'Open Incoming Webhooks, switch it on, then choose Add New Webhook and pick the channel.', 'chaos-shield' ),
+					__( 'Copy the webhook URL and paste it here.', 'chaos-shield' ),
 				),
-				'fields'  => array( 'url' => __( 'Webhook URL', 'sentinel-shield' ) ),
+				'fields'  => array( 'url' => __( 'Webhook URL', 'chaos-shield' ) ),
 				'pattern' => '#^https://hooks\.slack\.com/(services|triggers|workflows)/[A-Za-z0-9/_-]+$#',
 				'example' => 'https://hooks.slack.com/services/...',
 			),
 			'discord'    => array(
 				'kind'    => 'chat',
 				'name'    => 'Discord',
-				'blurb'   => __( 'Alerts in a Discord channel.', 'sentinel-shield' ),
+				'blurb'   => __( 'Alerts in a Discord channel.', 'chaos-shield' ),
 				'open'    => 'https://discord.com/channels/@me',
-				'button'  => __( 'Open Discord', 'sentinel-shield' ),
+				'button'  => __( 'Open Discord', 'chaos-shield' ),
 				'steps'   => array(
-					__( 'Open your server, then the settings of the channel the alerts should go to.', 'sentinel-shield' ),
-					__( 'Under Integrations, choose Webhooks, then New Webhook, and name it Sentinel Shield.', 'sentinel-shield' ),
-					__( 'Choose Copy Webhook URL and paste it here.', 'sentinel-shield' ),
+					__( 'Open your server, then the settings of the channel the alerts should go to.', 'chaos-shield' ),
+					__( 'Under Integrations, choose Webhooks, then New Webhook, and name it Chaos Shield.', 'chaos-shield' ),
+					__( 'Choose Copy Webhook URL and paste it here.', 'chaos-shield' ),
 				),
-				'fields'  => array( 'url' => __( 'Webhook URL', 'sentinel-shield' ) ),
+				'fields'  => array( 'url' => __( 'Webhook URL', 'chaos-shield' ) ),
 				'pattern' => '#^https://(?:ptb\.|canary\.)?discord(?:app)?\.com/api/webhooks/\d+/[A-Za-z0-9_-]+$#',
 				'example' => 'https://discord.com/api/webhooks/...',
 			),
 			'teams'      => array(
 				'kind'    => 'chat',
 				'name'    => 'Microsoft Teams',
-				'blurb'   => __( 'Alerts in a Teams channel, through Workflows.', 'sentinel-shield' ),
+				'blurb'   => __( 'Alerts in a Teams channel, through Workflows.', 'chaos-shield' ),
 				'open'    => 'https://teams.microsoft.com/v2/',
-				'button'  => __( 'Open Teams', 'sentinel-shield' ),
+				'button'  => __( 'Open Teams', 'chaos-shield' ),
 				'steps'   => array(
-					__( 'Open the channel, choose the three dots next to its name, then Workflows.', 'sentinel-shield' ),
-					__( 'Pick "Post to a channel when a webhook request is received" and follow its steps.', 'sentinel-shield' ),
-					__( 'Copy the URL it shows at the end and paste it here.', 'sentinel-shield' ),
+					__( 'Open the channel, choose the three dots next to its name, then Workflows.', 'chaos-shield' ),
+					__( 'Pick "Post to a channel when a webhook request is received" and follow its steps.', 'chaos-shield' ),
+					__( 'Copy the URL it shows at the end and paste it here.', 'chaos-shield' ),
 				),
-				'fields'  => array( 'url' => __( 'Workflow URL', 'sentinel-shield' ) ),
+				'fields'  => array( 'url' => __( 'Workflow URL', 'chaos-shield' ) ),
 				'pattern' => '#^https://[A-Za-z0-9.-]+\.(?:logic\.azure\.com|powerplatform\.com|powerautomate\.com|webhook\.office\.com)(?::443)?/\S+$#',
 				'example' => 'https://...logic.azure.com/workflows/...',
 			),
 			'gchat'      => array(
 				'kind'    => 'chat',
 				'name'    => 'Google Chat',
-				'blurb'   => __( 'Alerts in a Google Chat space (Google Workspace).', 'sentinel-shield' ),
+				'blurb'   => __( 'Alerts in a Google Chat space (Google Workspace).', 'chaos-shield' ),
 				'open'    => 'https://chat.google.com/',
-				'button'  => __( 'Open Google Chat', 'sentinel-shield' ),
+				'button'  => __( 'Open Google Chat', 'chaos-shield' ),
 				'steps'   => array(
-					__( 'Open the space, choose its name at the top, then Apps and integrations.', 'sentinel-shield' ),
-					__( 'Choose Add webhooks, name it Sentinel Shield and save.', 'sentinel-shield' ),
-					__( 'Copy the webhook URL and paste it here.', 'sentinel-shield' ),
+					__( 'Open the space, choose its name at the top, then Apps and integrations.', 'chaos-shield' ),
+					__( 'Choose Add webhooks, name it Chaos Shield and save.', 'chaos-shield' ),
+					__( 'Copy the webhook URL and paste it here.', 'chaos-shield' ),
 				),
-				'fields'  => array( 'url' => __( 'Webhook URL', 'sentinel-shield' ) ),
+				'fields'  => array( 'url' => __( 'Webhook URL', 'chaos-shield' ) ),
 				'pattern' => '#^https://chat\.googleapis\.com/v1/spaces/[A-Za-z0-9_-]+/messages\?\S+$#',
 				'example' => 'https://chat.googleapis.com/v1/spaces/...',
 			),
@@ -215,14 +215,14 @@ final class Connections {
 	 */
 	public function ajax() {
 		if ( ! current_user_can( Network::cap() ) ) {
-			wp_send_json_error( array( 'message' => __( 'You are not allowed to change this.', 'sentinel-shield' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'You are not allowed to change this.', 'chaos-shield' ) ), 403 );
 		}
 		check_ajax_referer( self::AJAX );
 		$service  = isset( $_POST['service'] ) ? sanitize_key( wp_unslash( $_POST['service'] ) ) : '';
 		$op       = isset( $_POST['op'] ) ? sanitize_key( wp_unslash( $_POST['op'] ) ) : 'save';
 		$services = self::services();
 		if ( ! isset( $services[ $service ] ) ) {
-			wp_send_json_error( array( 'message' => __( 'Unknown service.', 'sentinel-shield' ) ), 400 );
+			wp_send_json_error( array( 'message' => __( 'Unknown service.', 'chaos-shield' ) ), 400 );
 		}
 		$values = array();
 		foreach ( array( 'site_key', 'secret', 'url', 'token' ) as $field ) {
@@ -231,21 +231,21 @@ final class Connections {
 		}
 		if ( 'disconnect' === $op ) {
 			self::disconnect( $service );
-			wp_send_json_success( array( 'message' => __( 'Disconnected.', 'sentinel-shield' ) ) );
+			wp_send_json_success( array( 'message' => __( 'Disconnected.', 'chaos-shield' ) ) );
 		}
 		if ( 'test' === $op ) {
-			$result = 'chat' === $services[ $service ]['kind'] && self::chat() === $service ? self::send_chat( self::test_title(), self::test_body() ) : new \WP_Error( 'sshield_connect', __( 'Nothing to test yet.', 'sentinel-shield' ) );
+			$result = 'chat' === $services[ $service ]['kind'] && self::chat() === $service ? self::send_chat( self::test_title(), self::test_body() ) : new \WP_Error( 'cshield_connect', __( 'Nothing to test yet.', 'chaos-shield' ) );
 			if ( is_wp_error( $result ) ) {
 				wp_send_json_error( array( 'message' => $result->get_error_message() ) );
 			}
-			wp_send_json_success( array( 'message' => __( 'Test message sent. Check the channel.', 'sentinel-shield' ) ) );
+			wp_send_json_success( array( 'message' => __( 'Test message sent. Check the channel.', 'chaos-shield' ) ) );
 		}
 		$result = self::connect( $service, $values, ! empty( $_POST['force'] ) );
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error(
 				array(
 					'message'     => $result->get_error_message(),
-					'unreachable' => 'sshield_unreachable' === $result->get_error_code(),
+					'unreachable' => 'cshield_unreachable' === $result->get_error_code(),
 				)
 			);
 		}
@@ -277,7 +277,7 @@ final class Connections {
 		Events::add(
 			'settings',
 			/* translators: %s: service name, such as Slack. */
-			sprintf( __( 'Connected %s.', 'sentinel-shield' ), $s['name'] ),
+			sprintf( __( 'Connected %s.', 'chaos-shield' ), $s['name'] ),
 			Request::ip(),
 			array( 'action' => 'settings.connect' )
 		);
@@ -297,29 +297,29 @@ final class Connections {
 		$name = $d['name'];
 		if ( ! preg_match( $d['key_test'], $values['site_key'] ) ) {
 			/* translators: %s: service name. */
-			return new \WP_Error( 'sshield_connect', sprintf( __( 'That does not look like a %s site key. Copy it again from the window.', 'sentinel-shield' ), $name ) );
+			return new \WP_Error( 'cshield_connect', sprintf( __( 'That does not look like a %s site key. Copy it again from the window.', 'chaos-shield' ), $name ) );
 		}
 		$secret = '' !== $values['secret'] ? $values['secret'] : ( Captcha::provider() === $service ? (string) Totp::open( Network::get_option( $d['secret'] ) ) : '' );
 		if ( '' === $secret || strlen( $secret ) < 20 || preg_match( '/\s/', $secret ) ) {
-			return new \WP_Error( 'sshield_connect', __( 'Paste the secret key too.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_connect', __( 'Paste the secret key too.', 'chaos-shield' ) );
 		}
 		$check = Captcha::siteverify( $service, $values['site_key'], $secret, $values['token'] );
 		if ( is_wp_error( $check ) && ! $force ) {
 			/* translators: 1: service name, 2: error. */
-			return new \WP_Error( 'sshield_unreachable', sprintf( __( '%1$s could not be reached to check the keys (%2$s). You can save them anyway and test the login page yourself.', 'sentinel-shield' ), $name, $check->get_error_message() ) );
+			return new \WP_Error( 'cshield_unreachable', sprintf( __( '%1$s could not be reached to check the keys (%2$s). You can save them anyway and test the login page yourself.', 'chaos-shield' ), $name, $check->get_error_message() ) );
 		}
 		$full = false;
 		if ( ! is_wp_error( $check ) ) {
 			$codes = $check['codes'];
 			if ( array_intersect( $codes, array( 'invalid-input-secret', 'missing-input-secret', 'invalid-or-already-seen-response-secret' ) ) ) {
 				/* translators: %s: service name. */
-				return new \WP_Error( 'sshield_connect', sprintf( __( '%s says the secret key is wrong. Copy it again.', 'sentinel-shield' ), $name ) );
+				return new \WP_Error( 'cshield_connect', sprintf( __( '%s says the secret key is wrong. Copy it again.', 'chaos-shield' ), $name ) );
 			}
 			if ( array_intersect( $codes, array( 'sitekey-secret-mismatch', 'invalid-sitekey' ) ) ) {
-				return new \WP_Error( 'sshield_connect', __( 'The site key and secret key do not belong together. Copy both from the same place.', 'sentinel-shield' ) );
+				return new \WP_Error( 'cshield_connect', __( 'The site key and secret key do not belong together. Copy both from the same place.', 'chaos-shield' ) );
 			}
 			if ( '' !== $values['token'] && ! $check['success'] ) {
-				return new \WP_Error( 'sshield_connect', __( 'The keys were accepted, but the test challenge did not pass. Make sure both keys come from the same widget, then try again.', 'sentinel-shield' ) );
+				return new \WP_Error( 'cshield_connect', __( 'The keys were accepted, but the test challenge did not pass. Make sure both keys come from the same widget, then try again.', 'chaos-shield' ) );
 			}
 			$full = '' !== $values['token'] && $check['success'];
 		}
@@ -333,9 +333,9 @@ final class Connections {
 		);
 		$done = $full
 			/* translators: %s: service name. */
-			? __( 'Connected. %s checked both keys and the test challenge, and the login CAPTCHA is on.', 'sentinel-shield' )
+			? __( 'Connected. %s checked both keys and the test challenge, and the login CAPTCHA is on.', 'chaos-shield' )
 			/* translators: %s: service name. */
-			: __( 'Connected. %s accepted the secret key, and the login CAPTCHA is on. Try logging in from a private window to see it.', 'sentinel-shield' );
+			: __( 'Connected. %s accepted the secret key, and the login CAPTCHA is on. Try logging in from a private window to see it.', 'chaos-shield' );
 		return sprintf( $done, $name );
 	}
 
@@ -352,22 +352,22 @@ final class Connections {
 		$url = esc_url_raw( $values['url'], array( 'https' ) );
 		if ( '' === $url || ! preg_match( $s['pattern'], $url ) ) {
 			/* translators: 1: service name, 2: example address. */
-			return new \WP_Error( 'sshield_connect', sprintf( __( 'That is not a %1$s webhook address. It starts like %2$s', 'sentinel-shield' ), $s['name'], $s['example'] ) );
+			return new \WP_Error( 'cshield_connect', sprintf( __( 'That is not a %1$s webhook address. It starts like %2$s', 'chaos-shield' ), $s['name'], $s['example'] ) );
 		}
 		$sent = self::post( $service, $url, self::test_title(), self::test_body() );
 		if ( is_wp_error( $sent ) && ! $force ) {
-			$unreachable = 'sshield_chat_http' !== $sent->get_error_code();
+			$unreachable = 'cshield_chat_http' !== $sent->get_error_code();
 			return new \WP_Error(
-				$unreachable ? 'sshield_unreachable' : 'sshield_connect',
+				$unreachable ? 'cshield_unreachable' : 'cshield_connect',
 				/* translators: 1: service name, 2: error. */
-				sprintf( __( '%1$s did not take the test message: %2$s', 'sentinel-shield' ), $s['name'], $sent->get_error_message() )
+				sprintf( __( '%1$s did not take the test message: %2$s', 'chaos-shield' ), $s['name'], $sent->get_error_message() )
 			);
 		}
 		Network::update_option( self::CHAT_URL, Totp::seal( $url ), false );
 		Network::delete_option( self::CHAT_STATUS );
 		Settings::save_connection( array( 'chat_service' => $service ) );
 		/* translators: %s: service name. */
-		return sprintf( __( 'Connected. A test message is in your %s channel, and alerts will arrive there as well as by email.', 'sentinel-shield' ), $s['name'] );
+		return sprintf( __( 'Connected. A test message is in your %s channel, and alerts will arrive there as well as by email.', 'chaos-shield' ), $s['name'] );
 	}
 
 	/**
@@ -398,7 +398,7 @@ final class Connections {
 		Events::add(
 			'settings',
 			/* translators: %s: service name, such as Slack. */
-			sprintf( __( 'Disconnected %s.', 'sentinel-shield' ), $services[ $service ]['name'] ),
+			sprintf( __( 'Disconnected %s.', 'chaos-shield' ), $services[ $service ]['name'] ),
 			Request::ip(),
 			array(
 				'severity' => Events::NOTICE,
@@ -413,7 +413,7 @@ final class Connections {
 	 * @return string
 	 */
 	private static function test_title() {
-		return __( 'Sentinel Shield is connected', 'sentinel-shield' );
+		return __( 'Chaos Shield is connected', 'chaos-shield' );
 	}
 
 	/**
@@ -423,7 +423,7 @@ final class Connections {
 	 */
 	private static function test_body() {
 		/* translators: %s: site address. */
-		return sprintf( __( 'Security alerts from %s will appear here.', 'sentinel-shield' ), home_url() );
+		return sprintf( __( 'Security alerts from %s will appear here.', 'chaos-shield' ), home_url() );
 	}
 
 	/**
@@ -436,7 +436,7 @@ final class Connections {
 	public static function send_chat( $title, $body ) {
 		$service = self::chat();
 		if ( '' === $service ) {
-			return new \WP_Error( 'sshield_chat_none', __( 'No chat is connected.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_chat_none', __( 'No chat is connected.', 'chaos-shield' ) );
 		}
 		$sent = self::post( $service, self::chat_url(), $title, $body );
 		Network::update_option(
@@ -486,7 +486,7 @@ final class Connections {
 		$code = (int) wp_remote_retrieve_response_code( $response );
 		if ( $code < 200 || $code > 299 ) {
 			/* translators: %d: HTTP status code. */
-			return new \WP_Error( 'sshield_chat_http', sprintf( __( 'it answered HTTP %d. Check the address, or make a new webhook.', 'sentinel-shield' ), $code ) );
+			return new \WP_Error( 'cshield_chat_http', sprintf( __( 'it answered HTTP %d. Check the address, or make a new webhook.', 'chaos-shield' ), $code ) );
 		}
 		return true;
 	}
@@ -514,7 +514,7 @@ final class Connections {
 					return str_replace( array( '@', '<', '>', '[', ']' ), array( "@\u{200B}", '‹', '›', '(', ')' ), $text );
 				};
 				return array(
-					'username'         => 'Sentinel Shield',
+					'username'         => 'Chaos Shield',
 					'content'          => mb_substr( '**' . $clean( $title ) . "**\n" . $clean( $body ) . "\n" . $link, 0, 1990 ),
 					'allowed_mentions' => array( 'parse' => array() ),
 				);
@@ -544,7 +544,7 @@ final class Connections {
 								'actions' => array(
 									array(
 										'type'  => 'Action.OpenUrl',
-										'title' => __( 'Open Sentinel Shield', 'sentinel-shield' ),
+										'title' => __( 'Open Chaos Shield', 'chaos-shield' ),
 										'url'   => $link,
 									),
 								),
@@ -559,7 +559,7 @@ final class Connections {
 					return str_replace( array( '&', '<', '>' ), array( '&amp;', '&lt;', '&gt;' ), $text );
 				};
 				return array(
-					'text'         => '*' . $escape( $title ) . "*\n" . $escape( $body ) . "\n<" . $link . '|' . $escape( __( 'Open Sentinel Shield', 'sentinel-shield' ) ) . '>',
+					'text'         => '*' . $escape( $title ) . "*\n" . $escape( $body ) . "\n<" . $link . '|' . $escape( __( 'Open Chaos Shield', 'chaos-shield' ) ) . '>',
 					'unfurl_links' => false,
 				);
 		}

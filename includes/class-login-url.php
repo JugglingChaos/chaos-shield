@@ -2,10 +2,10 @@
 /**
  * Custom login address.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -13,7 +13,7 @@ defined( 'ABSPATH' ) || exit;
  * Moves the login page to a secret address and answers 404 on wp-login.php,
  * so bots that hammer the default address never reach a login form.
  *
- * Emergency switch: define( 'SSHIELD_DISABLE_LOGIN_SLUG', true ) in wp-config.php.
+ * Emergency switch: define( 'CSHIELD_DISABLE_LOGIN_SLUG', true ) in wp-config.php.
  */
 final class Login_Url {
 
@@ -37,7 +37,7 @@ final class Login_Url {
 	 * @return string
 	 */
 	public static function slug() {
-		if ( defined( 'SSHIELD_DISABLE_LOGIN_SLUG' ) && SSHIELD_DISABLE_LOGIN_SLUG ) {
+		if ( defined( 'CSHIELD_DISABLE_LOGIN_SLUG' ) && CSHIELD_DISABLE_LOGIN_SLUG ) {
 			return '';
 		}
 		return (string) Settings::get( 'login_slug' );
@@ -65,10 +65,10 @@ final class Login_Url {
 			return '';
 		}
 		if ( strlen( $slug ) < 6 ) {
-			return new \WP_Error( 'sshield_slug_short', __( 'Use at least 6 letters, numbers or dashes for the login address.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_slug_short', __( 'Use at least 6 letters, numbers or dashes for the login address.', 'chaos-shield' ) );
 		}
 		if ( in_array( $slug, self::$reserved, true ) || get_page_by_path( $slug ) || term_exists( $slug ) ) {
-			return new \WP_Error( 'sshield_slug_taken', __( 'That login address is already used by WordPress or by a page on your site. Pick another one.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_slug_taken', __( 'That login address is already used by WordPress or by a page on your site. Pick another one.', 'chaos-shield' ) );
 		}
 		return $slug;
 	}

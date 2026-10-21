@@ -2,10 +2,10 @@
 /**
  * Per-IP rate limits for the routes bots hammer.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -67,7 +67,7 @@ final class Rate_Limit {
 		}
 
 		Login_Guard::bump_stat( 'rate_limited' );
-		$throttle = 'sshield_rl_log_' . md5( $ip . $group );
+		$throttle = 'cshield_rl_log_' . md5( $ip . $group );
 		if ( ! self::get( $throttle ) ) {
 			self::set( $throttle, 1, 10 * MINUTE_IN_SECONDS );
 			// Plain English: this runs before translations may be loaded.
@@ -114,7 +114,7 @@ final class Rate_Limit {
 	 * @return int Requests in this minute so far.
 	 */
 	private static function hit( $ip, $group ) {
-		$key   = 'sshield_rl_' . $group . '_' . md5( $ip );
+		$key   = 'cshield_rl_' . $group . '_' . md5( $ip );
 		$data  = self::get( $key );
 		$now   = time();
 		$fresh = ! is_array( $data ) || $now - (int) $data[0] >= MINUTE_IN_SECONDS;
@@ -130,7 +130,7 @@ final class Rate_Limit {
 	 * @return mixed
 	 */
 	private static function get( $key ) {
-		return wp_using_ext_object_cache() ? wp_cache_get( $key, 'sshield' ) : Network::get_transient( $key );
+		return wp_using_ext_object_cache() ? wp_cache_get( $key, 'cshield' ) : Network::get_transient( $key );
 	}
 
 	/**
@@ -142,7 +142,7 @@ final class Rate_Limit {
 	 */
 	private static function set( $key, $value, $ttl ) {
 		if ( wp_using_ext_object_cache() ) {
-			wp_cache_set( $key, $value, 'sshield', $ttl );
+			wp_cache_set( $key, $value, 'cshield', $ttl );
 		} else {
 			Network::set_transient( $key, $value, $ttl );
 		}

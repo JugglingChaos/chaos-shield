@@ -2,10 +2,10 @@
 /**
  * SIEM search, timelines and charts.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -19,8 +19,8 @@ final class Siem {
 	 * Registers hooks.
 	 */
 	public function register() {
-		add_action( 'admin_post_sshield_incident', array( __CLASS__, 'handle' ) );
-		add_action( 'admin_post_sshield_rules', array( __CLASS__, 'handle_rules' ) );
+		add_action( 'admin_post_cshield_incident', array( __CLASS__, 'handle' ) );
+		add_action( 'admin_post_cshield_rules', array( __CLASS__, 'handle_rules' ) );
 	}
 
 	/**
@@ -208,9 +208,9 @@ final class Siem {
 	 */
 	public static function handle() {
 		if ( ! current_user_can( Network::cap() ) ) {
-			wp_die( esc_html__( 'You are not allowed to do this.', 'sentinel-shield' ), 403 );
+			wp_die( esc_html__( 'You are not allowed to do this.', 'chaos-shield' ), 403 );
 		}
-		check_admin_referer( 'sshield_incident' );
+		check_admin_referer( 'cshield_incident' );
 		$id       = isset( $_POST['incident'] ) ? absint( $_POST['incident'] ) : 0;
 		$op       = isset( $_POST['op'] ) ? sanitize_key( wp_unslash( $_POST['op'] ) ) : '';
 		$incident = Incidents::get( $id );
@@ -234,7 +234,7 @@ final class Siem {
 			case 'ban':
 				if ( $ip && ! $self && Bans::ban( $ip, 'incident #' . $id ) ) {
 					/* translators: %s: IP address. */
-					Incidents::note_action( $id, sprintf( __( 'Banned %s.', 'sentinel-shield' ), $ip ) );
+					Incidents::note_action( $id, sprintf( __( 'Banned %s.', 'chaos-shield' ), $ip ) );
 					$done = true;
 				}
 				$notice = $done ? 'incident_acted' : 'incident_skipped';
@@ -245,7 +245,7 @@ final class Siem {
 					Events::add(
 						'settings',
 						/* translators: %s: IP address. */
-						sprintf( __( '%s added to the block list.', 'sentinel-shield' ), $ip ),
+						sprintf( __( '%s added to the block list.', 'chaos-shield' ), $ip ),
 						Request::ip(),
 						array(
 							'action'  => 'fw.blocklist',
@@ -253,7 +253,7 @@ final class Siem {
 						)
 					);
 					/* translators: %s: IP address. */
-					Incidents::note_action( $id, sprintf( __( 'Added %s to the block list.', 'sentinel-shield' ), $ip ) );
+					Incidents::note_action( $id, sprintf( __( 'Added %s to the block list.', 'chaos-shield' ), $ip ) );
 					$done = true;
 				}
 				$notice = $done ? 'incident_acted' : 'incident_skipped';
@@ -265,13 +265,13 @@ final class Siem {
 					if ( 'reset' === $op ) {
 						Password_Policy::force( $user->ID );
 						/* translators: %s: username. */
-						Incidents::note_action( $id, sprintf( __( 'Forced a password reset for %s and ended their sessions.', 'sentinel-shield' ), $user->user_login ) );
+						Incidents::note_action( $id, sprintf( __( 'Forced a password reset for %s and ended their sessions.', 'chaos-shield' ), $user->user_login ) );
 					} else {
 						\WP_Session_Tokens::get_instance( $user->ID )->destroy_all();
 						Events::add(
 							'user',
 							/* translators: %s: username. */
-							sprintf( __( 'All sessions of %s were ended from an incident.', 'sentinel-shield' ), $user->user_login ),
+							sprintf( __( 'All sessions of %s were ended from an incident.', 'chaos-shield' ), $user->user_login ),
 							Request::ip(),
 							array(
 								'user_id' => $user->ID,
@@ -279,7 +279,7 @@ final class Siem {
 							)
 						);
 						/* translators: %s: username. */
-						Incidents::note_action( $id, sprintf( __( 'Ended all sessions of %s.', 'sentinel-shield' ), $user->user_login ) );
+						Incidents::note_action( $id, sprintf( __( 'Ended all sessions of %s.', 'chaos-shield' ), $user->user_login ) );
 					}
 				}
 				$notice = 'incident_acted';
@@ -290,7 +290,7 @@ final class Siem {
 				'siem',
 				array(
 					'incident'       => $id,
-					'sshield_notice' => $notice,
+					'cshield_notice' => $notice,
 				)
 			)
 		);
@@ -302,9 +302,9 @@ final class Siem {
 	 */
 	public static function handle_rules() {
 		if ( ! current_user_can( Network::cap() ) ) {
-			wp_die( esc_html__( 'You are not allowed to do this.', 'sentinel-shield' ), 403 );
+			wp_die( esc_html__( 'You are not allowed to do this.', 'chaos-shield' ), 403 );
 		}
-		check_admin_referer( 'sshield_rules' );
+		check_admin_referer( 'cshield_rules' );
 		$on  = isset( $_POST['rules'] ) ? array_map( 'sanitize_key', (array) wp_unslash( $_POST['rules'] ) ) : array();
 		$off = array_values( array_diff( array_keys( Detect::rules() ), $on ) );
 		$min = isset( $_POST['alert_min'] ) ? (int) $_POST['alert_min'] : 3;
@@ -313,7 +313,7 @@ final class Siem {
 			Events::add(
 				'settings',
 				/* translators: %s: rule keys. */
-				sprintf( __( 'SIEM rules switched off: %s.', 'sentinel-shield' ), implode( ', ', $off ) ),
+				sprintf( __( 'SIEM rules switched off: %s.', 'chaos-shield' ), implode( ', ', $off ) ),
 				Request::ip(),
 				array(
 					'severity' => Events::NOTICE,
@@ -321,7 +321,7 @@ final class Siem {
 				)
 			);
 		}
-		wp_safe_redirect( Admin::url( 'siem', array( 'sshield_notice' => 'saved' ) ) );
+		wp_safe_redirect( Admin::url( 'siem', array( 'cshield_notice' => 'saved' ) ) );
 		exit;
 	}
 }

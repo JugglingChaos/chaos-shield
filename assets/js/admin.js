@@ -1,9 +1,9 @@
-/* Sentinel Shield admin enhancements. The page works without this file. */
+/* Chaos Shield admin enhancements. The page works without this file. */
 ( function () {
 	'use strict';
 
 	// Animate the score ring from zero.
-	var bar = document.querySelector( '.sshield-score__bar' );
+	var bar = document.querySelector( '.cshield-score__bar' );
 	if ( bar ) {
 		var target = bar.style.strokeDasharray;
 		bar.style.strokeDasharray = '0 100';
@@ -15,7 +15,7 @@
 	}
 
 	// Highlight module cards that are switched on.
-	document.querySelectorAll( '.sshield-module' ).forEach( function ( card ) {
+	document.querySelectorAll( '.cshield-module' ).forEach( function ( card ) {
 		var input = card.querySelector( 'input[type="checkbox"]' );
 		if ( ! input ) {
 			return;
@@ -28,17 +28,17 @@
 	} );
 
 	// Scan tab: start a scan and drive it in small steps until it finishes.
-	var box = document.querySelector( '.sshield-scanbox' );
-	if ( box && window.sshieldAdmin ) {
-		var cfg = window.sshieldAdmin;
-		var button = box.querySelector( '.sshield-scan-start' );
-		var panel = box.querySelector( '.sshield-progress' );
-		var fill = box.querySelector( '.sshield-progress__bar span' );
-		var text = box.querySelector( '.sshield-progress__text' );
+	var box = document.querySelector( '.cshield-scanbox' );
+	if ( box && window.cshieldAdmin ) {
+		var cfg = window.cshieldAdmin;
+		var button = box.querySelector( '.cshield-scan-start' );
+		var panel = box.querySelector( '.cshield-progress' );
+		var fill = box.querySelector( '.cshield-progress__bar span' );
+		var text = box.querySelector( '.cshield-progress__text' );
 
 		var call = function ( op ) {
 			var body = new window.FormData();
-			body.append( 'action', 'sshield_scan' );
+			body.append( 'action', 'cshield_scan' );
 			body.append( 'op', op );
 			body.append( '_ajax_nonce', cfg.nonce );
 			return window.fetch( cfg.ajaxUrl, { method: 'POST', body: body, credentials: 'same-origin' } )
@@ -84,12 +84,12 @@
 		}
 	}
 	// Live traffic: fetch new rows every few seconds while the tab is visible.
-	var traffic = document.querySelector( '.sshield-traffic' );
-	if ( traffic && window.sshieldAdmin && traffic.querySelector( 'tbody' ) ) {
-		var tcfg = window.sshieldAdmin;
+	var traffic = document.querySelector( '.cshield-traffic' );
+	if ( traffic && window.cshieldAdmin && traffic.querySelector( 'tbody' ) ) {
+		var tcfg = window.cshieldAdmin;
 		var tbody = traffic.querySelector( 'tbody' );
-		var empty = traffic.querySelector( '.sshield-empty' );
-		var toggle = traffic.querySelector( '.sshield-live__toggle' );
+		var empty = traffic.querySelector( '.cshield-empty' );
+		var toggle = traffic.querySelector( '.cshield-live__toggle' );
 		var last = parseInt( traffic.getAttribute( 'data-last' ), 10 ) || 0;
 		var busy = false;
 
@@ -99,7 +99,7 @@
 			}
 			busy = true;
 			var body = new window.FormData();
-			body.append( 'action', 'sshield_traffic' );
+			body.append( 'action', 'cshield_traffic' );
 			body.append( 'kind', traffic.getAttribute( 'data-kind' ) );
 			body.append( 'country', traffic.getAttribute( 'data-country' ) || '' );
 			body.append( 'after', String( last ) );
@@ -151,14 +151,14 @@
 	}
 
 	// Traffic map: switch the measure, show a tooltip, click a country to filter the table.
-	var geo = document.querySelector( '.sshield-geo' );
+	var geo = document.querySelector( '.cshield-geo' );
 	if ( geo ) {
 		var gdata = JSON.parse( geo.getAttribute( 'data-geo' ) || '{}' );
 		var counts = gdata.counts || {};
-		var shapes = geo.querySelectorAll( '.sshield-geo__c' );
-		var tip = geo.querySelector( '.sshield-geo__tip' );
-		var mapBox = geo.querySelector( '.sshield-geo__map' );
-		var maxLabel = geo.querySelector( '.sshield-geo__max' );
+		var shapes = geo.querySelectorAll( '.cshield-geo__c' );
+		var tip = geo.querySelector( '.cshield-geo__tip' );
+		var mapBox = geo.querySelector( '.cshield-geo__map' );
+		var maxLabel = geo.querySelector( '.cshield-geo__max' );
 		var maxTemplate = maxLabel ? maxLabel.textContent.replace( /[\d.,\s\u00a0\u202f]+\)$/, ' %s)' ) : '';
 		var fmt = function ( n ) {
 			return ( n || 0 ).toLocaleString();
@@ -172,7 +172,7 @@
 				var c = counts[ el.getAttribute( 'data-cc' ) ];
 				var n = c ? c[ metric ] || 0 : 0;
 				var step = n > 0 && max > 0 ? Math.max( 1, Math.min( 5, Math.ceil( 5 * Math.log( 1 + n ) / Math.log( 1 + max ) ) ) ) : 0;
-				el.setAttribute( 'class', el.getAttribute( 'class' ).replace( /sshield-geo--\d/, 'sshield-geo--' + step ) );
+				el.setAttribute( 'class', el.getAttribute( 'class' ).replace( /cshield-geo--\d/, 'cshield-geo--' + step ) );
 			} );
 			if ( maxLabel && maxTemplate ) {
 				maxLabel.textContent = maxTemplate.replace( '%s', fmt( max ) );
@@ -218,7 +218,7 @@
 				el.addEventListener( 'click', function () {
 					var url = new window.URL( window.location.href );
 					url.searchParams.set( 'country', el.getAttribute( 'data-cc' ) );
-					url.hash = 'sshield-traffic';
+					url.hash = 'cshield-traffic';
 					window.location.href = url.toString();
 				} );
 			}
@@ -226,10 +226,10 @@
 	}
 
 	// Connections: open a service's sign-up page in a small window beside this one, then check and save what comes back.
-	var ccfg = window.sshieldAdmin;
+	var ccfg = window.cshieldAdmin;
 	var connectCall = function ( data ) {
 		var body = new window.FormData();
-		body.append( 'action', 'sshield_connect' );
+		body.append( 'action', 'cshield_connect' );
 		body.append( '_ajax_nonce', ccfg.connect );
 		Object.keys( data ).forEach( function ( k ) {
 			body.append( k, data[ k ] );
@@ -255,7 +255,7 @@
 		var left = Math.max( 0, window.screenX + window.outerWidth - w - 24 );
 		var top = Math.max( 0, window.screenY + 70 );
 		// Open blank first and cut the link back to this page, then load the service.
-		var win = window.open( 'about:blank', 'sshield_connect', 'popup=yes,width=' + w + ',height=' + h + ',left=' + left + ',top=' + top );
+		var win = window.open( 'about:blank', 'cshield_connect', 'popup=yes,width=' + w + ',height=' + h + ',left=' + left + ',top=' + top );
 		if ( ! win ) {
 			return null;
 		}
@@ -282,14 +282,14 @@
 		return scripts[ src ];
 	};
 
-	document.querySelectorAll( 'dialog.sshield-connect' ).forEach( function ( dialog ) {
+	document.querySelectorAll( 'dialog.cshield-connect' ).forEach( function ( dialog ) {
 		var service = dialog.getAttribute( 'data-service' );
-		var msg = dialog.querySelector( '.sshield-connect__msg' );
+		var msg = dialog.querySelector( '.cshield-connect__msg' );
 		var save = dialog.querySelector( '[data-save]' );
 		var force = dialog.querySelector( '[data-force]' );
-		var blocked = dialog.querySelector( '.sshield-connect__blocked' );
+		var blocked = dialog.querySelector( '.cshield-connect__blocked' );
 		var inputs = dialog.querySelectorAll( 'input' );
-		var preview = dialog.querySelector( '.sshield-connect__preview' );
+		var preview = dialog.querySelector( '.cshield-connect__preview' );
 		var keyInput = dialog.querySelector( 'input[name="site_key"]' );
 		var keyTest = dialog.getAttribute( 'data-key-test' ) ? new RegExp( dialog.getAttribute( 'data-key-test' ), 'i' ) : null;
 		var token = '';
@@ -316,7 +316,7 @@
 				} catch ( e ) {}
 				widget = null;
 			}
-			var mount = preview.querySelector( '.sshield-connect__widget' );
+			var mount = preview.querySelector( '.cshield-connect__widget' );
 			mount.textContent = '';
 			if ( ! keyTest || ! keyTest.test( key ) ) {
 				preview.hidden = true;
@@ -414,7 +414,7 @@
 		force.addEventListener( 'click', function () {
 			submit( true );
 		} );
-		dialog.querySelector( '.sshield-connect__form' ).addEventListener( 'submit', function ( e ) {
+		dialog.querySelector( '.cshield-connect__form' ).addEventListener( 'submit', function ( e ) {
 			e.preventDefault();
 			submit( false );
 		} );
@@ -432,7 +432,7 @@
 		dialog.addEventListener( 'close', function () {
 			window.clearInterval( watch );
 		} );
-		dialog.sshieldOpen = function () {
+		dialog.cshieldOpen = function () {
 			say( msg, '', '' );
 			force.hidden = true;
 			blocked.hidden = true;
@@ -455,12 +455,12 @@
 			return;
 		}
 		e.preventDefault();
-		var card = btn.closest( '.sshield-card' );
-		var status = card ? card.querySelector( '.sshield-connection__status' ) : null;
+		var card = btn.closest( '.cshield-card' );
+		var status = card ? card.querySelector( '.cshield-connection__status' ) : null;
 		if ( btn.hasAttribute( 'data-connect' ) ) {
-			var dialog = document.getElementById( 'sshield-connect-' + btn.getAttribute( 'data-connect' ) );
-			if ( dialog && dialog.sshieldOpen ) {
-				dialog.sshieldOpen();
+			var dialog = document.getElementById( 'cshield-connect-' + btn.getAttribute( 'data-connect' ) );
+			if ( dialog && dialog.cshieldOpen ) {
+				dialog.cshieldOpen();
 			}
 			return;
 		}
@@ -488,21 +488,21 @@
 	} );
 
 	// Visitor help: add and remove FAQ rows, keeping the field names in order.
-	var faq = document.querySelector( '.sshield-faq' );
+	var faq = document.querySelector( '.cshield-faq' );
 	if ( faq ) {
 		var renumber = function () {
-			Array.prototype.forEach.call( faq.querySelectorAll( '.sshield-faq__row' ), function ( row, i ) {
+			Array.prototype.forEach.call( faq.querySelectorAll( '.cshield-faq__row' ), function ( row, i ) {
 				row.querySelectorAll( '[name^="faq["]' ).forEach( function ( f ) {
 					f.name = f.name.replace( /^faq\[\d+\]/, 'faq[' + i + ']' );
 				} );
 			} );
 		};
 		faq.addEventListener( 'click', function ( e ) {
-			if ( ! e.target.classList.contains( 'sshield-faq__remove' ) ) {
+			if ( ! e.target.classList.contains( 'cshield-faq__remove' ) ) {
 				return;
 			}
-			var row = e.target.closest( '.sshield-faq__row' );
-			if ( faq.querySelectorAll( '.sshield-faq__row' ).length > 1 ) {
+			var row = e.target.closest( '.cshield-faq__row' );
+			if ( faq.querySelectorAll( '.cshield-faq__row' ).length > 1 ) {
 				row.parentNode.removeChild( row );
 			} else {
 				row.querySelectorAll( 'input, textarea' ).forEach( function ( f ) {
@@ -511,8 +511,8 @@
 			}
 			renumber();
 		} );
-		document.querySelector( '.sshield-faq__add' ).addEventListener( 'click', function () {
-			var rows = faq.querySelectorAll( '.sshield-faq__row' );
+		document.querySelector( '.cshield-faq__add' ).addEventListener( 'click', function () {
+			var rows = faq.querySelectorAll( '.cshield-faq__row' );
 			if ( rows.length >= parseInt( faq.getAttribute( 'data-max' ), 10 ) ) {
 				return;
 			}

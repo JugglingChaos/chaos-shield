@@ -2,10 +2,10 @@
 /**
  * Restore points: copies of settings and files taken before risky changes.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -13,17 +13,17 @@ defined( 'ABSPATH' ) || exit;
  * Saves what a change is about to replace, so it can be put back in one click.
  *
  * A restore point is taken before plugin and theme updates, before a file is
- * repaired from WordPress.org, before Sentinel Shield settings change and on
- * request. Each point is a folder in wp-content/sshield-restore holding the
+ * repaired from WordPress.org, before Chaos Shield settings change and on
+ * request. Each point is a folder in wp-content/cshield-restore holding the
  * compressed files and a manifest. Every stored file starts with a PHP exit
  * line, so even on a server that ignores the folder's deny rules, a direct
  * request runs nothing and shows nothing.
  */
 final class Restore_Points {
 
-	const INDEX        = 'sshield_restore_points';
-	const DIR          = 'sshield-restore';
-	const ACTION       = 'sshield_restore';
+	const INDEX        = 'cshield_restore_points';
+	const DIR          = 'cshield-restore';
+	const ACTION       = 'cshield_restore';
 	const MAX_POINTS   = 20;
 	const MAX_AGE      = 30 * DAY_IN_SECONDS;
 	const MAX_BYTES    = 250 * MB_IN_BYTES;
@@ -85,12 +85,12 @@ final class Restore_Points {
 	 */
 	public static function reasons() {
 		return array(
-			'manual'   => __( 'Made by hand', 'sentinel-shield' ),
-			'update'   => __( 'Before an update', 'sentinel-shield' ),
-			'repair'   => __( 'Before a file repair', 'sentinel-shield' ),
-			'settings' => __( 'Before a settings change', 'sentinel-shield' ),
-			'import'   => __( 'Before a settings import', 'sentinel-shield' ),
-			'restore'  => __( 'Before a restore', 'sentinel-shield' ),
+			'manual'   => __( 'Made by hand', 'chaos-shield' ),
+			'update'   => __( 'Before an update', 'chaos-shield' ),
+			'repair'   => __( 'Before a file repair', 'chaos-shield' ),
+			'settings' => __( 'Before a settings change', 'chaos-shield' ),
+			'import'   => __( 'Before a settings import', 'chaos-shield' ),
+			'restore'  => __( 'Before a restore', 'chaos-shield' ),
 		);
 	}
 
@@ -103,7 +103,7 @@ final class Restore_Points {
 	 * @param string $label    What is about to change, for the list.
 	 * @param array  $files    Absolute paths of single files. Missing files are noted, so a restore removes them again.
 	 * @param array  $folders  Absolute paths of folders, saved whole (a plugin or theme).
-	 * @param bool   $settings Whether to include the Sentinel Shield settings.
+	 * @param bool   $settings Whether to include the Chaos Shield settings.
 	 * @return string|\WP_Error Point ID.
 	 */
 	public static function create( $reason, $label, array $files = array(), array $folders = array(), $settings = true ) {
@@ -114,7 +114,7 @@ final class Restore_Points {
 		$id  = strtolower( wp_generate_password( 20, false ) );
 		$dir = $base . '/' . $id;
 		if ( ! wp_mkdir_p( $dir ) ) {
-			return new \WP_Error( 'sshield_rp_dir', __( 'Could not create the restore point folder. Check the permissions of wp-content.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_rp_dir', __( 'Could not create the restore point folder. Check the permissions of wp-content.', 'chaos-shield' ) );
 		}
 		self::guard( $dir );
 
@@ -183,7 +183,7 @@ final class Restore_Points {
 		);
 		if ( false === file_put_contents( $dir . '/manifest.php', self::GUARD . wp_json_encode( $manifest ) ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- The plugin's own restore folder.
 			self::remove_dir( $dir );
-			return new \WP_Error( 'sshield_rp_write', __( 'Could not write the restore point. Check the free disk space.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_rp_write', __( 'Could not write the restore point. Check the free disk space.', 'chaos-shield' ) );
 		}
 
 		$index        = self::all();
@@ -223,7 +223,7 @@ final class Restore_Points {
 			}
 			break;
 		}
-		self::create( 'settings', __( 'Sentinel Shield settings', 'sentinel-shield' ) );
+		self::create( 'settings', __( 'Chaos Shield settings', 'chaos-shield' ) );
 	}
 
 	/**
@@ -250,7 +250,7 @@ final class Restore_Points {
 			$data   = get_plugin_data( $file, false, false );
 			$folder = false === strpos( $hook_extra['plugin'], '/' ) ? '' : dirname( $file );
 			/* translators: 1: plugin name, 2: version. */
-			$label = sprintf( __( 'Plugin %1$s %2$s', 'sentinel-shield' ), $data['Name'] ? $data['Name'] : $hook_extra['plugin'], $data['Version'] );
+			$label = sprintf( __( 'Plugin %1$s %2$s', 'chaos-shield' ), $data['Name'] ? $data['Name'] : $hook_extra['plugin'], $data['Version'] );
 			if ( '' === $folder ) {
 				self::create( 'update', $label, array( $file ), array(), false );
 				return $response;
@@ -262,7 +262,7 @@ final class Restore_Points {
 			}
 			$folder = $theme->get_stylesheet_directory();
 			/* translators: 1: theme name, 2: version. */
-			$label = sprintf( __( 'Theme %1$s %2$s', 'sentinel-shield' ), $theme->get( 'Name' ), $theme->get( 'Version' ) );
+			$label = sprintf( __( 'Theme %1$s %2$s', 'chaos-shield' ), $theme->get( 'Name' ), $theme->get( 'Version' ) );
 		}
 		if ( '' === $folder ) {
 			return $response;
@@ -273,7 +273,7 @@ final class Restore_Points {
 			Events::add(
 				'system',
 				/* translators: 1: plugin or theme, 2: reason. */
-				sprintf( __( 'No restore point before updating %1$s: %2$s', 'sentinel-shield' ), $label, $result->get_error_message() ),
+				sprintf( __( 'No restore point before updating %1$s: %2$s', 'chaos-shield' ), $label, $result->get_error_message() ),
 				Request::ip(),
 				array( 'severity' => Events::NOTICE )
 			);
@@ -294,7 +294,7 @@ final class Restore_Points {
 		$index    = self::all();
 		$manifest = self::manifest( $id );
 		if ( ! isset( $index[ $id ] ) || ! $manifest ) {
-			return new \WP_Error( 'sshield_rp_missing', __( 'That restore point is gone.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_rp_missing', __( 'That restore point is gone.', 'chaos-shield' ) );
 		}
 		$dir = self::base() . '/' . $id;
 
@@ -304,7 +304,7 @@ final class Restore_Points {
 		foreach ( $manifest['items'] as $item ) {
 			$path = self::path( isset( $item['path'] ) ? $item['path'] : '' );
 			if ( '' === $path ) {
-				return new \WP_Error( 'sshield_rp_bad', __( 'The restore point names a file outside the site, so it was not used.', 'sentinel-shield' ) );
+				return new \WP_Error( 'cshield_rp_bad', __( 'The restore point names a file outside the site, so it was not used.', 'chaos-shield' ) );
 			}
 			if ( 'folder' === $item['kind'] ) {
 				$folders[] = $path;
@@ -312,7 +312,7 @@ final class Restore_Points {
 				$files[] = $path;
 			}
 			if ( in_array( $item['kind'], array( 'file', 'member' ), true ) && sha1( self::read_blob( $dir, $item ) ) !== $item['sha1'] ) {
-				return new \WP_Error( 'sshield_rp_damaged', __( 'A file in this restore point is damaged, so nothing was restored.', 'sentinel-shield' ) );
+				return new \WP_Error( 'cshield_rp_damaged', __( 'A file in this restore point is damaged, so nothing was restored.', 'chaos-shield' ) );
 			}
 		}
 
@@ -327,10 +327,10 @@ final class Restore_Points {
 			$path = self::path( $item['path'] );
 			if ( 'folder' === $item['kind'] && is_dir( $path ) ) {
 				// Move the current folder aside so files the update added go away too.
-				$aside = $path . '.sshield-old-' . strtolower( wp_generate_password( 6, false ) );
+				$aside = $path . '.cshield-old-' . strtolower( wp_generate_password( 6, false ) );
 				if ( ! @rename( $path, $aside ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions.rename_rename -- Reported below.
 					self::undo_moves( $moved );
-					return new \WP_Error( 'sshield_rp_move', __( 'Could not replace the folder. Check the file permissions.', 'sentinel-shield' ) );
+					return new \WP_Error( 'cshield_rp_move', __( 'Could not replace the folder. Check the file permissions.', 'chaos-shield' ) );
 				}
 				$moved[ $path ] = $aside;
 			} elseif ( 'absent' === $item['kind'] && is_file( $path ) ) {
@@ -339,7 +339,7 @@ final class Restore_Points {
 				wp_mkdir_p( dirname( $path ) );
 				if ( false === file_put_contents( $path, self::read_blob( $dir, $item ) ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writes back a verified copy.
 					self::undo_moves( $moved );
-					return new \WP_Error( 'sshield_rp_write', __( 'Could not write a file back. Check the file permissions. The state from before the restore was saved as a new restore point.', 'sentinel-shield' ) );
+					return new \WP_Error( 'cshield_rp_write', __( 'Could not write a file back. Check the file permissions. The state from before the restore was saved as a new restore point.', 'chaos-shield' ) );
 				}
 			}
 		}
@@ -357,7 +357,7 @@ final class Restore_Points {
 		Events::add(
 			'system',
 			/* translators: 1: what was restored, 2: date. */
-			sprintf( __( 'Restored %1$s from the restore point of %2$s.', 'sentinel-shield' ), $label, wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $index[ $id ]['time'] ) ),
+			sprintf( __( 'Restored %1$s from the restore point of %2$s.', 'chaos-shield' ), $label, wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $index[ $id ]['time'] ) ),
 			Request::ip(),
 			array(
 				'severity' => Events::NOTICE,
@@ -456,7 +456,7 @@ final class Restore_Points {
 	 */
 	public function handle() {
 		if ( ! current_user_can( Network::cap() ) ) {
-			wp_die( esc_html__( 'You are not allowed to do this.', 'sentinel-shield' ), 403 );
+			wp_die( esc_html__( 'You are not allowed to do this.', 'chaos-shield' ), 403 );
 		}
 		check_admin_referer( self::ACTION );
 		$op     = isset( $_POST['op'] ) ? sanitize_key( wp_unslash( $_POST['op'] ) ) : '';
@@ -465,10 +465,10 @@ final class Restore_Points {
 		$notice = '';
 		if ( 'create' === $op ) {
 			$files = array( self::config_file() );
-			$label = __( 'wp-config.php and Sentinel Shield settings', 'sentinel-shield' );
+			$label = __( 'wp-config.php and Chaos Shield settings', 'chaos-shield' );
 			if ( is_file( wp_normalize_path( ABSPATH ) . '.htaccess' ) ) {
 				$files[] = wp_normalize_path( ABSPATH ) . '.htaccess';
-				$label   = __( 'wp-config.php, .htaccess and Sentinel Shield settings', 'sentinel-shield' );
+				$label   = __( 'wp-config.php, .htaccess and Chaos Shield settings', 'chaos-shield' );
 			}
 			$result = self::create( 'manual', $label, $files );
 			$notice = 'rp_created';
@@ -487,10 +487,10 @@ final class Restore_Points {
 			$result = Backup::database();
 		}
 		if ( is_wp_error( $result ) ) {
-			Network::set_transient( 'sshield_error_' . get_current_user_id(), $result->get_error_message(), MINUTE_IN_SECONDS );
+			Network::set_transient( 'cshield_error_' . get_current_user_id(), $result->get_error_message(), MINUTE_IN_SECONDS );
 			$notice = '';
 		}
-		wp_safe_redirect( Admin::url( 'backups', array( 'sshield_notice' => $notice ) ) );
+		wp_safe_redirect( Admin::url( 'backups', array( 'cshield_notice' => $notice ) ) );
 		exit;
 	}
 
@@ -504,7 +504,7 @@ final class Restore_Points {
 	public static function base() {
 		$dir = wp_normalize_path( WP_CONTENT_DIR ) . '/' . self::DIR;
 		if ( ! is_dir( $dir ) && ! wp_mkdir_p( $dir ) ) {
-			return new \WP_Error( 'sshield_rp_dir', __( 'Could not create the restore folder in wp-content. Check the folder permissions.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_rp_dir', __( 'Could not create the restore folder in wp-content. Check the folder permissions.', 'chaos-shield' ) );
 		}
 		self::guard( $dir );
 		return $dir;
@@ -540,12 +540,12 @@ final class Restore_Points {
 		$body = file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file.
 		if ( false === $body ) {
 			/* translators: %s: file. */
-			return new \WP_Error( 'sshield_rp_read', sprintf( __( 'Could not read %s.', 'sentinel-shield' ), self::key( $path ) ) );
+			return new \WP_Error( 'cshield_rp_read', sprintf( __( 'Could not read %s.', 'chaos-shield' ), self::key( $path ) ) );
 		}
 		$packed = function_exists( 'gzencode' ) ? gzencode( $body, 6 ) : $body;
 		$blob   = $n . '.php';
 		if ( false === file_put_contents( $dir . '/' . $blob, self::GUARD . $packed ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- The plugin's own restore folder.
-			return new \WP_Error( 'sshield_rp_write', __( 'Could not write the restore point. Check the free disk space.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_rp_write', __( 'Could not write the restore point. Check the free disk space.', 'chaos-shield' ) );
 		}
 		return array(
 			'blob'   => $blob,
@@ -591,7 +591,7 @@ final class Restore_Points {
 			$files[] = wp_normalize_path( $file->getPathname() );
 			if ( count( $files ) > self::MAX_FILES || $bytes > self::MAX_FOLDER ) {
 				/* translators: %s: size such as 60 MB. */
-				return new \WP_Error( 'sshield_rp_big', sprintf( __( 'the folder is larger than %s, so it was not copied.', 'sentinel-shield' ), size_format( self::MAX_FOLDER ) ) );
+				return new \WP_Error( 'cshield_rp_big', sprintf( __( 'the folder is larger than %s, so it was not copied.', 'chaos-shield' ), size_format( self::MAX_FOLDER ) ) );
 			}
 		}
 		return $files;

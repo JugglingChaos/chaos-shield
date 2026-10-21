@@ -2,10 +2,10 @@
 /**
  * Uptime and SSL certificate checks for the sites a hub watches.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -15,8 +15,8 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Uptime {
 
-	const OPTION     = 'sshield_uptime';
-	const HOOK       = 'sshield_uptime_check';
+	const OPTION     = 'cshield_uptime';
+	const HOOK       = 'cshield_uptime_check';
 	const SSL_EVERY  = 12 * HOUR_IN_SECONDS;
 	const SSL_WARN   = 14;
 	const DOWN_AFTER = 2;
@@ -37,9 +37,9 @@ final class Uptime {
 	 * @return array
 	 */
 	public static function schedules( $schedules ) {
-		$schedules['sshield_5min'] = array(
+		$schedules['cshield_5min'] = array(
 			'interval' => 5 * MINUTE_IN_SECONDS,
-			'display'  => 'Every 5 minutes (Sentinel Shield uptime)',
+			'display'  => 'Every 5 minutes (Chaos Shield uptime)',
 		);
 		return $schedules;
 	}
@@ -50,7 +50,7 @@ final class Uptime {
 	public static function schedule() {
 		$next = Network::next_scheduled( self::HOOK );
 		if ( Hub::sites() && ! $next ) {
-			Network::schedule_event( time() + MINUTE_IN_SECONDS, 'sshield_5min', self::HOOK );
+			Network::schedule_event( time() + MINUTE_IN_SECONDS, 'cshield_5min', self::HOOK );
 		} elseif ( ! Hub::sites() && $next ) {
 			Network::clear_scheduled( self::HOOK );
 		}
@@ -127,7 +127,7 @@ final class Uptime {
 			array(
 				'timeout'     => 15,
 				'redirection' => 3,
-				'user-agent'  => 'SentinelShieldUptime/' . SSHIELD_VERSION . '; ' . home_url( '/' ),
+				'user-agent'  => 'ChaosShieldUptime/' . CSHIELD_VERSION . '; ' . home_url( '/' ),
 				'headers'     => array( 'Cache-Control' => 'no-cache' ),
 			)
 		);
@@ -158,14 +158,14 @@ final class Uptime {
 			$state['down']  = true;
 			$state['since'] = time();
 			/* translators: 1: site name, 2: error. */
-			Events::add( 'system', sprintf( __( 'Hub: %1$s is down (%2$s).', 'sentinel-shield' ), $site['name'], $err ), '', array( 'severity' => Events::CRITICAL ) );
+			Events::add( 'system', sprintf( __( 'Hub: %1$s is down (%2$s).', 'chaos-shield' ), $site['name'], $err ), '', array( 'severity' => Events::CRITICAL ) );
 			Alerts::send(
 				'alert_uptime',
 				/* translators: %s: site name. */
-				sprintf( __( '%s is down', 'sentinel-shield' ), $site['name'] ),
+				sprintf( __( '%s is down', 'chaos-shield' ), $site['name'] ),
 				sprintf(
 					/* translators: 1: site address, 2: number of checks, 3: error. */
-					__( "%1\$s did not answer correctly %2\$d checks in a row.\n\nLast error: %3\$s\n\nYou will get another email when it is back.", 'sentinel-shield' ),
+					__( "%1\$s did not answer correctly %2\$d checks in a row.\n\nLast error: %3\$s\n\nYou will get another email when it is back.", 'chaos-shield' ),
 					$site['url'],
 					$fails,
 					$err
@@ -177,13 +177,13 @@ final class Uptime {
 			$state['down']  = false;
 			$state['since'] = time();
 			/* translators: 1: site name, 2: minutes. */
-			Events::add( 'system', sprintf( __( 'Hub: %1$s is back up after %2$d minutes.', 'sentinel-shield' ), $site['name'], $minutes ), '', array( 'severity' => Events::NOTICE ) );
+			Events::add( 'system', sprintf( __( 'Hub: %1$s is back up after %2$d minutes.', 'chaos-shield' ), $site['name'], $minutes ), '', array( 'severity' => Events::NOTICE ) );
 			Alerts::send(
 				'alert_uptime',
 				/* translators: %s: site name. */
-				sprintf( __( '%s is back up', 'sentinel-shield' ), $site['name'] ),
+				sprintf( __( '%s is back up', 'chaos-shield' ), $site['name'] ),
 				/* translators: 1: site address, 2: minutes. */
-				sprintf( __( '%1$s answers again. It was down for about %2$d minutes.', 'sentinel-shield' ), $site['url'], $minutes ),
+				sprintf( __( '%1$s answers again. It was down for about %2$d minutes.', 'chaos-shield' ), $site['url'], $minutes ),
 				'up|' . md5( $site['url'] )
 			);
 		} elseif ( ! isset( $state['since'] ) ) {
@@ -218,12 +218,12 @@ final class Uptime {
 				'alert_uptime',
 				$days < 0
 					/* translators: %s: site name. */
-					? sprintf( __( 'The certificate of %s has expired', 'sentinel-shield' ), $site['name'] )
+					? sprintf( __( 'The certificate of %s has expired', 'chaos-shield' ), $site['name'] )
 					/* translators: 1: site name, 2: days. */
-					: sprintf( _n( 'The certificate of %1$s expires in %2$d day', 'The certificate of %1$s expires in %2$d days', $days, 'sentinel-shield' ), $site['name'], $days ),
+					: sprintf( _n( 'The certificate of %1$s expires in %2$d day', 'The certificate of %1$s expires in %2$d days', $days, 'chaos-shield' ), $site['name'], $days ),
 				sprintf(
 					/* translators: 1: site address, 2: expiry date, 3: issuer. */
-					__( "The HTTPS certificate of %1\$s expires on %2\$s (issued by %3\$s). Visitors will see a security warning after that.\n\nMost hosts renew certificates automatically; if this one did not renew, ask your host or renew it in your hosting panel.", 'sentinel-shield' ),
+					__( "The HTTPS certificate of %1\$s expires on %2\$s (issued by %3\$s). Visitors will see a security warning after that.\n\nMost hosts renew certificates automatically; if this one did not renew, ask your host or renew it in your hosting panel.", 'chaos-shield' ),
 					$site['url'],
 					wp_date( get_option( 'date_format' ), (int) $state['ssl']['expires'] ),
 					isset( $state['ssl']['issuer'] ) ? $state['ssl']['issuer'] : '?'
@@ -260,7 +260,7 @@ final class Uptime {
 			'error'   => '',
 		);
 		if ( ! function_exists( 'openssl_x509_parse' ) || '' === $host ) {
-			$out['error'] = __( 'This server cannot read certificates (OpenSSL is missing).', 'sentinel-shield' );
+			$out['error'] = __( 'This server cannot read certificates (OpenSSL is missing).', 'chaos-shield' );
 			return $out;
 		}
 		$cert = self::fetch_cert( $host, $port, true, $error );
@@ -310,9 +310,9 @@ final class Uptime {
 		$errstr  = '';
 		$client  = @stream_socket_client( 'ssl://' . $host . ':' . $port, $errno, $errstr, 10, STREAM_CLIENT_CONNECT, $context ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Failure is reported.
 		if ( ! $client ) {
-			$error = $errstr ? $errstr : __( 'The certificate could not be verified.', 'sentinel-shield' );
+			$error = $errstr ? $errstr : __( 'The certificate could not be verified.', 'chaos-shield' );
 			if ( $verify && '' === $errstr ) {
-				$error = __( 'The certificate is not trusted, or does not match the site name.', 'sentinel-shield' );
+				$error = __( 'The certificate is not trusted, or does not match the site name.', 'chaos-shield' );
 			}
 			return false;
 		}

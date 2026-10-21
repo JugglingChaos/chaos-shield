@@ -2,10 +2,10 @@
 /**
  * The Edge tab: under attack mode, Cloudflare and other edge services, HTTPS, page scripts and exposed files.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -15,8 +15,8 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Edge {
 
-	const ACTION   = 'sshield_edge';
-	const FEED_KEY = 'sshield_ban_feed_key';
+	const ACTION   = 'cshield_edge';
+	const FEED_KEY = 'cshield_ban_feed_key';
 	const ROUTE    = '/banlist';
 
 	/**
@@ -76,7 +76,7 @@ final class Edge {
 	public static function feed( $request ) {
 		$key = (string) $request->get_param( 'key' );
 		if ( ! Settings::get( 'ban_feed' ) || '' === $key || ! hash_equals( self::feed_key(), $key ) ) {
-			return new \WP_Error( 'sshield_feed', 'Not found', array( 'status' => 404 ) );
+			return new \WP_Error( 'cshield_feed', 'Not found', array( 'status' => 404 ) );
 		}
 		$lines = array_keys( Bans::bans() );
 		foreach ( (array) Settings::get( 'ip_blocklist' ) as $entry ) {
@@ -89,7 +89,7 @@ final class Edge {
 			header( 'Content-Type: text/plain; charset=utf-8' );
 			header( 'X-Robots-Tag: noindex' );
 		}
-		echo '# Sentinel Shield ban list for ' . esc_html( home_url() ) . ', ' . esc_html( gmdate( 'c' ) ) . "\n";
+		echo '# Chaos Shield ban list for ' . esc_html( home_url() ) . ', ' . esc_html( gmdate( 'c' ) ) . "\n";
 		echo esc_html( implode( "\n", $lines ) ) . ( $lines ? "\n" : '' );
 		exit;
 	}
@@ -101,7 +101,7 @@ final class Edge {
 	 */
 	public static function handle() {
 		if ( ! current_user_can( Network::cap() ) ) {
-			wp_die( esc_html__( 'You are not allowed to change Sentinel Shield settings.', 'sentinel-shield' ), 403 );
+			wp_die( esc_html__( 'You are not allowed to change Chaos Shield settings.', 'chaos-shield' ), 403 );
 		}
 		check_admin_referer( self::ACTION );
 		$op     = isset( $_POST['op'] ) ? sanitize_key( wp_unslash( $_POST['op'] ) ) : '';
@@ -115,7 +115,7 @@ final class Edge {
 				break;
 			case 'save':
 				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Each field is checked in save_edge().
-				$input = isset( $_POST['sshield'] ) && is_array( $_POST['sshield'] ) ? wp_unslash( $_POST['sshield'] ) : array();
+				$input = isset( $_POST['cshield'] ) && is_array( $_POST['cshield'] ) ? wp_unslash( $_POST['cshield'] ) : array();
 				if ( ! empty( $input['force_https'] ) && ! Settings::get( 'force_https' ) ) {
 					$can = Https::can_force();
 					if ( true !== $can ) {
@@ -125,7 +125,7 @@ final class Edge {
 				}
 				$fields = isset( $_POST['fields'] ) ? array_map( 'sanitize_key', explode( ',', sanitize_text_field( wp_unslash( $_POST['fields'] ) ) ) ) : array();
 				Settings::save_edge( $input, $fields );
-				Events::add( 'settings', __( 'Edge settings updated.', 'sentinel-shield' ), Request::ip(), array( 'action' => 'settings.edge' ) );
+				Events::add( 'settings', __( 'Edge settings updated.', 'chaos-shield' ), Request::ip(), array( 'action' => 'settings.edge' ) );
 				break;
 			case 'check':
 				Page_Check::run();
@@ -191,9 +191,9 @@ final class Edge {
 				break;
 		}
 		if ( $error ) {
-			Network::set_transient( 'sshield_error_' . get_current_user_id(), $error, MINUTE_IN_SECONDS );
+			Network::set_transient( 'cshield_error_' . get_current_user_id(), $error, MINUTE_IN_SECONDS );
 		}
-		wp_safe_redirect( Admin::url( 'edge', array( 'sshield_notice' => $error ? 'edge_error' : $notice ) ) . '#' . self::anchor( $op ) );
+		wp_safe_redirect( Admin::url( 'edge', array( 'cshield_notice' => $error ? 'edge_error' : $notice ) ) . '#' . self::anchor( $op ) );
 		exit;
 	}
 
@@ -205,15 +205,15 @@ final class Edge {
 	 */
 	private static function anchor( $op ) {
 		if ( in_array( $op, array( 'approve', 'block', 'forget', 'approve_all' ), true ) ) {
-			return 'sshield-scripts';
+			return 'cshield-scripts';
 		}
 		if ( in_array( $op, array( 'delete_file', 'protect', 'unprotect' ), true ) ) {
-			return 'sshield-exposure';
+			return 'cshield-exposure';
 		}
 		if ( 0 === strpos( $op, 'cf_' ) || 'feed_new' === $op ) {
-			return 'sshield-cloudflare';
+			return 'cshield-cloudflare';
 		}
-		return 'sshield-attack';
+		return 'cshield-attack';
 	}
 
 	// Security score.
@@ -231,26 +231,26 @@ final class Edge {
 			$days = isset( $cert['expires'] ) ? Uptime::days_left( (int) $cert['expires'] ) : null;
 			if ( null === $days ) {
 				$status = Posture::WARN;
-				$detail = __( 'The certificate could not be read in the last check.', 'sentinel-shield' );
+				$detail = __( 'The certificate could not be read in the last check.', 'chaos-shield' );
 			} elseif ( $days < 0 || empty( $cert['trusted'] ) ) {
 				$status = Posture::FAIL;
-				$detail = $days < 0 ? __( 'The HTTPS certificate has expired. Visitors see a security warning.', 'sentinel-shield' ) : __( 'Browsers do not trust the HTTPS certificate.', 'sentinel-shield' );
+				$detail = $days < 0 ? __( 'The HTTPS certificate has expired. Visitors see a security warning.', 'chaos-shield' ) : __( 'Browsers do not trust the HTTPS certificate.', 'chaos-shield' );
 			} elseif ( $days <= Uptime::SSL_WARN ) {
 				$status = Posture::WARN;
 				/* translators: %d: days. */
-				$detail = sprintf( _n( 'The HTTPS certificate expires in %d day.', 'The HTTPS certificate expires in %d days.', $days, 'sentinel-shield' ), $days );
+				$detail = sprintf( _n( 'The HTTPS certificate expires in %d day.', 'The HTTPS certificate expires in %d days.', $days, 'chaos-shield' ), $days );
 			} else {
 				$status = Posture::PASS;
 				/* translators: %d: days. */
-				$detail = sprintf( __( 'The certificate is valid for %d more days.', 'sentinel-shield' ), $days );
+				$detail = sprintf( __( 'The certificate is valid for %d more days.', 'chaos-shield' ), $days );
 			}
-			$out[] = array( 'tls_cert', __( 'HTTPS certificate', 'sentinel-shield' ), $status, $detail, 2 );
+			$out[] = array( 'tls_cert', __( 'HTTPS certificate', 'chaos-shield' ), $status, $detail, 2 );
 			if ( $https['redirect'] ) {
 				$ok    = $https['redirect']['ok'] || Settings::get( 'force_https' );
-				$out[] = array( 'https_redirect', __( 'HTTPS redirect', 'sentinel-shield' ), $ok ? Posture::PASS : Posture::WARN, $ok ? __( 'Visitors who type http:// are sent to HTTPS.', 'sentinel-shield' ) : __( 'The site still answers on plain http. Switch on "Send every visitor to HTTPS" on the Edge tab.', 'sentinel-shield' ), 1 );
+				$out[] = array( 'https_redirect', __( 'HTTPS redirect', 'chaos-shield' ), $ok ? Posture::PASS : Posture::WARN, $ok ? __( 'Visitors who type http:// are sent to HTTPS.', 'chaos-shield' ) : __( 'The site still answers on plain http. Switch on "Send every visitor to HTTPS" on the Edge tab.', 'chaos-shield' ), 1 );
 			}
 			$mixed = $https['mixed'] && ! Settings::get( 'https_upgrade' );
-			$out[] = array( 'mixed_content', __( 'Mixed content', 'sentinel-shield' ), $mixed ? Posture::WARN : Posture::PASS, $mixed ? __( 'Some pages load images or scripts over plain http. Switch on the fix on the Edge tab.', 'sentinel-shield' ) : __( 'Pages load their files over HTTPS.', 'sentinel-shield' ), 1 );
+			$out[] = array( 'mixed_content', __( 'Mixed content', 'chaos-shield' ), $mixed ? Posture::WARN : Posture::PASS, $mixed ? __( 'Some pages load images or scripts over plain http. Switch on the fix on the Edge tab.', 'chaos-shield' ) : __( 'Pages load their files over HTTPS.', 'chaos-shield' ), 1 );
 		}
 		$exp = Exposure::state();
 		if ( $exp['checked'] && Settings::enabled( 'exposure_check' ) ) {
@@ -265,24 +265,24 @@ final class Edge {
 			$local  = count( $exp['files'] ) - $public;
 			if ( $public || $exp['keys'] ) {
 				$status = Posture::FAIL;
-				$detail = __( 'Private files or secret keys can be downloaded by anyone. See the Edge tab.', 'sentinel-shield' );
+				$detail = __( 'Private files or secret keys can be downloaded by anyone. See the Edge tab.', 'chaos-shield' );
 			} elseif ( $local ) {
 				$status = Posture::WARN;
-				$detail = __( 'Backups or logs sit in a public folder. They cannot be downloaded now, but should be moved or deleted.', 'sentinel-shield' );
+				$detail = __( 'Backups or logs sit in a public folder. They cannot be downloaded now, but should be moved or deleted.', 'chaos-shield' );
 			} else {
 				$status = Posture::PASS;
-				$detail = __( 'No backups, logs, .env or .git can be downloaded, and no keys show in your pages.', 'sentinel-shield' );
+				$detail = __( 'No backups, logs, .env or .git can be downloaded, and no keys show in your pages.', 'chaos-shield' );
 			}
-			$out[] = array( 'exposure', __( 'Exposed files and keys', 'sentinel-shield' ), $status, $detail, 3 );
+			$out[] = array( 'exposure', __( 'Exposed files and keys', 'chaos-shield' ), $status, $detail, 3 );
 		}
 		$scripts = Scripts::state();
 		if ( $scripts['checked'] && Settings::enabled( 'script_watch' ) ) {
 			$c     = Scripts::counts();
 			$out[] = array(
 				'page_scripts',
-				__( 'Page scripts', 'sentinel-shield' ),
+				__( 'Page scripts', 'chaos-shield' ),
 				$c['flagged'] ? Posture::FAIL : ( $c['new'] ? Posture::WARN : Posture::PASS ),
-				$c['flagged'] ? __( 'A script on your pages looks harmful. Review it on the Edge tab.', 'sentinel-shield' ) : ( $c['new'] ? __( 'New scripts appeared on your pages and wait for your review on the Edge tab.', 'sentinel-shield' ) : __( 'Every script on your pages is one you approved.', 'sentinel-shield' ) ),
+				$c['flagged'] ? __( 'A script on your pages looks harmful. Review it on the Edge tab.', 'chaos-shield' ) : ( $c['new'] ? __( 'New scripts appeared on your pages and wait for your review on the Edge tab.', 'chaos-shield' ) : __( 'Every script on your pages is one you approved.', 'chaos-shield' ) ),
 				2,
 			);
 		}

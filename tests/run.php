@@ -8,46 +8,46 @@
  * Never run this on a production site: it creates users, bans IPs and plants a
  * harmless test file in the uploads folder (all removed at the end).
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
 // phpcs:disable WordPress.Security.EscapeOutput, WordPress.WP.AlternativeFunctions, WordPress.PHP.NoSilencedErrors, WordPress.WP.EnqueuedResources -- Command line test code.
 
-namespace SentinelShield\Tests;
+namespace ChaosShield\Tests;
 
-use SentinelShield\Alerts;
-use SentinelShield\Api;
-use SentinelShield\Attack_Mode;
-use SentinelShield\Cloudflare;
-use SentinelShield\Edge;
-use SentinelShield\Exposure;
-use SentinelShield\Https;
-use SentinelShield\Page_Check;
-use SentinelShield\Scripts;
-use SentinelShield\Captcha;
-use SentinelShield\Connections;
-use SentinelShield\Forwarder;
-use SentinelShield\Bans;
-use SentinelShield\Events;
-use SentinelShield\Firewall;
-use SentinelShield\Geo_Db;
-use SentinelShield\Help;
-use SentinelShield\Incidents;
-use SentinelShield\Integrity;
-use SentinelShield\Login_Guard;
-use SentinelShield\Network;
-use SentinelShield\Password_Policy;
-use SentinelShield\Request;
-use SentinelShield\Restore_Points;
-use SentinelShield\Backup;
-use SentinelShield\Scanner;
-use SentinelShield\Settings;
-use SentinelShield\Siem;
-use SentinelShield\Threat_Feed;
-use SentinelShield\Totp;
-use SentinelShield\Two_Factor;
+use ChaosShield\Alerts;
+use ChaosShield\Api;
+use ChaosShield\Attack_Mode;
+use ChaosShield\Cloudflare;
+use ChaosShield\Edge;
+use ChaosShield\Exposure;
+use ChaosShield\Https;
+use ChaosShield\Page_Check;
+use ChaosShield\Scripts;
+use ChaosShield\Captcha;
+use ChaosShield\Connections;
+use ChaosShield\Forwarder;
+use ChaosShield\Bans;
+use ChaosShield\Events;
+use ChaosShield\Firewall;
+use ChaosShield\Geo_Db;
+use ChaosShield\Help;
+use ChaosShield\Incidents;
+use ChaosShield\Integrity;
+use ChaosShield\Login_Guard;
+use ChaosShield\Network;
+use ChaosShield\Password_Policy;
+use ChaosShield\Request;
+use ChaosShield\Restore_Points;
+use ChaosShield\Backup;
+use ChaosShield\Scanner;
+use ChaosShield\Settings;
+use ChaosShield\Siem;
+use ChaosShield\Threat_Feed;
+use ChaosShield\Totp;
+use ChaosShield\Two_Factor;
 
-if ( ! defined( 'WP_CLI' ) || ! class_exists( '\SentinelShield\Settings' ) ) {
+if ( ! defined( 'WP_CLI' ) || ! class_exists( '\ChaosShield\Settings' ) ) {
 	echo "Run with: wp eval-file tests/run.php\n";
 	return;
 }
@@ -90,7 +90,7 @@ Network::delete_option( Firewall::EXCEPTIONS );
 Network::update_option( Settings::OPTION, $sst_s );
 Settings::forget();
 
-echo 'Sentinel Shield ' . SSHIELD_VERSION . ' integration tests against ' . home_url( '/' ) . "\n";
+echo 'Chaos Shield ' . CSHIELD_VERSION . ' integration tests against ' . home_url( '/' ) . "\n";
 $probe = http( 'GET', '/', ip() );
 if ( 200 !== $probe['status'] ) {
 	echo "The site did not answer with 200 ({$probe['status']}): start it first.\n";
@@ -136,36 +136,36 @@ group(
 
 		$res = login( $user->user_login, $pass, $from );
 		check( 'the password alone does not log in', ! logged_in( $res ) );
-		check( 'the password step sends the user to the code step', false !== strpos( $res['location'], 'action=sshield_2fa' ) );
+		check( 'the password step sends the user to the code step', false !== strpos( $res['location'], 'action=cshield_2fa' ) );
 
-		$wrong = http( 'POST', $res['location'], $from, array( 'body' => array( 'sshield_code' => '000000' === Totp::code( $secret, (int) floor( time() / 30 ) ) ? '111111' : '000000' ) ) );
+		$wrong = http( 'POST', $res['location'], $from, array( 'body' => array( 'cshield_code' => '000000' === Totp::code( $secret, (int) floor( time() / 30 ) ) ? '111111' : '000000' ) ) );
 		check( 'a wrong code is refused', ! logged_in( $wrong ) && false !== strpos( $wrong['body'], 'login_error' ) );
 
 		$code = Totp::code( $secret, (int) floor( time() / 30 ) );
-		$ok   = http( 'POST', $res['location'], $from, array( 'body' => array( 'sshield_code' => $code ) ) );
+		$ok   = http( 'POST', $res['location'], $from, array( 'body' => array( 'cshield_code' => $code ) ) );
 		check( 'the current code logs in', logged_in( $ok ) );
 
 		$again  = login( $user->user_login, $pass, $from );
-		$replay = http( 'POST', $again['location'], $from, array( 'body' => array( 'sshield_code' => $code ) ) );
+		$replay = http( 'POST', $again['location'], $from, array( 'body' => array( 'cshield_code' => $code ) ) );
 		check( 'the same code cannot be used twice', ! logged_in( $replay ) );
 
 		$third = login( $user->user_login, $pass, $from );
-		check( 'a recovery code logs in once', logged_in( http( 'POST', $third['location'], $from, array( 'body' => array( 'sshield_code' => $recovery ) ) ) ) );
+		check( 'a recovery code logs in once', logged_in( http( 'POST', $third['location'], $from, array( 'body' => array( 'cshield_code' => $recovery ) ) ) ) );
 		$fourth = login( $user->user_login, $pass, $from );
-		check( 'the recovery code is then used up', ! logged_in( http( 'POST', $fourth['location'], $from, array( 'body' => array( 'sshield_code' => $recovery ) ) ) ) );
+		check( 'the recovery code is then used up', ! logged_in( http( 'POST', $fourth['location'], $from, array( 'body' => array( 'cshield_code' => $recovery ) ) ) ) );
 
 		$forged = http(
 			'POST',
 			add_query_arg(
 				array(
-					'action' => 'sshield_2fa',
+					'action' => 'cshield_2fa',
 					'uid'    => $user->ID,
 					'token'  => 'forged',
 				),
 				'/wp-login.php'
 			),
 			$from,
-			array( 'body' => array( 'sshield_code' => Totp::code( $secret, (int) floor( time() / 30 ) + 1 ) ) )
+			array( 'body' => array( 'cshield_code' => Totp::code( $secret, (int) floor( time() / 30 ) + 1 ) ) )
 		);
 		check( 'a forged challenge token is rejected', ! logged_in( $forged ) );
 
@@ -328,7 +328,7 @@ group(
 		$path     = '/?sst_form=1';
 		$first    = http( 'POST', $path, ip(), array( 'body' => array( 'snippet' => '<script>track()</script>' ) ) );
 		preg_match( '/Reference: ([A-Z0-9]{8})/', $first['body'], $m );
-		$page = http( 'GET', Network::admin_url( 'admin.php?page=sentinel-shield&tab=firewall' ), $me, array( 'cookies' => $acookies ) );
+		$page = http( 'GET', Network::admin_url( 'admin.php?page=chaos-shield&tab=firewall' ), $me, array( 'cookies' => $acookies ) );
 		preg_match( '#name="_wpnonce" value="([a-f0-9]+)"#', $page['body'], $n );
 		check( 'the Firewall tab lists the hit', 200 === $page['status'] && ! empty( $m[1] ) && false !== strpos( $page['body'], $m[1] ) );
 		http(
@@ -338,7 +338,7 @@ group(
 			array(
 				'cookies' => $acookies,
 				'body'    => array(
-					'action'   => 'sshield_firewall',
+					'action'   => 'cshield_firewall',
 					'_wpnonce' => isset( $n[1] ) ? $n[1] : '',
 					'op'       => 'allow',
 					'ref'      => isset( $m[1] ) ? strtolower( $m[1] ) : '',
@@ -370,7 +370,7 @@ group(
 		};
 		$saved = array(
 			Network::get_option( Captcha::SECRET ),
-			Network::get_option( 'sshield_hcaptcha_secret' ),
+			Network::get_option( 'cshield_hcaptcha_secret' ),
 			Network::get_option( Connections::CHAT_URL ),
 		);
 		$key   = '0x4AAAAAAAsstTestKey000';
@@ -409,7 +409,7 @@ group(
 				'token'    => '',
 			)
 		);
-		check( 'an unreachable service asks before saving', is_wp_error( $off ) && 'sshield_unreachable' === $off->get_error_code() && ! Settings::enabled( 'captcha' ) );
+		check( 'an unreachable service asks before saving', is_wp_error( $off ) && 'cshield_unreachable' === $off->get_error_code() && ! Settings::enabled( 'captcha' ) );
 
 		$mock( array( 'challenges.cloudflare.com' => array( 'body' => '{"success":false,"error-codes":["invalid-input-response"]}' ) ) );
 		$ok = Connections::connect(
@@ -473,7 +473,7 @@ group(
 
 		Connections::disconnect( 'hcaptcha' );
 		Settings::forget();
-		check( 'disconnecting the CAPTCHA in use switches it off and deletes the secret', ! Settings::enabled( 'captcha' ) && ! Network::get_option( 'sshield_hcaptcha_secret' ) && '' === Settings::get( 'hcaptcha_site_key' ) );
+		check( 'disconnecting the CAPTCHA in use switches it off and deletes the secret', ! Settings::enabled( 'captcha' ) && ! Network::get_option( 'cshield_hcaptcha_secret' ) && '' === Settings::get( 'hcaptcha_site_key' ) );
 
 		$bad = Connections::connect(
 			'slack',
@@ -496,7 +496,7 @@ group(
 			)
 		);
 		$sent = $log();
-		check( 'Slack connects after a test message', is_string( $ok ) && 'slack' === Connections::chat() && $sent && false !== strpos( $sent[0]['body'], 'Sentinel Shield is connected' ), is_wp_error( $ok ) ? $ok->get_error_message() : '' );
+		check( 'Slack connects after a test message', is_string( $ok ) && 'slack' === Connections::chat() && $sent && false !== strpos( $sent[0]['body'], 'Chaos Shield is connected' ), is_wp_error( $ok ) ? $ok->get_error_message() : '' );
 		check( 'the webhook address is stored encrypted and shown shortened', false === strpos( (string) Network::get_option( Connections::CHAT_URL ), 'sstsecret' ) && false === strpos( Connections::chat_hint(), 'sstsecret' ) );
 
 		update_site_option( 'sst_http_log', array() );
@@ -534,10 +534,10 @@ group(
 			grant_super_admin( $admin->ID );
 		}
 		$cookie = admin_cookies( $admin->ID );
-		$tab    = http( 'GET', Network::admin_url( 'admin.php?page=sentinel-shield&tab=alerts' ), ip(), array( 'cookies' => $cookie ) );
-		check( 'the alerts tab has the chat connections and their dialogs', false !== strpos( $tab['body'], 'id="sshield-connect-slack"' ) && false !== strpos( $tab['body'], 'data-connect-test="slack"' ) && false === strpos( $tab['body'], 'sstsecret' ) );
-		$hard = http( 'GET', Network::admin_url( 'admin.php?page=sentinel-shield&tab=hardening' ), ip(), array( 'cookies' => $cookie ) );
-		check( 'the hardening tab has the CAPTCHA dialogs and no raw key fields', false !== strpos( $hard['body'], 'id="sshield-connect-hcaptcha"' ) && false === strpos( $hard['body'], 'sshield[turnstile_secret]' ) );
+		$tab    = http( 'GET', Network::admin_url( 'admin.php?page=chaos-shield&tab=alerts' ), ip(), array( 'cookies' => $cookie ) );
+		check( 'the alerts tab has the chat connections and their dialogs', false !== strpos( $tab['body'], 'id="cshield-connect-slack"' ) && false !== strpos( $tab['body'], 'data-connect-test="slack"' ) && false === strpos( $tab['body'], 'sstsecret' ) );
+		$hard = http( 'GET', Network::admin_url( 'admin.php?page=chaos-shield&tab=hardening' ), ip(), array( 'cookies' => $cookie ) );
+		check( 'the hardening tab has the CAPTCHA dialogs and no raw key fields', false !== strpos( $hard['body'], 'id="cshield-connect-hcaptcha"' ) && false === strpos( $hard['body'], 'cshield[turnstile_secret]' ) );
 		preg_match( '#"connect":"([a-f0-9]+)"#', $tab['body'], $m );
 		$nonce = isset( $m[1] ) ? $m[1] : '';
 		$ajax  = static function ( array $body, array $cookies ) {
@@ -553,7 +553,7 @@ group(
 		};
 		$r     = $ajax(
 			array(
-				'action'  => 'sshield_connect',
+				'action'  => 'cshield_connect',
 				'service' => 'slack',
 				'op'      => 'disconnect',
 			),
@@ -563,7 +563,7 @@ group(
 		$editor = user( 'editor' );
 		$r      = $ajax(
 			array(
-				'action'      => 'sshield_connect',
+				'action'      => 'cshield_connect',
 				'service'     => 'slack',
 				'op'          => 'disconnect',
 				'_ajax_nonce' => $nonce,
@@ -573,7 +573,7 @@ group(
 		check( 'editors cannot change connections', false === strpos( $r['body'], '"success":true' ) );
 		$r = $ajax(
 			array(
-				'action'      => 'sshield_connect',
+				'action'      => 'cshield_connect',
 				'service'     => 'slack',
 				'op'          => 'disconnect',
 				'_ajax_nonce' => $nonce,
@@ -613,7 +613,7 @@ group(
 
 		delete_site_option( 'sst_http_mock' );
 		delete_site_option( 'sst_http_log' );
-		foreach ( array( Captcha::SECRET, 'sshield_hcaptcha_secret', Connections::CHAT_URL ) as $i => $name ) {
+		foreach ( array( Captcha::SECRET, 'cshield_hcaptcha_secret', Connections::CHAT_URL ) as $i => $name ) {
 			$saved[ $i ] ? Network::update_option( $name, $saved[ $i ], false ) : Network::delete_option( $name );
 		}
 		Network::delete_option( Connections::CHAT_STATUS );
@@ -665,8 +665,8 @@ group(
 			if ( is_multisite() ) {
 				grant_super_admin( $admin->ID );
 			}
-			$tab = http( 'GET', Network::admin_url( 'admin.php?page=sentinel-shield&tab=scan' ), ip(), array( 'cookies' => admin_cookies( $admin->ID ) ) );
-			check( 'the scan tab shows the change line by line', false !== strpos( $tab['body'], 'id="sshield-integrity"' ) && false !== strpos( $tab['body'], 'evil.example' ) && false !== strpos( $tab['body'], 'diff-addedline' ) );
+			$tab = http( 'GET', Network::admin_url( 'admin.php?page=chaos-shield&tab=scan' ), ip(), array( 'cookies' => admin_cookies( $admin->ID ) ) );
+			check( 'the scan tab shows the change line by line', false !== strpos( $tab['body'], 'id="cshield-integrity"' ) && false !== strpos( $tab['body'], 'evil.example' ) && false !== strpos( $tab['body'], 'diff-addedline' ) );
 
 			$points = count( Restore_Points::all() );
 			$put    = Integrity::restore( '.htaccess' );
@@ -754,7 +754,7 @@ group(
 		$uploads = wp_upload_dir();
 		$file    = trailingslashit( $uploads['basedir'] ) . 'sst-test-' . wp_rand() . '.php';
 		// A harmless file that looks exactly like a common web shell.
-		file_put_contents( $file, '<?php /* Sentinel Shield test file */ if ( isset( $_POST["z"] ) ) { eval( base64_decode( $_POST["z"] ) ); }' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Test fixture.
+		file_put_contents( $file, '<?php /* Chaos Shield test file */ if ( isset( $_POST["z"] ) ) { eval( base64_decode( $_POST["z"] ) ); }' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Test fixture.
 		$GLOBALS['sst']['files'][] = $file;
 		Scanner::start( 'test' );
 		$guard = 0;
@@ -804,15 +804,15 @@ group(
 group(
 	'Hub API',
 	function () {
-		$status = '/?rest_route=/sentinel-shield/v1/status';
+		$status = '/?rest_route=/chaos-shield/v1/status';
 		check( 'status needs a key', in_array( http( 'GET', $status, ip() )['status'], array( 401, 403 ), true ) );
-		check( 'a wrong key is refused', 403 === http( 'GET', $status, ip(), array( 'headers' => array( 'X-Sentinel-Key' => 'ssk_wrong' ) ) )['status'] );
+		check( 'a wrong key is refused', 403 === http( 'GET', $status, ip(), array( 'headers' => array( 'X-Chaos-Key' => 'ssk_wrong' ) ) )['status'] );
 		$key = Api::new_key( true );
-		$res = http( 'GET', $status, ip(), array( 'headers' => array( 'X-Sentinel-Key' => $key ) ) );
+		$res = http( 'GET', $status, ip(), array( 'headers' => array( 'X-Chaos-Key' => $key ) ) );
 		$doc = json_decode( $res['body'], true );
 		check( 'the right key reads the status', 200 === $res['status'] && isset( $doc['score'], $doc['incidents'] ) );
 
-		$route = '/sentinel-shield/v1/hub/release';
+		$route = '/chaos-shield/v1/hub/release';
 		$from  = ip();
 		$send  = function ( $time, $nonce, $sig ) use ( $route, $from ) {
 			return http(
@@ -821,9 +821,9 @@ group(
 				$from,
 				array(
 					'headers' => array(
-						'X-Sentinel-Time'      => (string) $time,
-						'X-Sentinel-Nonce'     => $nonce,
-						'X-Sentinel-Signature' => $sig,
+						'X-Chaos-Time'      => (string) $time,
+						'X-Chaos-Nonce'     => $nonce,
+						'X-Chaos-Signature' => $sig,
 					),
 					'body'    => '',
 				)
@@ -859,11 +859,11 @@ group(
 		check( 'a forced reset puts no reset key in the reply', false === strpos( $res['location'] . $res['body'], 'key=' ) );
 		check( 'a forced reset emails a link instead', get_userdata( $user->ID )->user_activation_key !== $before );
 		delete_user_meta( $user->ID, Password_Policy::FORCED_META );
-		Network::delete_transient( 'sshield_rp_sent_' . $user->ID );
+		Network::delete_transient( 'cshield_rp_sent_' . $user->ID );
 
 		// Signed hub reads.
 		$key    = Api::new_key( false );
-		$route  = '/sentinel-shield/v1/status';
+		$route  = '/chaos-shield/v1/status';
 		$nonce  = wp_generate_password( 24, false );
 		$now    = time();
 		$signed = http(
@@ -872,14 +872,14 @@ group(
 			ip(),
 			array(
 				'headers' => array(
-					'X-Sentinel-Time'      => (string) $now,
-					'X-Sentinel-Nonce'     => $nonce,
-					'X-Sentinel-Signature' => Api::sign( hash( 'sha256', $key ), $now, $nonce, 'GET', $route, '' ),
+					'X-Chaos-Time'      => (string) $now,
+					'X-Chaos-Nonce'     => $nonce,
+					'X-Chaos-Signature' => Api::sign( hash( 'sha256', $key ), $now, $nonce, 'GET', $route, '' ),
 				),
 			)
 		);
 		check( 'the hub reads status with a signature instead of the key', 200 === $signed['status'] );
-		check( 'the hub only adds sites over https or a private network', ! \SentinelShield\Hub::secure_url( 'http://example.com' ) && \SentinelShield\Hub::secure_url( 'https://example.com' ) && \SentinelShield\Hub::secure_url( 'http://10.0.0.4' ) );
+		check( 'the hub only adds sites over https or a private network', ! \ChaosShield\Hub::secure_url( 'http://example.com' ) && \ChaosShield\Hub::secure_url( 'https://example.com' ) && \ChaosShield\Hub::secure_url( 'http://10.0.0.4' ) );
 
 		// Proxy headers.
 		check( 'a proxy header from a public address is not believed', ! Request::trusted_proxy( '45.33.1.2', 'HTTP_X_FORWARDED_FOR', array() ) );
@@ -943,10 +943,10 @@ group(
 		$cookies = admin_cookies( $admin->ID );
 		$me      = ip();
 		$profile = http( 'GET', admin_url( 'profile.php' ), $me, array( 'cookies' => $cookies ) );
-		preg_match( '#sshieldPasskey = \{[^;]*?"nonce":"([a-f0-9]+)"#', $profile['body'], $m );
+		preg_match( '#cshieldPasskey = \{[^;]*?"nonce":"([a-f0-9]+)"#', $profile['body'], $m );
 		$ask   = function ( $password ) use ( $me, $cookies, $m ) {
 			$body = array(
-				'action' => 'sshield_pk_reg_options',
+				'action' => 'cshield_pk_reg_options',
 				'nonce'  => isset( $m[1] ) ? $m[1] : '',
 			);
 			if ( null !== $password ) {
@@ -984,7 +984,7 @@ group(
 		}
 		$cookies = admin_cookies( $admin->ID );
 		$me      = ip();
-		$page    = http( 'GET', Network::admin_url( 'admin.php?page=sentinel-shield&tab=backups' ), $me, array( 'cookies' => $cookies ) );
+		$page    = http( 'GET', Network::admin_url( 'admin.php?page=chaos-shield&tab=backups' ), $me, array( 'cookies' => $cookies ) );
 		preg_match( '#name="_wpnonce" value="([a-f0-9]+)"#', $page['body'], $m );
 		$nonce = isset( $m[1] ) ? $m[1] : '';
 		check( 'the Backups tab loads', 200 === $page['status'] && '' !== $nonce );
@@ -1145,7 +1145,7 @@ group(
 			Network::delete_option( Help::REQUESTS );
 			$attack = '/?id=1%20UNION%20SELECT%20user_pass%20FROM%20wp_users';
 			$page   = http( 'GET', $attack, ip(), array( 'headers' => $browser ) );
-			check( 'a blocked browser gets a help page with a 403', 403 === $page['status'] && false !== strpos( $page['body'], 'id="ssh-assistant"' ) && false !== strpos( $page['body'], 'window.sshieldHelp' ) );
+			check( 'a blocked browser gets a help page with a 403', 403 === $page['status'] && false !== strpos( $page['body'], 'id="ssh-assistant"' ) && false !== strpos( $page['body'], 'window.cshieldHelp' ) );
 			check( 'the help page shows the block reference', (bool) preg_match( '/<code>[A-Z0-9]{6,12}<\/code>/', $page['body'] ) );
 			check( 'the help page never names the rule that fired', false === stripos( $page['body'], 'union' ) && false === stripos( $page['body'], 'sql' ) && false === stripos( $page['body'], 'user_pass' ) );
 			$plain = http( 'GET', $attack, ip() );
@@ -1158,7 +1158,7 @@ group(
 			$ban_page = http( 'GET', '/', $banned, array( 'headers' => $browser ) );
 			check( 'a banned visitor gets the help page too', 403 === $ban_page['status'] && false !== strpos( $ban_page['body'], 'ssh-assistant' ) );
 			$form = array(
-				'sshield_help' => 'ask',
+				'cshield_help' => 'ask',
 				'token'        => Help::token( time() - 30 ),
 				'name'         => 'Sam <b>Tester</b>',
 				'email'        => 'sam@example.com',
@@ -1307,7 +1307,7 @@ group(
 			); // phpcs:ignore Squiz.Functions.MultiLineFunctionDeclaration -- Short test callback.
 			$keys = Exposure::state()['keys'];
 			check( 'a secret key in a page is found and shown masked', $keys && 'AWS access key' === $keys[0]['type'] && false === strpos( $keys[0]['masked'], 'AKIAABCDEFGHIJKLMNOP' ) );
-			check( 'the security score reports both', in_array( 'page_scripts', wp_list_pluck( \SentinelShield\Posture::checks(), 'id' ), true ) && in_array( 'exposure', wp_list_pluck( \SentinelShield\Posture::checks(), 'id' ), true ) );
+			check( 'the security score reports both', in_array( 'page_scripts', wp_list_pluck( \ChaosShield\Posture::checks(), 'id' ), true ) && in_array( 'exposure', wp_list_pluck( \ChaosShield\Posture::checks(), 'id' ), true ) );
 
 			// Content Security Policy.
 			$set( array( 'csp_mode' => 'report' ) );
@@ -1324,7 +1324,7 @@ group(
 			$report = static function ( $blocked, $from ) {
 				return http(
 					'POST',
-					rest_url( 'sentinel-shield/v1/csp' ),
+					rest_url( 'chaos-shield/v1/csp' ),
 					$from,
 					array(
 						'headers' => array( 'Content-Type' => 'application/csp-report' ),
@@ -1372,7 +1372,7 @@ group(
 			Attack_Mode::manual( true );
 			$visitor = ip();
 			$gate    = http( 'GET', '/', $visitor, array( 'headers' => $browser ) );
-			check( 'under attack, browsers get the browser check', 503 === $gate['status'] && false !== strpos( $gate['body'], 'name="sshield_pow"' ) && false !== strpos( $gate['body'], 'window.sshieldPow' ) );
+			check( 'under attack, browsers get the browser check', 503 === $gate['status'] && false !== strpos( $gate['body'], 'name="cshield_pow"' ) && false !== strpos( $gate['body'], 'window.cshieldPow' ) );
 			$bot = http( 'GET', '/', ip() );
 			check( 'scripts get a short busy answer', 503 === $bot['status'] && 0 === strpos( $bot['body'], '503' ) );
 			check( 'the REST API is left to its own rate limit', 200 === http( 'GET', rest_url( '/' ), ip() )['status'] );
@@ -1381,7 +1381,7 @@ group(
 				grant_super_admin( $admin->ID );
 			}
 			check( 'logged-in users are never checked', 200 === http( 'GET', '/', ip(), array( 'cookies' => admin_cookies( $admin->ID ) ) )['status'] );
-			preg_match( '/name="sshield_pow" value="([^"]+)"/', $gate['body'], $m );
+			preg_match( '/name="cshield_pow" value="([^"]+)"/', $gate['body'], $m );
 			$challenge = isset( $m[1] ) ? html_entity_decode( $m[1] ) : '';
 			$nonce     = 0;
 			while ( $challenge && ! Attack_Mode::solved( $challenge, (string) $nonce ) && $nonce < 5000000 ) {
@@ -1395,8 +1395,8 @@ group(
 				array(
 					'headers' => $browser,
 					'body'    => array(
-						'sshield_pow'   => $challenge,
-						'sshield_nonce' => (string) $nonce,
+						'cshield_pow'   => $challenge,
+						'cshield_nonce' => (string) $nonce,
 					),
 				)
 			);
@@ -1577,7 +1577,7 @@ group(
 		$cookies = admin_cookies( $admin->ID );
 		$me      = ip();
 		foreach ( array( 'activity', 'siem', 'traffic', 'overview', 'hub', 'access', 'firewall', 'backups', 'hardening', 'help', 'edge' ) as $tab ) {
-			$page = http( 'GET', Network::admin_url( 'admin.php?page=sentinel-shield&tab=' . $tab ), $me, array( 'cookies' => $cookies ) );
+			$page = http( 'GET', Network::admin_url( 'admin.php?page=chaos-shield&tab=' . $tab ), $me, array( 'cookies' => $cookies ) );
 			check(
 				'the ' . $tab . ' tab loads and escapes attacker text',
 				200 === $page['status'] && false === strpos( $page['body'], '<img src=x onerror' ) && false === strpos( $page['body'], '<svg onload' ) && false === strpos( $page['body'], '<script>alert(3)' ),
@@ -1591,7 +1591,7 @@ group(
 			array(
 				'cookies' => $cookies,
 				'body'    => array(
-					'action' => 'sshield_rules',
+					'action' => 'cshield_rules',
 					'rules'  => array(),
 				),
 			)
@@ -1599,8 +1599,8 @@ group(
 		check( 'settings forms refuse requests without a nonce', in_array( $no_nonce['status'], array( 403, 400 ), true ) && array() === (array) Settings::get( 'siem_rules_off' ) );
 
 		$editor = user( 'editor' );
-		$page   = http( 'GET', Network::admin_url( 'admin.php?page=sentinel-shield' ), $me, array( 'cookies' => admin_cookies( $editor->ID ) ) );
-		check( 'editors cannot open the plugin', 200 !== $page['status'] || false === strpos( $page['body'], 'sshield-tabs' ) );
+		$page   = http( 'GET', Network::admin_url( 'admin.php?page=chaos-shield' ), $me, array( 'cookies' => admin_cookies( $editor->ID ) ) );
+		check( 'editors cannot open the plugin', 200 !== $page['status'] || false === strpos( $page['body'], 'cshield-tabs' ) );
 	}
 );
 

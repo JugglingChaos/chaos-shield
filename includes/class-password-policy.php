@@ -2,10 +2,10 @@
 /**
  * Password rules, expiry and forced resets.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -18,9 +18,9 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Password_Policy {
 
-	const CHANGED_META = '_sshield_pw_changed';
-	const FORCED_META  = '_sshield_force_reset';
-	const SINCE_OPTION = 'sshield_pw_policy_since';
+	const CHANGED_META = '_cshield_pw_changed';
+	const FORCED_META  = '_cshield_force_reset';
+	const SINCE_OPTION = 'cshield_pw_policy_since';
 
 	/**
 	 * Registers hooks.
@@ -35,7 +35,7 @@ final class Password_Policy {
 		add_filter( 'user_row_actions', array( $this, 'row_action' ), 10, 2 );
 		add_filter( 'bulk_actions-users', array( $this, 'bulk_action' ) );
 		add_filter( 'handle_bulk_actions-users', array( $this, 'handle_bulk' ), 10, 3 );
-		add_action( 'admin_post_sshield_force_reset', array( $this, 'handle_force' ) );
+		add_action( 'admin_post_cshield_force_reset', array( $this, 'handle_force' ) );
 		add_action( 'admin_notices', array( $this, 'users_notice' ) );
 		add_filter( 'login_message', array( $this, 'reset_message' ) );
 
@@ -88,18 +88,18 @@ final class Password_Policy {
 		$min      = (int) Settings::get( 'pw_min_length' );
 		if ( mb_strlen( $password ) < $min ) {
 			/* translators: %d: minimum length. */
-			$problems[] = sprintf( __( 'Use at least %d characters.', 'sentinel-shield' ), $min );
+			$problems[] = sprintf( __( 'Use at least %d characters.', 'chaos-shield' ), $min );
 		}
 		$need = (int) Settings::get( 'pw_classes' );
 		if ( self::classes( $password ) < $need ) {
 			/* translators: %d: number of character kinds. */
-			$problems[] = sprintf( __( 'Mix at least %d of these: lowercase letters, capital letters, numbers and symbols.', 'sentinel-shield' ), $need );
+			$problems[] = sprintf( __( 'Mix at least %d of these: lowercase letters, capital letters, numbers and symbols.', 'chaos-shield' ), $need );
 		}
 		$lower = mb_strtolower( $password );
 		foreach ( array( $login, strstr( (string) $email, '@', true ) ) as $part ) {
 			$part = mb_strtolower( (string) $part );
 			if ( mb_strlen( $part ) >= 4 && false !== strpos( $lower, $part ) ) {
-				$problems[] = __( 'Do not use your username or email address in the password.', 'sentinel-shield' );
+				$problems[] = __( 'Do not use your username or email address in the password.', 'chaos-shield' );
 				break;
 			}
 		}
@@ -128,7 +128,7 @@ final class Password_Policy {
 	public static function describe() {
 		return sprintf(
 			/* translators: 1: minimum length, 2: number of character kinds. */
-			__( 'Passwords need at least %1$d characters and %2$d of these: lowercase letters, capital letters, numbers and symbols.', 'sentinel-shield' ),
+			__( 'Passwords need at least %1$d characters and %2$d of these: lowercase letters, capital letters, numbers and symbols.', 'chaos-shield' ),
 			(int) Settings::get( 'pw_min_length' ),
 			(int) Settings::get( 'pw_classes' )
 		);
@@ -152,7 +152,7 @@ final class Password_Policy {
 		}
 		$problems = self::problems( (string) $data->user_pass, isset( $data->user_login ) ? (string) $data->user_login : ( $user ? $user->user_login : '' ), isset( $data->user_email ) ? (string) $data->user_email : '' );
 		if ( $problems ) {
-			$errors->add( 'sshield_password_policy', '<strong>' . esc_html__( 'Error:', 'sentinel-shield' ) . '</strong> ' . esc_html( implode( ' ', $problems ) ), array( 'form-field' => 'pass1' ) );
+			$errors->add( 'cshield_password_policy', '<strong>' . esc_html__( 'Error:', 'chaos-shield' ) . '</strong> ' . esc_html( implode( ' ', $problems ) ), array( 'form-field' => 'pass1' ) );
 		}
 	}
 
@@ -169,7 +169,7 @@ final class Password_Policy {
 		}
 		$problems = self::problems( $pass, $user->user_login, $user->user_email );
 		if ( $problems ) {
-			$errors->add( 'sshield_password_policy', '<strong>' . esc_html__( 'Error:', 'sentinel-shield' ) . '</strong> ' . esc_html( implode( ' ', $problems ) ) );
+			$errors->add( 'cshield_password_policy', '<strong>' . esc_html__( 'Error:', 'chaos-shield' ) . '</strong> ' . esc_html( implode( ' ', $problems ) ) );
 		}
 	}
 
@@ -233,23 +233,23 @@ final class Password_Policy {
 			return $user;
 		}
 		$message = 'forced' === $reason
-			? __( 'An administrator asked you to choose a new password.', 'sentinel-shield' )
-			: __( 'Your password has expired.', 'sentinel-shield' );
+			? __( 'An administrator asked you to choose a new password.', 'chaos-shield' )
+			: __( 'Your password has expired.', 'chaos-shield' );
 
 		$interactive = ! ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST ) && ! ( defined( 'REST_REQUEST' ) && REST_REQUEST ) && did_action( 'login_init' );
 		if ( ! $interactive ) {
-			return new \WP_Error( 'sshield_reset_required', $message . ' ' . __( 'Sign in on the website to choose a new one.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_reset_required', $message . ' ' . __( 'Sign in on the website to choose a new one.', 'chaos-shield' ) );
 		}
 
 		// One email per user every 15 minutes, so the form cannot be used to flood an inbox.
-		$throttle = 'sshield_rp_sent_' . $user->ID;
+		$throttle = 'cshield_rp_sent_' . $user->ID;
 		if ( ! Network::get_transient( $throttle ) ) {
 			Network::set_transient( $throttle, 1, 15 * MINUTE_IN_SECONDS );
 			$sent = retrieve_password( $user->user_login );
 			Events::add(
 				'password',
 				/* translators: 1: username, 2: forced or expired. */
-				sprintf( __( '%1$s must choose a new password (%2$s). A reset link was emailed to them.', 'sentinel-shield' ), $user->user_login, $reason ),
+				sprintf( __( '%1$s must choose a new password (%2$s). A reset link was emailed to them.', 'chaos-shield' ), $user->user_login, $reason ),
 				Request::ip(),
 				array(
 					'user_id' => $user->ID,
@@ -257,10 +257,10 @@ final class Password_Policy {
 				)
 			);
 			if ( is_wp_error( $sent ) ) {
-				return new \WP_Error( 'sshield_reset_required', $message . ' ' . __( 'The reset email could not be sent. Ask an administrator for help.', 'sentinel-shield' ) );
+				return new \WP_Error( 'cshield_reset_required', $message . ' ' . __( 'The reset email could not be sent. Ask an administrator for help.', 'chaos-shield' ) );
 			}
 		}
-		return new \WP_Error( 'sshield_reset_required', $message . ' ' . __( 'We emailed you a link to choose a new one. Check your inbox.', 'sentinel-shield' ) );
+		return new \WP_Error( 'cshield_reset_required', $message . ' ' . __( 'We emailed you a link to choose a new one. Check your inbox.', 'chaos-shield' ) );
 	}
 
 	/**
@@ -271,11 +271,11 @@ final class Password_Policy {
 	 */
 	public function reset_message( $message ) {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display only.
-		$reason = isset( $_GET['sshield_reason'] ) ? sanitize_key( wp_unslash( $_GET['sshield_reason'] ) ) : '';
+		$reason = isset( $_GET['cshield_reason'] ) ? sanitize_key( wp_unslash( $_GET['cshield_reason'] ) ) : '';
 		if ( 'forced' === $reason ) {
-			$text = __( 'An administrator asked you to choose a new password before you continue.', 'sentinel-shield' );
+			$text = __( 'An administrator asked you to choose a new password before you continue.', 'chaos-shield' );
 		} elseif ( 'expired' === $reason ) {
-			$text = __( 'Your password has expired. Choose a new one to continue.', 'sentinel-shield' );
+			$text = __( 'Your password has expired. Choose a new one to continue.', 'chaos-shield' );
 		} else {
 			return $message;
 		}
@@ -328,7 +328,7 @@ final class Password_Policy {
 			delete_user_meta( $user_id, self::FORCED_META );
 			$user = get_userdata( $user_id );
 			/* translators: %s: username. */
-			Events::add( 'password', sprintf( __( '%s chose a new password after a forced reset.', 'sentinel-shield' ), $user ? $user->user_login : '#' . $user_id ), Request::ip(), array( 'user_id' => $user_id ) );
+			Events::add( 'password', sprintf( __( '%s chose a new password after a forced reset.', 'chaos-shield' ), $user ? $user->user_login : '#' . $user_id ), Request::ip(), array( 'user_id' => $user_id ) );
 		}
 	}
 
@@ -348,7 +348,7 @@ final class Password_Policy {
 		Events::add(
 			'password',
 			/* translators: %s: username. */
-			sprintf( __( 'Password reset forced for %s. Their sessions were ended.', 'sentinel-shield' ), $user->user_login ),
+			sprintf( __( 'Password reset forced for %s. Their sessions were ended.', 'chaos-shield' ), $user->user_login ),
 			Request::ip(),
 			array( 'severity' => Events::NOTICE )
 		);
@@ -414,20 +414,20 @@ final class Password_Policy {
 			return $actions;
 		}
 		if ( self::forced( $user->ID ) ) {
-			$actions['sshield_reset'] = '<span class="description">' . esc_html__( 'Password reset pending', 'sentinel-shield' ) . '</span>';
+			$actions['cshield_reset'] = '<span class="description">' . esc_html__( 'Password reset pending', 'chaos-shield' ) . '</span>';
 			return $actions;
 		}
 		$url                      = wp_nonce_url(
 			add_query_arg(
 				array(
-					'action' => 'sshield_force_reset',
+					'action' => 'cshield_force_reset',
 					'user'   => $user->ID,
 				),
 				admin_url( 'admin-post.php' )
 			),
-			'sshield_force_reset_' . $user->ID
+			'cshield_force_reset_' . $user->ID
 		);
-		$actions['sshield_reset'] = '<a href="' . esc_url( $url ) . '">' . esc_html__( 'Force password reset', 'sentinel-shield' ) . '</a>';
+		$actions['cshield_reset'] = '<a href="' . esc_url( $url ) . '">' . esc_html__( 'Force password reset', 'chaos-shield' ) . '</a>';
 		return $actions;
 	}
 
@@ -439,7 +439,7 @@ final class Password_Policy {
 	 */
 	public function bulk_action( $actions ) {
 		if ( current_user_can( 'manage_options' ) ) {
-			$actions['sshield_force_reset'] = __( 'Force password reset', 'sentinel-shield' );
+			$actions['cshield_force_reset'] = __( 'Force password reset', 'chaos-shield' );
 		}
 		return $actions;
 	}
@@ -453,7 +453,7 @@ final class Password_Policy {
 	 * @return string
 	 */
 	public function handle_bulk( $redirect, $action, $ids ) {
-		if ( 'sshield_force_reset' !== $action || ! current_user_can( 'manage_options' ) ) {
+		if ( 'cshield_force_reset' !== $action || ! current_user_can( 'manage_options' ) ) {
 			return $redirect;
 		}
 		$count = 0;
@@ -463,7 +463,7 @@ final class Password_Policy {
 				$count += (int) self::force( $id );
 			}
 		}
-		return add_query_arg( 'sshield_forced', $count, $redirect );
+		return add_query_arg( 'cshield_forced', $count, $redirect );
 	}
 
 	/**
@@ -471,18 +471,18 @@ final class Password_Policy {
 	 */
 	public function handle_force() {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You are not allowed to do this.', 'sentinel-shield' ), 403 );
+			wp_die( esc_html__( 'You are not allowed to do this.', 'chaos-shield' ), 403 );
 		}
 		// phpcs:disable WordPress.Security.NonceVerification -- Each branch checks its own nonce.
 		$group = isset( $_REQUEST['group'] ) ? sanitize_key( wp_unslash( $_REQUEST['group'] ) ) : '';
 		if ( $group ) {
-			check_admin_referer( 'sshield_force_group' );
+			check_admin_referer( 'cshield_force_group' );
 			$count = self::force_group( 'admins' === $group ? 'admins' : 'policy' );
 			wp_safe_redirect(
 				Admin::url(
 					'hardening',
 					array(
-						'sshield_notice' => 'forced',
+						'cshield_notice' => 'forced',
 						'forced'         => $count,
 					)
 				)
@@ -491,9 +491,9 @@ final class Password_Policy {
 		}
 		$id = isset( $_GET['user'] ) ? absint( $_GET['user'] ) : 0;
 		// phpcs:enable
-		check_admin_referer( 'sshield_force_reset_' . $id );
+		check_admin_referer( 'cshield_force_reset_' . $id );
 		$count = ( $id && get_current_user_id() !== $id && current_user_can( 'edit_user', $id ) ) ? (int) self::force( $id ) : 0;
-		wp_safe_redirect( add_query_arg( 'sshield_forced', $count, admin_url( 'users.php' ) ) );
+		wp_safe_redirect( add_query_arg( 'cshield_forced', $count, admin_url( 'users.php' ) ) );
 		exit;
 	}
 
@@ -502,16 +502,16 @@ final class Password_Policy {
 	 */
 	public function users_notice() {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display only.
-		if ( ! isset( $_GET['sshield_forced'] ) || 'users' !== get_current_screen()->id ) {
+		if ( ! isset( $_GET['cshield_forced'] ) || 'users' !== get_current_screen()->id ) {
 			return;
 		}
-		$count = absint( $_GET['sshield_forced'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display only.
+		$count = absint( $_GET['cshield_forced'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display only.
 		printf(
 			'<div class="notice notice-success is-dismissible"><p>%s</p></div>',
 			esc_html(
 				sprintf(
 					/* translators: %d: number of users. */
-					_n( 'Password reset forced for %d user. They were signed out and will choose a new password at their next login.', 'Password reset forced for %d users. They were signed out and will choose a new password at their next login.', $count, 'sentinel-shield' ),
+					_n( 'Password reset forced for %d user. They were signed out and will choose a new password at their next login.', 'Password reset forced for %d users. They were signed out and will choose a new password at their next login.', $count, 'chaos-shield' ),
 					$count
 				)
 			)

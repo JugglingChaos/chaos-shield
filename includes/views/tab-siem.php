@@ -2,52 +2,52 @@
 /**
  * SIEM tab: incidents, search, timelines, rules.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
 // phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only view state.
-$sshield_incident_id = isset( $_GET['incident'] ) ? absint( $_GET['incident'] ) : 0;
-$sshield_tl_ip       = isset( $_GET['ip'] ) ? sanitize_text_field( wp_unslash( $_GET['ip'] ) ) : '';
-$sshield_tl_user     = isset( $_GET['user'] ) ? absint( $_GET['user'] ) : 0;
-$sshield_q           = isset( $_GET['q'] ) ? sanitize_text_field( wp_unslash( $_GET['q'] ) ) : '';
-$sshield_status_f    = isset( $_GET['status'] ) ? sanitize_key( $_GET['status'] ) : 'active';
+$cshield_incident_id = isset( $_GET['incident'] ) ? absint( $_GET['incident'] ) : 0;
+$cshield_tl_ip       = isset( $_GET['ip'] ) ? sanitize_text_field( wp_unslash( $_GET['ip'] ) ) : '';
+$cshield_tl_user     = isset( $_GET['user'] ) ? absint( $_GET['user'] ) : 0;
+$cshield_q           = isset( $_GET['q'] ) ? sanitize_text_field( wp_unslash( $_GET['q'] ) ) : '';
+$cshield_status_f    = isset( $_GET['status'] ) ? sanitize_key( $_GET['status'] ) : 'active';
 // phpcs:enable
 
-$sshield_sev_labels = Incidents::severities();
-$sshield_statuses   = Incidents::statuses();
-$sshield_rules      = Detect::rules();
-$sshield_fmt        = get_option( 'date_format' ) . ' ' . get_option( 'time_format' );
-$sshield_sev_class  = array(
+$cshield_sev_labels = Incidents::severities();
+$cshield_statuses   = Incidents::statuses();
+$cshield_rules      = Detect::rules();
+$cshield_fmt        = get_option( 'date_format' ) . ' ' . get_option( 'time_format' );
+$cshield_sev_class  = array(
 	1 => 'low',
 	2 => 'medium',
 	3 => 'high',
 	4 => 'critical',
 );
-$sshield_mitre      = static function ( $technique ) {
+$cshield_mitre      = static function ( $technique ) {
 	if ( ! $technique ) {
 		return '';
 	}
 	$path = str_replace( '.', '/', $technique );
-	return '<a class="sshield-tag" href="' . esc_url( 'https://attack.mitre.org/techniques/' . $path . '/' ) . '" target="_blank" rel="noopener noreferrer" title="MITRE ATT&amp;CK">' . esc_html( $technique ) . '</a>';
+	return '<a class="cshield-tag" href="' . esc_url( 'https://attack.mitre.org/techniques/' . $path . '/' ) . '" target="_blank" rel="noopener noreferrer" title="MITRE ATT&amp;CK">' . esc_html( $technique ) . '</a>';
 };
-$sshield_ip_link    = static function ( $ip ) {
-	return $ip ? '<a class="sshield-link" href="' . esc_url( Admin::url( 'siem', array( 'ip' => $ip ) ) ) . '"><code>' . esc_html( $ip ) . '</code></a>' : '';
+$cshield_ip_link    = static function ( $ip ) {
+	return $ip ? '<a class="cshield-link" href="' . esc_url( Admin::url( 'siem', array( 'ip' => $ip ) ) ) . '"><code>' . esc_html( $ip ) . '</code></a>' : '';
 };
-$sshield_user_link  = static function ( $user_id ) {
+$cshield_user_link  = static function ( $user_id ) {
 	$user = $user_id ? get_userdata( $user_id ) : null;
-	return $user ? '<a class="sshield-link" href="' . esc_url( Admin::url( 'siem', array( 'user' => $user->ID ) ) ) . '">' . esc_html( $user->user_login ) . '</a>' : '';
+	return $user ? '<a class="cshield-link" href="' . esc_url( Admin::url( 'siem', array( 'user' => $user->ID ) ) ) . '">' . esc_html( $user->user_login ) . '</a>' : '';
 };
-$sshield_post       = static function ( $op, $incident, $label, $css = 'sshield-btn sshield-btn--ghost', $confirm = '' ) {
+$cshield_post       = static function ( $op, $incident, $label, $css = 'cshield-btn cshield-btn--ghost', $confirm = '' ) {
 	?>
-	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="sshield-inline-form"<?php echo $confirm ? ' onsubmit="return confirm(' . esc_attr( wp_json_encode( $confirm ) ) . ')"' : ''; ?>>
-		<input type="hidden" name="action" value="sshield_incident">
+	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="cshield-inline-form"<?php echo $confirm ? ' onsubmit="return confirm(' . esc_attr( wp_json_encode( $confirm ) ) . ')"' : ''; ?>>
+		<input type="hidden" name="action" value="cshield_incident">
 		<input type="hidden" name="op" value="<?php echo esc_attr( $op ); ?>">
 		<input type="hidden" name="incident" value="<?php echo esc_attr( $incident ); ?>">
-		<?php wp_nonce_field( 'sshield_incident' ); ?>
+		<?php wp_nonce_field( 'cshield_incident' ); ?>
 		<button type="submit" class="<?php echo esc_attr( $css ); ?>"><?php echo esc_html( $label ); ?></button>
 	</form>
 	<?php
@@ -55,100 +55,100 @@ $sshield_post       = static function ( $op, $incident, $label, $css = 'sshield-
 ?>
 
 <?php if ( ! Settings::enabled( 'siem' ) ) : ?>
-	<div class="sshield-notice sshield-notice--warn" role="status"><?php esc_html_e( 'SIEM detections are switched off under Hardening, so no new incidents are opened. Search and timelines still work.', 'sentinel-shield' ); ?></div>
+	<div class="cshield-notice cshield-notice--warn" role="status"><?php esc_html_e( 'SIEM detections are switched off under Hardening, so no new incidents are opened. Search and timelines still work.', 'chaos-shield' ); ?></div>
 <?php endif; ?>
 
 <?php
-if ( $sshield_incident_id ) :
-	$sshield_i = Incidents::get( $sshield_incident_id );
-	if ( ! $sshield_i ) :
+if ( $cshield_incident_id ) :
+	$cshield_i = Incidents::get( $cshield_incident_id );
+	if ( ! $cshield_i ) :
 		?>
-		<p class="sshield-empty"><?php esc_html_e( 'That incident no longer exists.', 'sentinel-shield' ); ?></p>
+		<p class="cshield-empty"><?php esc_html_e( 'That incident no longer exists.', 'chaos-shield' ); ?></p>
 		<?php
 	else :
-		$sshield_rule   = isset( $sshield_rules[ $sshield_i['rule'] ] ) ? $sshield_rules[ $sshield_i['rule'] ] : null;
-		$sshield_evts   = $sshield_i['events'] ? Events::query(
+		$cshield_rule   = isset( $cshield_rules[ $cshield_i['rule'] ] ) ? $cshield_rules[ $cshield_i['rule'] ] : null;
+		$cshield_evts   = $cshield_i['events'] ? Events::query(
 			array(
-				'ids'   => $sshield_i['events'],
+				'ids'   => $cshield_i['events'],
 				'limit' => 200,
 			)
 		) : array();
-		$sshield_user   = $sshield_i['user_id'] ? get_userdata( $sshield_i['user_id'] ) : get_user_by( 'login', $sshield_i['subject'] );
-		$sshield_admins = get_users(
+		$cshield_user   = $cshield_i['user_id'] ? get_userdata( $cshield_i['user_id'] ) : get_user_by( 'login', $cshield_i['subject'] );
+		$cshield_admins = get_users(
 			array(
 				'role__in' => array( 'administrator' ),
 				'fields'   => array( 'ID', 'user_login' ),
 			)
 		);
 		?>
-		<p><a class="sshield-link" href="<?php echo esc_url( Admin::url( 'siem' ) ); ?>">&larr; <?php esc_html_e( 'All incidents', 'sentinel-shield' ); ?></a></p>
-		<div class="sshield-grid">
-			<section class="sshield-card sshield-card--wide sshield-incident sshield-incident--<?php echo esc_attr( $sshield_sev_class[ $sshield_i['severity'] ] ); ?>">
-				<div class="sshield-incident__meta">
-					<span class="sshield-sev sshield-sev--<?php echo esc_attr( $sshield_sev_class[ $sshield_i['severity'] ] ); ?>"><?php echo esc_html( $sshield_sev_labels[ $sshield_i['severity'] ] ); ?></span>
-					<span class="sshield-pill"><?php echo esc_html( $sshield_statuses[ $sshield_i['status'] ] ); ?></span>
-					<?php echo $sshield_mitre( $sshield_i['technique'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the closure. ?>
-					<?php if ( $sshield_rule ) : ?>
-						<span class="sshield-small"><?php echo esc_html( $sshield_rule['tactic'] . ' · ' . $sshield_rule['name'] ); ?></span>
+		<p><a class="cshield-link" href="<?php echo esc_url( Admin::url( 'siem' ) ); ?>">&larr; <?php esc_html_e( 'All incidents', 'chaos-shield' ); ?></a></p>
+		<div class="cshield-grid">
+			<section class="cshield-card cshield-card--wide cshield-incident cshield-incident--<?php echo esc_attr( $cshield_sev_class[ $cshield_i['severity'] ] ); ?>">
+				<div class="cshield-incident__meta">
+					<span class="cshield-sev cshield-sev--<?php echo esc_attr( $cshield_sev_class[ $cshield_i['severity'] ] ); ?>"><?php echo esc_html( $cshield_sev_labels[ $cshield_i['severity'] ] ); ?></span>
+					<span class="cshield-pill"><?php echo esc_html( $cshield_statuses[ $cshield_i['status'] ] ); ?></span>
+					<?php echo $cshield_mitre( $cshield_i['technique'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the closure. ?>
+					<?php if ( $cshield_rule ) : ?>
+						<span class="cshield-small"><?php echo esc_html( $cshield_rule['tactic'] . ' · ' . $cshield_rule['name'] ); ?></span>
 					<?php endif; ?>
 				</div>
-				<h2 class="sshield-incident__title">#<?php echo esc_html( $sshield_i['id'] . ' ' . $sshield_i['title'] ); ?></h2>
-				<p><?php echo esc_html( $sshield_i['summary'] ); ?></p>
-				<p class="sshield-small">
+				<h2 class="cshield-incident__title">#<?php echo esc_html( $cshield_i['id'] . ' ' . $cshield_i['title'] ); ?></h2>
+				<p><?php echo esc_html( $cshield_i['summary'] ); ?></p>
+				<p class="cshield-small">
 					<?php
 					printf(
 						/* translators: 1: first seen, 2: last seen, 3: number of hits. */
-						esc_html( _n( 'First seen %1$s, last seen %2$s, %3$d hit.', 'First seen %1$s, last seen %2$s, %3$d hits.', (int) $sshield_i['hits'], 'sentinel-shield' ) ),
-						esc_html( wp_date( $sshield_fmt, $sshield_i['created'] ) ),
-						esc_html( wp_date( $sshield_fmt, $sshield_i['updated'] ) ),
-						(int) $sshield_i['hits']
+						esc_html( _n( 'First seen %1$s, last seen %2$s, %3$d hit.', 'First seen %1$s, last seen %2$s, %3$d hits.', (int) $cshield_i['hits'], 'chaos-shield' ) ),
+						esc_html( wp_date( $cshield_fmt, $cshield_i['created'] ) ),
+						esc_html( wp_date( $cshield_fmt, $cshield_i['updated'] ) ),
+						(int) $cshield_i['hits']
 					);
 					?>
 				</p>
-				<p class="sshield-incident__entities">
-					<?php if ( $sshield_i['ip'] ) : ?>
-						<span><?php esc_html_e( 'IP', 'sentinel-shield' ); ?> <?php echo $sshield_ip_link( $sshield_i['ip'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the closure. ?></span>
+				<p class="cshield-incident__entities">
+					<?php if ( $cshield_i['ip'] ) : ?>
+						<span><?php esc_html_e( 'IP', 'chaos-shield' ); ?> <?php echo $cshield_ip_link( $cshield_i['ip'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the closure. ?></span>
 					<?php endif; ?>
-					<?php if ( $sshield_user ) : ?>
-						<span><?php esc_html_e( 'User', 'sentinel-shield' ); ?> <?php echo $sshield_user_link( $sshield_user->ID ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the closure. ?></span>
+					<?php if ( $cshield_user ) : ?>
+						<span><?php esc_html_e( 'User', 'chaos-shield' ); ?> <?php echo $cshield_user_link( $cshield_user->ID ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the closure. ?></span>
 					<?php endif; ?>
 				</p>
 			</section>
 
-			<section class="sshield-card">
-				<h2><?php esc_html_e( 'Respond', 'sentinel-shield' ); ?></h2>
-				<div class="sshield-respond">
+			<section class="cshield-card">
+				<h2><?php esc_html_e( 'Respond', 'chaos-shield' ); ?></h2>
+				<div class="cshield-respond">
 					<?php
-					if ( $sshield_i['ip'] && Request::ip() !== $sshield_i['ip'] ) {
-						$sshield_post( 'ban', $sshield_i['id'], __( 'Ban this IP', 'sentinel-shield' ) );
-						$sshield_post( 'block', $sshield_i['id'], __( 'Block this IP for good', 'sentinel-shield' ), 'sshield-btn sshield-btn--ghost', __( 'Add this IP to the permanent block list?', 'sentinel-shield' ) );
+					if ( $cshield_i['ip'] && Request::ip() !== $cshield_i['ip'] ) {
+						$cshield_post( 'ban', $cshield_i['id'], __( 'Ban this IP', 'chaos-shield' ) );
+						$cshield_post( 'block', $cshield_i['id'], __( 'Block this IP for good', 'chaos-shield' ), 'cshield-btn cshield-btn--ghost', __( 'Add this IP to the permanent block list?', 'chaos-shield' ) );
 					}
-					if ( $sshield_user && get_current_user_id() !== $sshield_user->ID ) {
-						$sshield_post( 'sessions', $sshield_i['id'], __( 'End this user’s sessions', 'sentinel-shield' ) );
-						$sshield_post( 'reset', $sshield_i['id'], __( 'Force a password reset', 'sentinel-shield' ), 'sshield-btn sshield-btn--ghost', __( 'Sign this user out and make them choose a new password?', 'sentinel-shield' ) );
+					if ( $cshield_user && get_current_user_id() !== $cshield_user->ID ) {
+						$cshield_post( 'sessions', $cshield_i['id'], __( 'End this user’s sessions', 'chaos-shield' ) );
+						$cshield_post( 'reset', $cshield_i['id'], __( 'Force a password reset', 'chaos-shield' ), 'cshield-btn cshield-btn--ghost', __( 'Sign this user out and make them choose a new password?', 'chaos-shield' ) );
 					}
 					?>
 				</div>
-				<?php if ( ( ! $sshield_i['ip'] || Request::ip() === $sshield_i['ip'] ) && ( ! $sshield_user || get_current_user_id() === $sshield_user->ID ) ) : ?>
-					<p class="sshield-small"><?php esc_html_e( 'No response actions apply here: the incident names no other IP or user.', 'sentinel-shield' ); ?></p>
+				<?php if ( ( ! $cshield_i['ip'] || Request::ip() === $cshield_i['ip'] ) && ( ! $cshield_user || get_current_user_id() === $cshield_user->ID ) ) : ?>
+					<p class="cshield-small"><?php esc_html_e( 'No response actions apply here: the incident names no other IP or user.', 'chaos-shield' ); ?></p>
 				<?php endif; ?>
 			</section>
 
-			<section class="sshield-card sshield-card--wide">
-				<h2><?php esc_html_e( 'Evidence', 'sentinel-shield' ); ?></h2>
-				<?php if ( ! $sshield_evts ) : ?>
-					<p class="sshield-empty"><?php esc_html_e( 'The events behind this incident are no longer in the log.', 'sentinel-shield' ); ?></p>
+			<section class="cshield-card cshield-card--wide">
+				<h2><?php esc_html_e( 'Evidence', 'chaos-shield' ); ?></h2>
+				<?php if ( ! $cshield_evts ) : ?>
+					<p class="cshield-empty"><?php esc_html_e( 'The events behind this incident are no longer in the log.', 'chaos-shield' ); ?></p>
 				<?php else : ?>
-					<div class="sshield-table-wrap">
-						<table class="sshield-table sshield-table--evidence">
-							<thead><tr><th><?php esc_html_e( 'Time', 'sentinel-shield' ); ?></th><th><?php esc_html_e( 'Action', 'sentinel-shield' ); ?></th><th><?php esc_html_e( 'Event', 'sentinel-shield' ); ?></th><th><?php esc_html_e( 'IP', 'sentinel-shield' ); ?></th></tr></thead>
+					<div class="cshield-table-wrap">
+						<table class="cshield-table cshield-table--evidence">
+							<thead><tr><th><?php esc_html_e( 'Time', 'chaos-shield' ); ?></th><th><?php esc_html_e( 'Action', 'chaos-shield' ); ?></th><th><?php esc_html_e( 'Event', 'chaos-shield' ); ?></th><th><?php esc_html_e( 'IP', 'chaos-shield' ); ?></th></tr></thead>
 							<tbody>
-							<?php foreach ( $sshield_evts as $sshield_e ) : ?>
-								<tr class="sshield-sev-<?php echo esc_attr( $sshield_e['severity'] ); ?>">
-									<td><?php echo esc_html( wp_date( $sshield_fmt, (int) $sshield_e['time'] ) ); ?></td>
-									<td><code><?php echo esc_html( $sshield_e['action'] ? $sshield_e['action'] : $sshield_e['type'] ); ?></code></td>
-									<td><?php echo esc_html( $sshield_e['message'] ); ?></td>
-									<td><?php echo $sshield_ip_link( $sshield_e['ip'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the closure. ?></td>
+							<?php foreach ( $cshield_evts as $cshield_e ) : ?>
+								<tr class="cshield-sev-<?php echo esc_attr( $cshield_e['severity'] ); ?>">
+									<td><?php echo esc_html( wp_date( $cshield_fmt, (int) $cshield_e['time'] ) ); ?></td>
+									<td><code><?php echo esc_html( $cshield_e['action'] ? $cshield_e['action'] : $cshield_e['type'] ); ?></code></td>
+									<td><?php echo esc_html( $cshield_e['message'] ); ?></td>
+									<td><?php echo $cshield_ip_link( $cshield_e['ip'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the closure. ?></td>
 								</tr>
 							<?php endforeach; ?>
 							</tbody>
@@ -157,45 +157,45 @@ if ( $sshield_incident_id ) :
 				<?php endif; ?>
 			</section>
 
-			<section class="sshield-card">
-				<h2><?php esc_html_e( 'Case', 'sentinel-shield' ); ?></h2>
+			<section class="cshield-card">
+				<h2><?php esc_html_e( 'Case', 'chaos-shield' ); ?></h2>
 				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-					<input type="hidden" name="action" value="sshield_incident">
+					<input type="hidden" name="action" value="cshield_incident">
 					<input type="hidden" name="op" value="update">
-					<input type="hidden" name="incident" value="<?php echo esc_attr( $sshield_i['id'] ); ?>">
-					<?php wp_nonce_field( 'sshield_incident' ); ?>
-					<div class="sshield-fields sshield-fields--one">
-						<label><span><?php esc_html_e( 'Status', 'sentinel-shield' ); ?></span>
+					<input type="hidden" name="incident" value="<?php echo esc_attr( $cshield_i['id'] ); ?>">
+					<?php wp_nonce_field( 'cshield_incident' ); ?>
+					<div class="cshield-fields cshield-fields--one">
+						<label><span><?php esc_html_e( 'Status', 'chaos-shield' ); ?></span>
 							<select name="status">
-								<?php foreach ( $sshield_statuses as $sshield_k => $sshield_l ) : ?>
-									<option value="<?php echo esc_attr( $sshield_k ); ?>" <?php selected( $sshield_i['status'], $sshield_k ); ?>><?php echo esc_html( $sshield_l ); ?></option>
+								<?php foreach ( $cshield_statuses as $cshield_k => $cshield_l ) : ?>
+									<option value="<?php echo esc_attr( $cshield_k ); ?>" <?php selected( $cshield_i['status'], $cshield_k ); ?>><?php echo esc_html( $cshield_l ); ?></option>
 								<?php endforeach; ?>
 							</select></label>
-						<label><span><?php esc_html_e( 'Assigned to', 'sentinel-shield' ); ?></span>
+						<label><span><?php esc_html_e( 'Assigned to', 'chaos-shield' ); ?></span>
 							<select name="assignee">
-								<option value="0"><?php esc_html_e( 'Nobody', 'sentinel-shield' ); ?></option>
-								<?php foreach ( $sshield_admins as $sshield_a ) : ?>
-									<option value="<?php echo esc_attr( $sshield_a->ID ); ?>" <?php selected( $sshield_i['assignee'], (int) $sshield_a->ID ); ?>><?php echo esc_html( $sshield_a->user_login ); ?></option>
+								<option value="0"><?php esc_html_e( 'Nobody', 'chaos-shield' ); ?></option>
+								<?php foreach ( $cshield_admins as $cshield_a ) : ?>
+									<option value="<?php echo esc_attr( $cshield_a->ID ); ?>" <?php selected( $cshield_i['assignee'], (int) $cshield_a->ID ); ?>><?php echo esc_html( $cshield_a->user_login ); ?></option>
 								<?php endforeach; ?>
 							</select></label>
-						<label><span><?php esc_html_e( 'Add a note', 'sentinel-shield' ); ?></span>
-							<textarea name="note" rows="3" placeholder="<?php esc_attr_e( 'What you found, what you did', 'sentinel-shield' ); ?>"></textarea></label>
+						<label><span><?php esc_html_e( 'Add a note', 'chaos-shield' ); ?></span>
+							<textarea name="note" rows="3" placeholder="<?php esc_attr_e( 'What you found, what you did', 'chaos-shield' ); ?>"></textarea></label>
 					</div>
-					<div class="sshield-actions sshield-actions--start">
-						<button type="submit" class="sshield-btn"><?php esc_html_e( 'Save', 'sentinel-shield' ); ?></button>
+					<div class="cshield-actions cshield-actions--start">
+						<button type="submit" class="cshield-btn"><?php esc_html_e( 'Save', 'chaos-shield' ); ?></button>
 					</div>
 				</form>
-				<?php if ( $sshield_i['notes'] ) : ?>
-					<ol class="sshield-notes">
-						<?php foreach ( array_reverse( $sshield_i['notes'] ) as $sshield_n ) : ?>
-							<?php $sshield_nu = get_userdata( (int) $sshield_n['user'] ); ?>
+				<?php if ( $cshield_i['notes'] ) : ?>
+					<ol class="cshield-notes">
+						<?php foreach ( array_reverse( $cshield_i['notes'] ) as $cshield_n ) : ?>
+							<?php $cshield_nu = get_userdata( (int) $cshield_n['user'] ); ?>
 							<li>
-								<span class="sshield-small"><?php echo esc_html( wp_date( $sshield_fmt, (int) $sshield_n['time'] ) . ' · ' . ( $sshield_nu ? $sshield_nu->user_login : __( 'system', 'sentinel-shield' ) ) ); ?></span>
-								<?php if ( ! empty( $sshield_n['change'] ) ) : ?>
-									<p><em><?php echo esc_html( $sshield_n['change'] ); ?></em></p>
+								<span class="cshield-small"><?php echo esc_html( wp_date( $cshield_fmt, (int) $cshield_n['time'] ) . ' · ' . ( $cshield_nu ? $cshield_nu->user_login : __( 'system', 'chaos-shield' ) ) ); ?></span>
+								<?php if ( ! empty( $cshield_n['change'] ) ) : ?>
+									<p><em><?php echo esc_html( $cshield_n['change'] ); ?></em></p>
 								<?php endif; ?>
-								<?php if ( ! empty( $sshield_n['text'] ) ) : ?>
-									<p><?php echo nl2br( esc_html( $sshield_n['text'] ) ); ?></p>
+								<?php if ( ! empty( $cshield_n['text'] ) ) : ?>
+									<p><?php echo nl2br( esc_html( $cshield_n['text'] ) ); ?></p>
 								<?php endif; ?>
 							</li>
 						<?php endforeach; ?>
@@ -206,69 +206,69 @@ if ( $sshield_incident_id ) :
 	<?php endif; ?>
 
 	<?php
-elseif ( $sshield_tl_ip || $sshield_tl_user ) :
-	$sshield_is_ip = '' !== $sshield_tl_ip;
-	$sshield_items = Siem::timeline( $sshield_is_ip ? 'ip' : 'user', $sshield_is_ip ? $sshield_tl_ip : $sshield_tl_user );
-	$sshield_tu    = $sshield_tl_user ? get_userdata( $sshield_tl_user ) : null;
-	$sshield_until = $sshield_is_ip ? Bans::until( $sshield_tl_ip ) : 0;
-	$sshield_src   = array(
-		'event'    => __( 'Log', 'sentinel-shield' ),
-		'traffic'  => __( 'Traffic', 'sentinel-shield' ),
-		'incident' => __( 'Incident', 'sentinel-shield' ),
+elseif ( $cshield_tl_ip || $cshield_tl_user ) :
+	$cshield_is_ip = '' !== $cshield_tl_ip;
+	$cshield_items = Siem::timeline( $cshield_is_ip ? 'ip' : 'user', $cshield_is_ip ? $cshield_tl_ip : $cshield_tl_user );
+	$cshield_tu    = $cshield_tl_user ? get_userdata( $cshield_tl_user ) : null;
+	$cshield_until = $cshield_is_ip ? Bans::until( $cshield_tl_ip ) : 0;
+	$cshield_src   = array(
+		'event'    => __( 'Log', 'chaos-shield' ),
+		'traffic'  => __( 'Traffic', 'chaos-shield' ),
+		'incident' => __( 'Incident', 'chaos-shield' ),
 	);
 	?>
-	<p><a class="sshield-link" href="<?php echo esc_url( Admin::url( 'siem' ) ); ?>">&larr; <?php esc_html_e( 'All incidents', 'sentinel-shield' ); ?></a></p>
-	<section class="sshield-card sshield-card--full">
-		<div class="sshield-card__head">
+	<p><a class="cshield-link" href="<?php echo esc_url( Admin::url( 'siem' ) ); ?>">&larr; <?php esc_html_e( 'All incidents', 'chaos-shield' ); ?></a></p>
+	<section class="cshield-card cshield-card--full">
+		<div class="cshield-card__head">
 			<div>
 				<h2>
 					<?php
 					echo esc_html(
-						$sshield_is_ip
+						$cshield_is_ip
 							/* translators: %s: IP address or username. */
-							? sprintf( __( 'Timeline for %s', 'sentinel-shield' ), $sshield_tl_ip )
+							? sprintf( __( 'Timeline for %s', 'chaos-shield' ), $cshield_tl_ip )
 							/* translators: %s: IP address or username. */
-							: sprintf( __( 'Timeline for %s', 'sentinel-shield' ), $sshield_tu ? $sshield_tu->user_login : '#' . $sshield_tl_user )
+							: sprintf( __( 'Timeline for %s', 'chaos-shield' ), $cshield_tu ? $cshield_tu->user_login : '#' . $cshield_tl_user )
 					);
 					?>
 				</h2>
 				<p>
 					<?php
 					/* translators: %d: number of entries. */
-					echo esc_html( sprintf( _n( '%d entry from the log, live traffic and incidents.', '%d entries from the log, live traffic and incidents.', count( $sshield_items ), 'sentinel-shield' ), count( $sshield_items ) ) );
-					if ( $sshield_until ) {
+					echo esc_html( sprintf( _n( '%d entry from the log, live traffic and incidents.', '%d entries from the log, live traffic and incidents.', count( $cshield_items ), 'chaos-shield' ), count( $cshield_items ) ) );
+					if ( $cshield_until ) {
 						echo ' ';
 						/* translators: %s: date. */
-						echo esc_html( sprintf( __( 'Banned until %s.', 'sentinel-shield' ), wp_date( $sshield_fmt, $sshield_until ) ) );
+						echo esc_html( sprintf( __( 'Banned until %s.', 'chaos-shield' ), wp_date( $cshield_fmt, $cshield_until ) ) );
 					}
 					?>
 				</p>
 			</div>
-			<?php if ( $sshield_is_ip && Request::ip() !== $sshield_tl_ip && filter_var( $sshield_tl_ip, FILTER_VALIDATE_IP ) ) : ?>
-				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="sshield-inline-form">
-					<input type="hidden" name="action" value="sshield_block">
-					<input type="hidden" name="ip" value="<?php echo esc_attr( $sshield_tl_ip ); ?>">
-					<?php wp_nonce_field( 'sshield_block' ); ?>
-					<button type="submit" class="sshield-btn sshield-btn--ghost"><?php esc_html_e( 'Block IP', 'sentinel-shield' ); ?></button>
+			<?php if ( $cshield_is_ip && Request::ip() !== $cshield_tl_ip && filter_var( $cshield_tl_ip, FILTER_VALIDATE_IP ) ) : ?>
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="cshield-inline-form">
+					<input type="hidden" name="action" value="cshield_block">
+					<input type="hidden" name="ip" value="<?php echo esc_attr( $cshield_tl_ip ); ?>">
+					<?php wp_nonce_field( 'cshield_block' ); ?>
+					<button type="submit" class="cshield-btn cshield-btn--ghost"><?php esc_html_e( 'Block IP', 'chaos-shield' ); ?></button>
 				</form>
 			<?php endif; ?>
 		</div>
-		<?php if ( ! $sshield_items ) : ?>
-			<p class="sshield-empty"><?php esc_html_e( 'Nothing recorded.', 'sentinel-shield' ); ?></p>
+		<?php if ( ! $cshield_items ) : ?>
+			<p class="cshield-empty"><?php esc_html_e( 'Nothing recorded.', 'chaos-shield' ); ?></p>
 		<?php else : ?>
-			<ol class="sshield-timeline">
-				<?php foreach ( $sshield_items as $sshield_it ) : ?>
-					<li class="sshield-timeline__item sshield-timeline__item--<?php echo esc_attr( $sshield_it['source'] ); ?> sshield-sev-<?php echo esc_attr( $sshield_it['severity'] ); ?>">
-						<span class="sshield-timeline__time"><?php echo esc_html( wp_date( $sshield_fmt, $sshield_it['time'] ) ); ?></span>
-						<span class="sshield-pill"><?php echo esc_html( $sshield_src[ $sshield_it['source'] ] ); ?></span>
-						<?php if ( 'incident' === $sshield_it['source'] ) : ?>
-							<a class="sshield-link" href="<?php echo esc_url( Admin::url( 'siem', array( 'incident' => $sshield_it['id'] ) ) ); ?>"><?php echo esc_html( $sshield_it['text'] ); ?></a>
+			<ol class="cshield-timeline">
+				<?php foreach ( $cshield_items as $cshield_it ) : ?>
+					<li class="cshield-timeline__item cshield-timeline__item--<?php echo esc_attr( $cshield_it['source'] ); ?> cshield-sev-<?php echo esc_attr( $cshield_it['severity'] ); ?>">
+						<span class="cshield-timeline__time"><?php echo esc_html( wp_date( $cshield_fmt, $cshield_it['time'] ) ); ?></span>
+						<span class="cshield-pill"><?php echo esc_html( $cshield_src[ $cshield_it['source'] ] ); ?></span>
+						<?php if ( 'incident' === $cshield_it['source'] ) : ?>
+							<a class="cshield-link" href="<?php echo esc_url( Admin::url( 'siem', array( 'incident' => $cshield_it['id'] ) ) ); ?>"><?php echo esc_html( $cshield_it['text'] ); ?></a>
 						<?php else : ?>
-							<span class="sshield-timeline__text"><?php echo esc_html( $sshield_it['text'] ); ?></span>
+							<span class="cshield-timeline__text"><?php echo esc_html( $cshield_it['text'] ); ?></span>
 						<?php endif; ?>
-						<code class="sshield-timeline__meta"><?php echo esc_html( $sshield_it['meta'] ); ?></code>
-						<?php if ( ! $sshield_is_ip && $sshield_it['ip'] ) : ?>
-							<?php echo $sshield_ip_link( $sshield_it['ip'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the closure. ?>
+						<code class="cshield-timeline__meta"><?php echo esc_html( $cshield_it['meta'] ); ?></code>
+						<?php if ( ! $cshield_is_ip && $cshield_it['ip'] ) : ?>
+							<?php echo $cshield_ip_link( $cshield_it['ip'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the closure. ?>
 						<?php endif; ?>
 					</li>
 				<?php endforeach; ?>
@@ -278,180 +278,180 @@ elseif ( $sshield_tl_ip || $sshield_tl_user ) :
 
 	<?php
 else :
-	$sshield_sum    = Incidents::summary();
-	$sshield_list   = Incidents::query(
+	$cshield_sum    = Incidents::summary();
+	$cshield_list   = Incidents::query(
 		array(
-			'status' => $sshield_status_f,
+			'status' => $cshield_status_f,
 			'limit'  => 50,
 		)
 	);
-	$sshield_hourly = Siem::hourly();
-	$sshield_events = Events::count( array( 'since' => time() - DAY_IN_SECONDS ) );
-	$sshield_closed = Incidents::count(
+	$cshield_hourly = Siem::hourly();
+	$cshield_events = Events::count( array( 'since' => time() - DAY_IN_SECONDS ) );
+	$cshield_closed = Incidents::count(
 		array(
 			'status' => 'resolved',
 			'since'  => time() - 30 * DAY_IN_SECONDS,
 		)
 	);
 	?>
-	<div class="sshield-tiles">
-		<?php foreach ( array( Incidents::CRITICAL, Incidents::HIGH, Incidents::MEDIUM, Incidents::LOW ) as $sshield_sv ) : ?>
-			<a class="sshield-tile sshield-tile--<?php echo esc_attr( $sshield_sev_class[ $sshield_sv ] ); ?><?php echo $sshield_sum['by_severity'][ $sshield_sv ] ? ' is-hot' : ''; ?>" href="<?php echo esc_url( Admin::url( 'siem' ) . '#sshield-incidents' ); ?>">
-				<span class="sshield-tile__label">
+	<div class="cshield-tiles">
+		<?php foreach ( array( Incidents::CRITICAL, Incidents::HIGH, Incidents::MEDIUM, Incidents::LOW ) as $cshield_sv ) : ?>
+			<a class="cshield-tile cshield-tile--<?php echo esc_attr( $cshield_sev_class[ $cshield_sv ] ); ?><?php echo $cshield_sum['by_severity'][ $cshield_sv ] ? ' is-hot' : ''; ?>" href="<?php echo esc_url( Admin::url( 'siem' ) . '#cshield-incidents' ); ?>">
+				<span class="cshield-tile__label">
 					<?php
 					/* translators: %s: severity. */
-					echo esc_html( sprintf( __( '%s, open', 'sentinel-shield' ), $sshield_sev_labels[ $sshield_sv ] ) );
+					echo esc_html( sprintf( __( '%s, open', 'chaos-shield' ), $cshield_sev_labels[ $cshield_sv ] ) );
 					?>
 				</span>
-				<span class="sshield-tile__value"><?php echo esc_html( number_format_i18n( $sshield_sum['by_severity'][ $sshield_sv ] ) ); ?></span>
+				<span class="cshield-tile__value"><?php echo esc_html( number_format_i18n( $cshield_sum['by_severity'][ $cshield_sv ] ) ); ?></span>
 			</a>
 		<?php endforeach; ?>
 	</div>
 
-	<div class="sshield-grid">
+	<div class="cshield-grid">
 		<?php
-		$sshield_max = 1;
-		foreach ( $sshield_hourly as $sshield_b ) {
-			$sshield_max = max( $sshield_max, $sshield_b[1] + $sshield_b[2] + $sshield_b[3] );
+		$cshield_max = 1;
+		foreach ( $cshield_hourly as $cshield_b ) {
+			$cshield_max = max( $cshield_max, $cshield_b[1] + $cshield_b[2] + $cshield_b[3] );
 		}
-		$sshield_cw = 720;
-		$sshield_ch = 150;
-		$sshield_bw = $sshield_cw / 24;
+		$cshield_cw = 720;
+		$cshield_ch = 150;
+		$cshield_bw = $cshield_cw / 24;
 		?>
-		<section class="sshield-card sshield-card--full">
-			<div class="sshield-card__head">
+		<section class="cshield-card cshield-card--full">
+			<div class="cshield-card__head">
 				<div>
-					<h2><?php esc_html_e( 'Events in the last 24 hours', 'sentinel-shield' ); ?></h2>
+					<h2><?php esc_html_e( 'Events in the last 24 hours', 'chaos-shield' ); ?></h2>
 					<p>
 						<?php
 						/* translators: 1: number of events, 2: busiest hour, 3: number of incidents resolved. */
-						echo esc_html( sprintf( _n( '%1$s events logged, at most %2$s in one hour. %3$s incident resolved in the last 30 days.', '%1$s events logged, at most %2$s in one hour. %3$s incidents resolved in the last 30 days.', $sshield_closed, 'sentinel-shield' ), number_format_i18n( $sshield_events ), number_format_i18n( $sshield_max ), number_format_i18n( $sshield_closed ) ) );
+						echo esc_html( sprintf( _n( '%1$s events logged, at most %2$s in one hour. %3$s incident resolved in the last 30 days.', '%1$s events logged, at most %2$s in one hour. %3$s incidents resolved in the last 30 days.', $cshield_closed, 'chaos-shield' ), number_format_i18n( $cshield_events ), number_format_i18n( $cshield_max ), number_format_i18n( $cshield_closed ) ) );
 						?>
 					</p>
 				</div>
-				<ul class="sshield-legend" aria-label="<?php esc_attr_e( 'Severity', 'sentinel-shield' ); ?>">
-					<li><span class="sshield-legend__swatch sshield-legend__swatch--1"></span><?php esc_html_e( 'Info', 'sentinel-shield' ); ?></li>
-					<li><span class="sshield-legend__swatch sshield-legend__swatch--2"></span><?php esc_html_e( 'Notice', 'sentinel-shield' ); ?></li>
-					<li><span class="sshield-legend__swatch sshield-legend__swatch--3"></span><?php esc_html_e( 'Critical', 'sentinel-shield' ); ?></li>
+				<ul class="cshield-legend" aria-label="<?php esc_attr_e( 'Severity', 'chaos-shield' ); ?>">
+					<li><span class="cshield-legend__swatch cshield-legend__swatch--1"></span><?php esc_html_e( 'Info', 'chaos-shield' ); ?></li>
+					<li><span class="cshield-legend__swatch cshield-legend__swatch--2"></span><?php esc_html_e( 'Notice', 'chaos-shield' ); ?></li>
+					<li><span class="cshield-legend__swatch cshield-legend__swatch--3"></span><?php esc_html_e( 'Critical', 'chaos-shield' ); ?></li>
 				</ul>
 			</div>
-			<svg class="sshield-chart" viewBox="0 0 <?php echo esc_attr( $sshield_cw ); ?> <?php echo esc_attr( $sshield_ch + 22 ); ?>" role="img" aria-label="<?php esc_attr_e( 'Events per hour for the last 24 hours, by severity', 'sentinel-shield' ); ?>">
-				<line class="sshield-chart__base" x1="0" x2="<?php echo esc_attr( $sshield_cw ); ?>" y1="<?php echo esc_attr( $sshield_ch ); ?>" y2="<?php echo esc_attr( $sshield_ch ); ?>"></line>
-				<?php foreach ( $sshield_hourly as $sshield_h => $sshield_b ) : ?>
+			<svg class="cshield-chart" viewBox="0 0 <?php echo esc_attr( $cshield_cw ); ?> <?php echo esc_attr( $cshield_ch + 22 ); ?>" role="img" aria-label="<?php esc_attr_e( 'Events per hour for the last 24 hours, by severity', 'chaos-shield' ); ?>">
+				<line class="cshield-chart__base" x1="0" x2="<?php echo esc_attr( $cshield_cw ); ?>" y1="<?php echo esc_attr( $cshield_ch ); ?>" y2="<?php echo esc_attr( $cshield_ch ); ?>"></line>
+				<?php foreach ( $cshield_hourly as $cshield_h => $cshield_b ) : ?>
 					<?php
-					$sshield_x     = $sshield_h * $sshield_bw + 3;
-					$sshield_y     = $sshield_ch;
-					$sshield_total = $sshield_b[1] + $sshield_b[2] + $sshield_b[3];
+					$cshield_x     = $cshield_h * $cshield_bw + 3;
+					$cshield_y     = $cshield_ch;
+					$cshield_total = $cshield_b[1] + $cshield_b[2] + $cshield_b[3];
 					?>
-					<g class="sshield-chart__col">
+					<g class="cshield-chart__col">
 						<title>
 						<?php
 						/* translators: 1: hour, 2: total, 3: info, 4: notice, 5: critical. */
-						echo esc_html( sprintf( __( '%1$s: %2$d events (%3$d info, %4$d notice, %5$d critical)', 'sentinel-shield' ), wp_date( get_option( 'time_format' ), $sshield_b['start'] ), $sshield_total, $sshield_b[1], $sshield_b[2], $sshield_b[3] ) );
+						echo esc_html( sprintf( __( '%1$s: %2$d events (%3$d info, %4$d notice, %5$d critical)', 'chaos-shield' ), wp_date( get_option( 'time_format' ), $cshield_b['start'] ), $cshield_total, $cshield_b[1], $cshield_b[2], $cshield_b[3] ) );
 						?>
 						</title>
-						<rect class="sshield-chart__hit" x="<?php echo esc_attr( $sshield_h * $sshield_bw ); ?>" y="0" width="<?php echo esc_attr( $sshield_bw ); ?>" height="<?php echo esc_attr( $sshield_ch ); ?>"></rect>
-						<?php foreach ( array( 1, 2, 3 ) as $sshield_s ) : ?>
+						<rect class="cshield-chart__hit" x="<?php echo esc_attr( $cshield_h * $cshield_bw ); ?>" y="0" width="<?php echo esc_attr( $cshield_bw ); ?>" height="<?php echo esc_attr( $cshield_ch ); ?>"></rect>
+						<?php foreach ( array( 1, 2, 3 ) as $cshield_s ) : ?>
 							<?php
-							if ( ! $sshield_b[ $sshield_s ] ) {
+							if ( ! $cshield_b[ $cshield_s ] ) {
 								continue;
 							}
-							$sshield_hgt = max( 2, ( $sshield_ch - 6 ) * $sshield_b[ $sshield_s ] / $sshield_max );
-							$sshield_y  -= $sshield_hgt;
+							$cshield_hgt = max( 2, ( $cshield_ch - 6 ) * $cshield_b[ $cshield_s ] / $cshield_max );
+							$cshield_y  -= $cshield_hgt;
 							?>
-							<rect class="sshield-chart__bar sshield-chart__bar--<?php echo esc_attr( $sshield_s ); ?>" x="<?php echo esc_attr( $sshield_x ); ?>" y="<?php echo esc_attr( $sshield_y ); ?>" width="<?php echo esc_attr( $sshield_bw - 6 ); ?>" height="<?php echo esc_attr( max( 1, $sshield_hgt - 2 ) ); ?>" rx="2"></rect>
+							<rect class="cshield-chart__bar cshield-chart__bar--<?php echo esc_attr( $cshield_s ); ?>" x="<?php echo esc_attr( $cshield_x ); ?>" y="<?php echo esc_attr( $cshield_y ); ?>" width="<?php echo esc_attr( $cshield_bw - 6 ); ?>" height="<?php echo esc_attr( max( 1, $cshield_hgt - 2 ) ); ?>" rx="2"></rect>
 						<?php endforeach; ?>
-						<?php if ( 0 === $sshield_h % 6 ) : ?>
-							<text class="sshield-chart__label" x="<?php echo esc_attr( $sshield_x ); ?>" y="<?php echo esc_attr( $sshield_ch + 16 ); ?>"><?php echo esc_html( wp_date( 'H:i', $sshield_b['start'] ) ); ?></text>
+						<?php if ( 0 === $cshield_h % 6 ) : ?>
+							<text class="cshield-chart__label" x="<?php echo esc_attr( $cshield_x ); ?>" y="<?php echo esc_attr( $cshield_ch + 16 ); ?>"><?php echo esc_html( wp_date( 'H:i', $cshield_b['start'] ) ); ?></text>
 						<?php endif; ?>
 					</g>
 				<?php endforeach; ?>
 			</svg>
 		</section>
 
-		<section class="sshield-card sshield-card--full" id="sshield-incidents">
-			<div class="sshield-card__head">
-				<h2><?php esc_html_e( 'Incidents', 'sentinel-shield' ); ?></h2>
-				<nav class="sshield-chips" aria-label="<?php esc_attr_e( 'Filter incidents', 'sentinel-shield' ); ?>">
+		<section class="cshield-card cshield-card--full" id="cshield-incidents">
+			<div class="cshield-card__head">
+				<h2><?php esc_html_e( 'Incidents', 'chaos-shield' ); ?></h2>
+				<nav class="cshield-chips" aria-label="<?php esc_attr_e( 'Filter incidents', 'chaos-shield' ); ?>">
 					<?php
 					foreach ( array(
-						'active'         => __( 'Open', 'sentinel-shield' ),
-						'resolved'       => $sshield_statuses['resolved'],
-						'false_positive' => $sshield_statuses['false_positive'],
-						'all'            => __( 'All', 'sentinel-shield' ),
-					) as $sshield_k => $sshield_l ) :
+						'active'         => __( 'Open', 'chaos-shield' ),
+						'resolved'       => $cshield_statuses['resolved'],
+						'false_positive' => $cshield_statuses['false_positive'],
+						'all'            => __( 'All', 'chaos-shield' ),
+					) as $cshield_k => $cshield_l ) :
 						?>
-						<a class="sshield-chip<?php echo $sshield_k === $sshield_status_f ? ' is-active' : ''; ?>" href="<?php echo esc_url( Admin::url( 'siem', array( 'status' => $sshield_k ) ) . '#sshield-incidents' ); ?>"><?php echo esc_html( $sshield_l ); ?></a>
+						<a class="cshield-chip<?php echo $cshield_k === $cshield_status_f ? ' is-active' : ''; ?>" href="<?php echo esc_url( Admin::url( 'siem', array( 'status' => $cshield_k ) ) . '#cshield-incidents' ); ?>"><?php echo esc_html( $cshield_l ); ?></a>
 					<?php endforeach; ?>
 				</nav>
 			</div>
-			<?php if ( ! $sshield_list ) : ?>
-				<p class="sshield-empty"><?php echo esc_html( 'active' === $sshield_status_f ? __( 'No open incidents. The rules below are watching.', 'sentinel-shield' ) : __( 'No incidents here.', 'sentinel-shield' ) ); ?></p>
+			<?php if ( ! $cshield_list ) : ?>
+				<p class="cshield-empty"><?php echo esc_html( 'active' === $cshield_status_f ? __( 'No open incidents. The rules below are watching.', 'chaos-shield' ) : __( 'No incidents here.', 'chaos-shield' ) ); ?></p>
 			<?php else : ?>
-				<ul class="sshield-incidents">
-					<?php foreach ( $sshield_list as $sshield_i ) : ?>
-						<li class="sshield-incident-row sshield-incident-row--<?php echo esc_attr( $sshield_sev_class[ $sshield_i['severity'] ] ); ?>">
-							<span class="sshield-sev sshield-sev--<?php echo esc_attr( $sshield_sev_class[ $sshield_i['severity'] ] ); ?>"><?php echo esc_html( $sshield_sev_labels[ $sshield_i['severity'] ] ); ?></span>
-							<div class="sshield-incident-row__body">
-								<a class="sshield-incident-row__title" href="<?php echo esc_url( Admin::url( 'siem', array( 'incident' => $sshield_i['id'] ) ) ); ?>">#<?php echo esc_html( $sshield_i['id'] . ' ' . $sshield_i['title'] ); ?></a>
-								<p class="sshield-small">
+				<ul class="cshield-incidents">
+					<?php foreach ( $cshield_list as $cshield_i ) : ?>
+						<li class="cshield-incident-row cshield-incident-row--<?php echo esc_attr( $cshield_sev_class[ $cshield_i['severity'] ] ); ?>">
+							<span class="cshield-sev cshield-sev--<?php echo esc_attr( $cshield_sev_class[ $cshield_i['severity'] ] ); ?>"><?php echo esc_html( $cshield_sev_labels[ $cshield_i['severity'] ] ); ?></span>
+							<div class="cshield-incident-row__body">
+								<a class="cshield-incident-row__title" href="<?php echo esc_url( Admin::url( 'siem', array( 'incident' => $cshield_i['id'] ) ) ); ?>">#<?php echo esc_html( $cshield_i['id'] . ' ' . $cshield_i['title'] ); ?></a>
+								<p class="cshield-small">
 									<?php
-									$sshield_bits = array( wp_date( $sshield_fmt, $sshield_i['updated'] ) );
-									if ( $sshield_i['hits'] > 1 ) {
+									$cshield_bits = array( wp_date( $cshield_fmt, $cshield_i['updated'] ) );
+									if ( $cshield_i['hits'] > 1 ) {
 										/* translators: %d: number of hits. */
-										$sshield_bits[] = sprintf( __( '%d hits', 'sentinel-shield' ), $sshield_i['hits'] );
+										$cshield_bits[] = sprintf( __( '%d hits', 'chaos-shield' ), $cshield_i['hits'] );
 									}
-									$sshield_bits[] = $sshield_statuses[ $sshield_i['status'] ];
-									if ( $sshield_i['assignee'] ) {
-										$sshield_as = get_userdata( $sshield_i['assignee'] );
-										if ( $sshield_as ) {
+									$cshield_bits[] = $cshield_statuses[ $cshield_i['status'] ];
+									if ( $cshield_i['assignee'] ) {
+										$cshield_as = get_userdata( $cshield_i['assignee'] );
+										if ( $cshield_as ) {
 											/* translators: %s: username. */
-											$sshield_bits[] = sprintf( __( 'assigned to %s', 'sentinel-shield' ), $sshield_as->user_login );
+											$cshield_bits[] = sprintf( __( 'assigned to %s', 'chaos-shield' ), $cshield_as->user_login );
 										}
 									}
-									echo esc_html( implode( ' · ', $sshield_bits ) );
+									echo esc_html( implode( ' · ', $cshield_bits ) );
 									?>
 								</p>
 							</div>
-							<?php echo $sshield_mitre( $sshield_i['technique'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the closure. ?>
+							<?php echo $cshield_mitre( $cshield_i['technique'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the closure. ?>
 						</li>
 					<?php endforeach; ?>
 				</ul>
 			<?php endif; ?>
 		</section>
 
-		<section class="sshield-card sshield-card--full" id="sshield-search">
-			<h2><?php esc_html_e( 'Search the log', 'sentinel-shield' ); ?></h2>
-			<form method="get" action="<?php echo esc_url( Network::admin_url( 'admin.php' ) ); ?>" class="sshield-search">
+		<section class="cshield-card cshield-card--full" id="cshield-search">
+			<h2><?php esc_html_e( 'Search the log', 'chaos-shield' ); ?></h2>
+			<form method="get" action="<?php echo esc_url( Network::admin_url( 'admin.php' ) ); ?>" class="cshield-search">
 				<input type="hidden" name="page" value="<?php echo esc_attr( Admin::SLUG ); ?>">
 				<input type="hidden" name="tab" value="siem">
-				<input type="search" name="q" value="<?php echo esc_attr( $sshield_q ); ?>" placeholder="action:auth.failed since:24h" spellcheck="false" aria-label="<?php esc_attr_e( 'Search', 'sentinel-shield' ); ?>">
-				<button type="submit" class="sshield-btn"><?php esc_html_e( 'Search', 'sentinel-shield' ); ?></button>
+				<input type="search" name="q" value="<?php echo esc_attr( $cshield_q ); ?>" placeholder="action:auth.failed since:24h" spellcheck="false" aria-label="<?php esc_attr_e( 'Search', 'chaos-shield' ); ?>">
+				<button type="submit" class="cshield-btn"><?php esc_html_e( 'Search', 'chaos-shield' ); ?></button>
 			</form>
-			<p class="sshield-small"><?php esc_html_e( 'Fields: ip:, user:, action: (end with * for a family, such as auth.*), type:, sev: (1 to 3), since: (30m, 24h, 7d), site: (on a network). Other words search the message.', 'sentinel-shield' ); ?></p>
-			<?php if ( '' !== $sshield_q ) : ?>
+			<p class="cshield-small"><?php esc_html_e( 'Fields: ip:, user:, action: (end with * for a family, such as auth.*), type:, sev: (1 to 3), since: (30m, 24h, 7d), site: (on a network). Other words search the message.', 'chaos-shield' ); ?></p>
+			<?php if ( '' !== $cshield_q ) : ?>
 				<?php
-				$sshield_sargs = Siem::parse( $sshield_q );
-				$sshield_found = Events::query( $sshield_sargs + array( 'limit' => 200 ) );
-				$sshield_total = Events::count( $sshield_sargs );
+				$cshield_sargs = Siem::parse( $cshield_q );
+				$cshield_found = Events::query( $cshield_sargs + array( 'limit' => 200 ) );
+				$cshield_total = Events::count( $cshield_sargs );
 				?>
 				<p>
 					<?php
 					/* translators: 1: shown, 2: total matches. */
-					echo esc_html( sprintf( __( 'Showing %1$s of %2$s matching events.', 'sentinel-shield' ), number_format_i18n( count( $sshield_found ) ), number_format_i18n( $sshield_total ) ) );
+					echo esc_html( sprintf( __( 'Showing %1$s of %2$s matching events.', 'chaos-shield' ), number_format_i18n( count( $cshield_found ) ), number_format_i18n( $cshield_total ) ) );
 					?>
 				</p>
-				<?php if ( $sshield_found ) : ?>
-					<div class="sshield-table-wrap">
-						<table class="sshield-table sshield-table--evidence">
-							<thead><tr><th><?php esc_html_e( 'Time', 'sentinel-shield' ); ?></th><th><?php esc_html_e( 'Action', 'sentinel-shield' ); ?></th><th><?php esc_html_e( 'Event', 'sentinel-shield' ); ?></th><th><?php esc_html_e( 'IP', 'sentinel-shield' ); ?></th></tr></thead>
+				<?php if ( $cshield_found ) : ?>
+					<div class="cshield-table-wrap">
+						<table class="cshield-table cshield-table--evidence">
+							<thead><tr><th><?php esc_html_e( 'Time', 'chaos-shield' ); ?></th><th><?php esc_html_e( 'Action', 'chaos-shield' ); ?></th><th><?php esc_html_e( 'Event', 'chaos-shield' ); ?></th><th><?php esc_html_e( 'IP', 'chaos-shield' ); ?></th></tr></thead>
 							<tbody>
-							<?php foreach ( $sshield_found as $sshield_e ) : ?>
-								<tr class="sshield-sev-<?php echo esc_attr( $sshield_e['severity'] ); ?>">
-									<td><?php echo esc_html( wp_date( $sshield_fmt, (int) $sshield_e['time'] ) ); ?></td>
-									<td><code><?php echo esc_html( $sshield_e['action'] ? $sshield_e['action'] : $sshield_e['type'] ); ?></code></td>
-									<td><?php echo esc_html( $sshield_e['message'] ); ?> <?php echo $sshield_user_link( (int) $sshield_e['user_id'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the closure. ?></td>
-									<td><?php echo $sshield_ip_link( $sshield_e['ip'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the closure. ?></td>
+							<?php foreach ( $cshield_found as $cshield_e ) : ?>
+								<tr class="cshield-sev-<?php echo esc_attr( $cshield_e['severity'] ); ?>">
+									<td><?php echo esc_html( wp_date( $cshield_fmt, (int) $cshield_e['time'] ) ); ?></td>
+									<td><code><?php echo esc_html( $cshield_e['action'] ? $cshield_e['action'] : $cshield_e['type'] ); ?></code></td>
+									<td><?php echo esc_html( $cshield_e['message'] ); ?> <?php echo $cshield_user_link( (int) $cshield_e['user_id'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the closure. ?></td>
+									<td><?php echo $cshield_ip_link( $cshield_e['ip'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the closure. ?></td>
 								</tr>
 							<?php endforeach; ?>
 							</tbody>
@@ -461,35 +461,35 @@ else :
 			<?php endif; ?>
 		</section>
 
-		<section class="sshield-card sshield-card--full" id="sshield-rules">
-			<h2><?php esc_html_e( 'Detection rules', 'sentinel-shield' ); ?></h2>
+		<section class="cshield-card cshield-card--full" id="cshield-rules">
+			<h2><?php esc_html_e( 'Detection rules', 'chaos-shield' ); ?></h2>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-				<input type="hidden" name="action" value="sshield_rules">
-				<?php wp_nonce_field( 'sshield_rules' ); ?>
-				<ul class="sshield-rules">
-					<?php foreach ( $sshield_rules as $sshield_rk => $sshield_r ) : ?>
+				<input type="hidden" name="action" value="cshield_rules">
+				<?php wp_nonce_field( 'cshield_rules' ); ?>
+				<ul class="cshield-rules">
+					<?php foreach ( $cshield_rules as $cshield_rk => $cshield_r ) : ?>
 						<?php
-						$sshield_hits = Incidents::count(
+						$cshield_hits = Incidents::count(
 							array(
 								'status' => 'all',
-								'rule'   => $sshield_rk,
+								'rule'   => $cshield_rk,
 								'since'  => time() - 30 * DAY_IN_SECONDS,
 							)
 						);
 						?>
 						<li>
-							<label class="sshield-rule">
-								<input type="checkbox" name="rules[]" value="<?php echo esc_attr( $sshield_rk ); ?>" <?php checked( Detect::rule_on( $sshield_rk ) ); ?>>
-								<span class="sshield-rule__body">
-									<strong><?php echo esc_html( $sshield_r['name'] ); ?></strong>
-									<span class="sshield-small"><?php echo esc_html( $sshield_r['description'] ); ?></span>
+							<label class="cshield-rule">
+								<input type="checkbox" name="rules[]" value="<?php echo esc_attr( $cshield_rk ); ?>" <?php checked( Detect::rule_on( $cshield_rk ) ); ?>>
+								<span class="cshield-rule__body">
+									<strong><?php echo esc_html( $cshield_r['name'] ); ?></strong>
+									<span class="cshield-small"><?php echo esc_html( $cshield_r['description'] ); ?></span>
 								</span>
-								<span class="sshield-rule__meta">
-									<?php echo $sshield_mitre( $sshield_r['technique'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the closure. ?>
-									<span class="sshield-small">
+								<span class="cshield-rule__meta">
+									<?php echo $cshield_mitre( $cshield_r['technique'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in the closure. ?>
+									<span class="cshield-small">
 										<?php
 										/* translators: %d: number of incidents. */
-										echo esc_html( sprintf( _n( '%d incident in 30 days', '%d incidents in 30 days', $sshield_hits, 'sentinel-shield' ), $sshield_hits ) );
+										echo esc_html( sprintf( _n( '%d incident in 30 days', '%d incidents in 30 days', $cshield_hits, 'chaos-shield' ), $cshield_hits ) );
 										?>
 									</span>
 								</span>
@@ -497,25 +497,25 @@ else :
 						</li>
 					<?php endforeach; ?>
 				</ul>
-				<div class="sshield-fields sshield-fields--two sshield-fields--spaced">
-					<label><span><?php esc_html_e( 'Email me about incidents rated', 'sentinel-shield' ); ?></span>
+				<div class="cshield-fields cshield-fields--two cshield-fields--spaced">
+					<label><span><?php esc_html_e( 'Email me about incidents rated', 'chaos-shield' ); ?></span>
 						<select name="alert_min">
-							<?php foreach ( array_reverse( $sshield_sev_labels, true ) as $sshield_sv => $sshield_sl ) : ?>
-								<option value="<?php echo esc_attr( $sshield_sv ); ?>" <?php selected( (int) Settings::get( 'siem_alert_min' ), $sshield_sv ); ?>>
+							<?php foreach ( array_reverse( $cshield_sev_labels, true ) as $cshield_sv => $cshield_sl ) : ?>
+								<option value="<?php echo esc_attr( $cshield_sv ); ?>" <?php selected( (int) Settings::get( 'siem_alert_min' ), $cshield_sv ); ?>>
 									<?php
 									echo esc_html(
-										Incidents::CRITICAL === $sshield_sv
-											? $sshield_sl
+										Incidents::CRITICAL === $cshield_sv
+											? $cshield_sl
 											/* translators: %s: severity. */
-											: sprintf( __( '%s and above', 'sentinel-shield' ), $sshield_sl )
+											: sprintf( __( '%s and above', 'chaos-shield' ), $cshield_sl )
 									);
 									?>
 								</option>
 							<?php endforeach; ?>
 						</select></label>
 				</div>
-				<div class="sshield-actions sshield-actions--start">
-					<button type="submit" class="sshield-btn"><?php esc_html_e( 'Save rules', 'sentinel-shield' ); ?></button>
+				<div class="cshield-actions cshield-actions--start">
+					<button type="submit" class="cshield-btn"><?php esc_html_e( 'Save rules', 'chaos-shield' ); ?></button>
 				</div>
 			</form>
 		</section>

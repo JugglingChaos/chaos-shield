@@ -2,10 +2,10 @@
 /**
  * IP block list and request firewall.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -25,13 +25,13 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Firewall {
 
-	const HITS         = 'sshield_fw_hits';
-	const EXCEPTIONS   = 'sshield_fw_exceptions';
+	const HITS         = 'cshield_fw_hits';
+	const EXCEPTIONS   = 'cshield_fw_exceptions';
 	const MAX_HITS     = 100;
 	const MAX_VALUE    = 16384;
 	const MAX_BYTES    = 262144;
 	const MAX_FIELDS   = 500;
-	const UPLOADS_MARK = '# Sentinel Shield: no PHP in uploads';
+	const UPLOADS_MARK = '# Chaos Shield: no PHP in uploads';
 
 	/**
 	 * Reference of the request being blocked, shown on the block page.
@@ -51,7 +51,7 @@ final class Firewall {
 			// Pluggable functions exist from here, which the admin exemption needs.
 			add_action( 'plugins_loaded', array( $this, 'inspect' ), 0 );
 		}
-		add_action( 'admin_post_sshield_firewall', array( __CLASS__, 'handle' ) );
+		add_action( 'admin_post_cshield_firewall', array( __CLASS__, 'handle' ) );
 	}
 
 	/**
@@ -143,7 +143,7 @@ final class Firewall {
 		}
 
 		// Log one event per IP and rule set every 10 minutes so a scan cannot flood the log.
-		$throttle = 'sshield_fw_' . md5( $ip . '|' . implode( ',', wp_list_pluck( $result['hits'], 'rule' ) ) . '|' . (int) $learning );
+		$throttle = 'cshield_fw_' . md5( $ip . '|' . implode( ',', wp_list_pluck( $result['hits'], 'rule' ) ) . '|' . (int) $learning );
 		if ( ! Network::get_transient( $throttle ) ) {
 			Network::set_transient( $throttle, 1, 10 * MINUTE_IN_SECONDS );
 			Events::add(
@@ -290,7 +290,7 @@ final class Firewall {
 		 *
 		 * @param array $rules Rule key => [ label, info, pattern, score, targets, staff ].
 		 */
-		$rules = (array) apply_filters( 'sshield_firewall_rules', $rules );
+		$rules = (array) apply_filters( 'cshield_firewall_rules', $rules );
 		if ( ! $all ) {
 			foreach ( (array) Settings::get( 'fw_rules_off' ) as $off ) {
 				unset( $rules[ $off ] );
@@ -584,7 +584,7 @@ final class Firewall {
 			Events::add(
 				'settings',
 				/* translators: 1: request path, 2: reference. */
-				sprintf( __( 'Firewall exception added for %1$s (from blocked request %2$s).', 'sentinel-shield' ), $hit['path'], $hit['ref'] ),
+				sprintf( __( 'Firewall exception added for %1$s (from blocked request %2$s).', 'chaos-shield' ), $hit['path'], $hit['ref'] ),
 				Request::ip(),
 				array(
 					'severity' => Events::NOTICE,
@@ -619,9 +619,9 @@ final class Firewall {
 	 */
 	public static function handle() {
 		if ( ! current_user_can( Network::cap() ) ) {
-			wp_die( esc_html__( 'You are not allowed to change Sentinel Shield settings.', 'sentinel-shield' ), 403 );
+			wp_die( esc_html__( 'You are not allowed to change Chaos Shield settings.', 'chaos-shield' ), 403 );
 		}
-		check_admin_referer( 'sshield_firewall' );
+		check_admin_referer( 'cshield_firewall' );
 		// phpcs:disable WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Each field is validated below.
 		$op     = isset( $_POST['op'] ) ? sanitize_key( wp_unslash( $_POST['op'] ) ) : '';
 		$notice = 'saved';
@@ -647,12 +647,12 @@ final class Firewall {
 		} elseif ( 'uploads_on' === $op || 'uploads_off' === $op ) {
 			$result = self::uploads_rule( 'uploads_on' === $op );
 			if ( is_wp_error( $result ) ) {
-				Network::set_transient( 'sshield_error_' . get_current_user_id(), $result->get_error_message(), MINUTE_IN_SECONDS );
+				Network::set_transient( 'cshield_error_' . get_current_user_id(), $result->get_error_message(), MINUTE_IN_SECONDS );
 				$notice = '';
 			}
 		}
 		// phpcs:enable
-		wp_safe_redirect( Admin::url( 'firewall', array( 'sshield_notice' => $notice ) ) );
+		wp_safe_redirect( Admin::url( 'firewall', array( 'cshield_notice' => $notice ) ) );
 		exit;
 	}
 
@@ -687,11 +687,11 @@ final class Firewall {
 	public static function uploads_rule( $on ) {
 		$file = self::uploads_htaccess();
 		if ( '' === $file ) {
-			return new \WP_Error( 'sshield_up_dir', __( 'The uploads folder could not be found.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_up_dir', __( 'The uploads folder could not be found.', 'chaos-shield' ) );
 		}
 		$body  = is_file( $file ) ? (string) file_get_contents( $file ) : ''; // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file.
-		$block = self::UPLOADS_MARK . "\n<FilesMatch \"\\.(php\\d?|phtml|phar|pht|phps)$\">\n\t<IfModule mod_authz_core.c>\n\t\tRequire all denied\n\t</IfModule>\n\t<IfModule !mod_authz_core.c>\n\t\tOrder allow,deny\n\t\tDeny from all\n\t</IfModule>\n</FilesMatch>\n# End Sentinel Shield\n";
-		$body  = preg_replace( '/' . preg_quote( self::UPLOADS_MARK, '/' ) . '.*?# End Sentinel Shield\n?/s', '', $body );
+		$block = self::UPLOADS_MARK . "\n<FilesMatch \"\\.(php\\d?|phtml|phar|pht|phps)$\">\n\t<IfModule mod_authz_core.c>\n\t\tRequire all denied\n\t</IfModule>\n\t<IfModule !mod_authz_core.c>\n\t\tOrder allow,deny\n\t\tDeny from all\n\t</IfModule>\n</FilesMatch>\n# End Chaos Shield\n";
+		$body  = preg_replace( '/' . preg_quote( self::UPLOADS_MARK, '/' ) . '.*?# End Chaos Shield\n?/s', '', $body );
 		if ( $on ) {
 			$body = rtrim( (string) $body ) . ( '' === trim( (string) $body ) ? '' : "\n\n" ) . $block;
 		}
@@ -702,11 +702,11 @@ final class Firewall {
 				wp_delete_file( $file );
 			}
 		} elseif ( false === file_put_contents( $file, $body ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writes the uploads .htaccess on request.
-			return new \WP_Error( 'sshield_up_write', __( 'Could not write the .htaccess file in uploads. Check the folder permissions.', 'sentinel-shield' ) );
+			return new \WP_Error( 'cshield_up_write', __( 'Could not write the .htaccess file in uploads. Check the folder permissions.', 'chaos-shield' ) );
 		}
 		Events::add(
 			'settings',
-			$on ? __( 'PHP is now blocked from running in the uploads folder.', 'sentinel-shield' ) : __( 'The rule blocking PHP in the uploads folder was removed.', 'sentinel-shield' ),
+			$on ? __( 'PHP is now blocked from running in the uploads folder.', 'chaos-shield' ) : __( 'The rule blocking PHP in the uploads folder was removed.', 'chaos-shield' ),
 			Request::ip(),
 			array(
 				'severity' => $on ? Events::INFO : Events::NOTICE,

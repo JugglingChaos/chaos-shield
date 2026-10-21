@@ -2,25 +2,25 @@
 /**
  * Multisite checks: run against a TEST network with `wp eval-file tests/multisite.php`.
  *
- * Needs a network with at least one site besides the main one, Sentinel Shield
+ * Needs a network with at least one site besides the main one, Chaos Shield
  * network activated and the test IP helper from tests/fixtures/ as a must-use plugin.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
 // phpcs:disable WordPress.Security.EscapeOutput -- Command line output.
 
-namespace SentinelShield\Tests;
+namespace ChaosShield\Tests;
 
-use SentinelShield\Bans;
-use SentinelShield\Events;
-use SentinelShield\Login_Guard;
-use SentinelShield\Network;
-use SentinelShield\Plugin;
-use SentinelShield\Settings;
-use SentinelShield\Siem;
+use ChaosShield\Bans;
+use ChaosShield\Events;
+use ChaosShield\Login_Guard;
+use ChaosShield\Network;
+use ChaosShield\Plugin;
+use ChaosShield\Settings;
+use ChaosShield\Siem;
 
-if ( ! defined( 'WP_CLI' ) || ! class_exists( '\SentinelShield\Settings' ) ) {
+if ( ! defined( 'WP_CLI' ) || ! class_exists( '\ChaosShield\Settings' ) ) {
 	echo "Run with: wp eval-file tests/multisite.php\n";
 	return;
 }
@@ -28,7 +28,7 @@ if ( ! defined( 'WP_CLI' ) || ! class_exists( '\SentinelShield\Settings' ) ) {
 require_once __DIR__ . '/helpers.php';
 
 if ( ! is_multisite() || ! Network::active() ) {
-	echo "This needs a multisite network with Sentinel Shield network activated.\n";
+	echo "This needs a multisite network with Chaos Shield network activated.\n";
 	\WP_CLI::halt( 1 );
 }
 
@@ -61,13 +61,13 @@ Network::update_option(
 	)
 );
 
-echo 'Sentinel Shield ' . SSHIELD_VERSION . ' multisite checks against ' . network_home_url( '/' ) . "\n";
+echo 'Chaos Shield ' . CSHIELD_VERSION . ' multisite checks against ' . network_home_url( '/' ) . "\n";
 
 group(
 	'One network, one set of rules',
 	function () use ( $sst_sub, $sst_sub_url ) {
 		check( 'settings live in the network options', is_array( get_site_option( Settings::OPTION ) ) );
-		check( 'the log is one network table', Events::table() === $GLOBALS['wpdb']->base_prefix . 'sshield_log' );
+		check( 'the log is one network table', Events::table() === $GLOBALS['wpdb']->base_prefix . 'cshield_log' );
 
 		$user = user();
 		$bad  = ip();
@@ -112,8 +112,8 @@ group(
 		remove_user_from_blog( $admin->ID, get_main_site_id() );
 		$cookies = admin_cookies( $admin->ID );
 		$me      = ip();
-		$page    = http( 'GET', $sst_sub_url . '/wp-admin/admin.php?page=sentinel-shield', $me, array( 'cookies' => $cookies ) );
-		check( 'a site administrator cannot open the screens', false === strpos( $page['body'], 'sshield-tabs' ) );
+		$page    = http( 'GET', $sst_sub_url . '/wp-admin/admin.php?page=chaos-shield', $me, array( 'cookies' => $cookies ) );
+		check( 'a site administrator cannot open the screens', false === strpos( $page['body'], 'cshield-tabs' ) );
 
 		$before = Network::get_option( Settings::OPTION );
 		http(
@@ -123,9 +123,9 @@ group(
 			array(
 				'cookies' => $cookies,
 				'body'    => array(
-					'action'   => 'sshield_save',
+					'action'   => 'cshield_save',
 					'_wpnonce' => 'x',
-					'sshield'  => array( 'firewall' => '' ),
+					'cshield'  => array( 'firewall' => '' ),
 				),
 			)
 		);
@@ -134,8 +134,8 @@ group(
 
 		$super = user();
 		grant_super_admin( $super->ID );
-		$net = http( 'GET', network_admin_url( 'admin.php?page=sentinel-shield&tab=activity' ), ip(), array( 'cookies' => admin_cookies( $super->ID ) ) );
-		check( 'a super admin opens the screens in Network Admin', 200 === $net['status'] && false !== strpos( $net['body'], 'sshield-tabs' ) );
+		$net = http( 'GET', network_admin_url( 'admin.php?page=chaos-shield&tab=activity' ), ip(), array( 'cookies' => admin_cookies( $super->ID ) ) );
+		check( 'a super admin opens the screens in Network Admin', 200 === $net['status'] && false !== strpos( $net['body'], 'cshield-tabs' ) );
 		check( 'the network log shows a site column', false !== strpos( $net['body'], '<th>Site</th>' ) );
 		revoke_super_admin( $super->ID );
 	}

@@ -2,10 +2,10 @@
 /**
  * CBOR decoding for passkeys.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 

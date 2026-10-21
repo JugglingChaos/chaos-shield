@@ -2,15 +2,15 @@
 /**
  * Multisite support: one protection layer for the whole network.
  *
- * @package SentinelShield
+ * @package ChaosShield
  */
 
-namespace SentinelShield;
+namespace ChaosShield;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Where Sentinel Shield keeps its data and who may manage it.
+ * Where Chaos Shield keeps its data and who may manage it.
  *
  * On a single site, and on a multisite network where the plugin is active on
  * one site only, everything stays per site, as before. When the plugin is
@@ -36,7 +36,7 @@ final class Network {
 	public static function active() {
 		if ( null === self::$active ) {
 			$plugins      = is_multisite() ? (array) get_site_option( 'active_sitewide_plugins', array() ) : array();
-			self::$active = isset( $plugins[ plugin_basename( SSHIELD_FILE ) ] );
+			self::$active = isset( $plugins[ plugin_basename( CSHIELD_FILE ) ] );
 		}
 		return self::$active;
 	}
@@ -58,7 +58,7 @@ final class Network {
 	}
 
 	/**
-	 * Capability that manages Sentinel Shield.
+	 * Capability that manages Chaos Shield.
 	 *
 	 * @return string
 	 */
@@ -143,18 +143,18 @@ final class Network {
 	 */
 	public static function migrate() {
 		global $wpdb;
-		if ( ! self::active() || get_site_option( 'sshield_network_since' ) ) {
+		if ( ! self::active() || get_site_option( 'cshield_network_since' ) ) {
 			return;
 		}
 		$table = $wpdb->get_blog_prefix( self::main_site() ) . 'options';
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- One-off copy from the main site's options table.
-		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT option_name, option_value FROM {$table} WHERE option_name LIKE %s", $wpdb->esc_like( 'sshield_' ) . '%' ), ARRAY_A );
+		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT option_name, option_value FROM {$table} WHERE option_name LIKE %s", $wpdb->esc_like( 'cshield_' ) . '%' ), ARRAY_A );
 		foreach ( (array) $rows as $row ) {
 			if ( false === get_site_option( $row['option_name'] ) ) {
 				update_site_option( $row['option_name'], maybe_unserialize( $row['option_value'] ) );
 			}
 		}
-		update_site_option( 'sshield_network_since', time() );
+		update_site_option( 'cshield_network_since', time() );
 	}
 
 	/**
