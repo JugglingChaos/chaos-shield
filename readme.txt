@@ -4,7 +4,7 @@ Tags: security, firewall, two-factor, audit log, malware scanner
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.12.0
+Stable tag: 1.13.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -201,7 +201,7 @@ Two-factor secrets are encrypted with your wp-config.php security keys. If those
 
 = Running the tests =
 
-The plugin source (not the release zip) has an integration suite in `tests/` that drives a live test site over HTTP: logins, two-factor, the firewall, bans, the SIEM, the hub API, restore points and the admin screens, plus network checks when the site is a multisite. Run `tests/run.sh /path/to/wordpress` on a throwaway site, never on production.
+The plugin source (not the release zip) has an integration suite in `tests/` that drives a live test site over HTTP: logins, two-factor, the firewall, bans, the SIEM, the hub API, restore points, updates and the admin screens, plus network checks when the site is a multisite. Run `tests/run.sh /path/to/wordpress` on a throwaway site, never on production; `tests/ci/setup.sh` builds a fresh single site and multisite for it. On GitHub every pull request runs the coding standards, PHP 7.4 to 8.4 syntax checks and the whole suite on both kinds of site.
 
 = Filters =
 
@@ -213,6 +213,11 @@ The plugin source (not the release zip) has an integration suite in `tests/` tha
 * `cshield_check_pages` - the page addresses the daily page check loads (up to 8).
 * `cshield_exposure_paths` - the addresses asked for by the exposed files check, by id, with path and kind.
 * `cshield_attack_mode` (action) - runs with true or false when under attack mode switches on or off.
+* `cshield_update_repo` - the GitHub repository (owner/name) updates come from.
+
+= Updates =
+
+Chaos Shield updates from its GitHub releases, not from WordPress.org. When a new release is published, the usual "update available" notice, one-click update, View details and automatic updates work as for any other plugin. Sites check GitHub at most every six hours; "Check again" on Dashboard > Updates asks straight away. To update from a private repository, add a fine-grained GitHub token with read-only access to its contents to wp-config.php as `define( 'CSHIELD_GITHUB_TOKEN', '...' );`. A fork can point updates at itself with `CSHIELD_UPDATE_REPO` or the `cshield_update_repo` filter.
 
 == Installation ==
 
@@ -240,7 +245,7 @@ No. Hardening and the firewall are a few checks per request, and the file scan r
 
 = Does it send data anywhere? =
 
-Nothing that identifies your site's users, unless you turn on log forwarding, which sends events (including usernames and IPs) to the webhook or syslog server you choose. Repair downloads the original file from core.svn.wordpress.org, plugins.svn.wordpress.org or themes.svn.wordpress.org. The daily vulnerability check asks wpvulnerability.net about each installed slug and your WordPress version, the scan fetches plugin checksums and theme releases from downloads.wordpress.org, and the threat blocklist downloads Spamhaus DROP (and the Tor exit list, if chosen) once a day, the built-in country lookup downloads its database from github.com once a week; all of these can be switched off under Hardening. With a login CAPTCHA on, login tokens are checked with Cloudflare or hCaptcha, and their script loads on the login page; while you connect one, its script also loads in the dialog for the live test. A connected chat receives the text of each alert. The daily page check loads your own pages and downloads the outside scripts they include, so their servers see your server's address. With Cloudflare connected, the plugin sends banned IPs and settings changes to api.cloudflare.com with your token. Help messages from visitors (name, email, message and IP) are stored on your site for 30 days and never sent anywhere except your own alert email or chat. Scans fetch core checksums from api.wordpress.org, the breached password check sends the first five characters of a password's SHA-1 hash to api.pwnedpasswords.com (switch it off under Hardening if you prefer), and the hub contacts only the sites you connect.
+Nothing that identifies your site's users, unless you turn on log forwarding, which sends events (including usernames and IPs) to the webhook or syslog server you choose. Repair downloads the original file from core.svn.wordpress.org, plugins.svn.wordpress.org or themes.svn.wordpress.org. The daily vulnerability check asks wpvulnerability.net about each installed slug and your WordPress version, the scan fetches plugin checksums and theme releases from downloads.wordpress.org, and the threat blocklist downloads Spamhaus DROP (and the Tor exit list, if chosen) once a day, the built-in country lookup downloads its database from github.com once a week; all of these can be switched off under Hardening. With a login CAPTCHA on, login tokens are checked with Cloudflare or hCaptcha, and their script loads on the login page; while you connect one, its script also loads in the dialog for the live test. A connected chat receives the text of each alert. The daily page check loads your own pages and downloads the outside scripts they include, so their servers see your server's address. To look for updates, the site asks api.github.com for the latest Chaos Shield release at most every six hours. With Cloudflare connected, the plugin sends banned IPs and settings changes to api.cloudflare.com with your token. Help messages from visitors (name, email, message and IP) are stored on your site for 30 days and never sent anywhere except your own alert email or chat. Scans fetch core checksums from api.wordpress.org, the breached password check sends the first five characters of a password's SHA-1 hash to api.pwnedpasswords.com (switch it off under Hardening if you prefer), and the hub contacts only the sites you connect.
 
 = Does it replace Cloudflare? =
 
@@ -267,6 +272,10 @@ Counting every page view needs a persistent object cache such as Redis or Memcac
 Usually not. Current NIST guidance (SP 800-63B) recommends long passwords, breach screening and two-factor login instead of regular expiry, which is why expiry is off by default. Turn it on if a policy you must follow requires it.
 
 == Changelog ==
+
+= 1.13.0 =
+* Updates from GitHub: new releases show up as normal plugin updates with one-click and automatic updating, View details with the release notes, and support for private repositories through a token in wp-config.php.
+* The new Update URI header tells WordPress.org to skip this plugin, so a different plugin with the same name there can never replace it.
 
 = 1.12.0 =
 * Renamed from Sentinel Shield to Chaos Shield, with a new folder, text domain and code prefixes. Settings from an earlier Sentinel Shield install do not carry over.
