@@ -95,7 +95,7 @@ echo 'Chaos Shield ' . CSHIELD_VERSION . ' integration tests against ' . home_ur
 $probe = http( 'GET', '/', ip() );
 if ( 200 !== $probe['status'] ) {
 	echo "The site did not answer with 200 ({$probe['status']}): start it first.\n";
-	return;
+	\WP_CLI::halt( 1 );
 }
 
 group(

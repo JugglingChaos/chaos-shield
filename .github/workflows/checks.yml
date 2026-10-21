@@ -76,9 +76,17 @@ jobs:
       - name: Build the test sites
         run: sh tests/ci/setup.sh
       - name: Single site
-        run: sh tests/run.sh "$ROOT/single"
+        run: |
+          set -o pipefail
+          sh tests/run.sh "$ROOT/single" | tee single.txt
+          grep -qE '^[0-9]+ passed, 0 failed' single.txt
+          echo "::notice title=Single site (PHP ${{ matrix.php }})::$(grep -E '^[0-9]+ passed' single.txt | tr '\n' ' ')"
       - name: Multisite
-        run: WP="wp --url=http://localhost:8081" sh tests/run.sh "$ROOT/multi"
+        run: |
+          set -o pipefail
+          WP="wp --url=http://localhost:8081" sh tests/run.sh "$ROOT/multi" | tee multi.txt
+          grep -qE '^[0-9]+ passed, 0 failed' multi.txt
+          echo "::notice title=Multisite (PHP ${{ matrix.php }})::$(grep -E '^[0-9]+ passed' multi.txt | tr '\n' ' ')"
       - name: Keep the logs
         if: failure()
         uses: actions/upload-artifact@v4
