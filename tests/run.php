@@ -46,6 +46,7 @@ use ChaosShield\Siem;
 use ChaosShield\Threat_Feed;
 use ChaosShield\Totp;
 use ChaosShield\Two_Factor;
+use ChaosShield\Updater;
 
 if ( ! defined( 'WP_CLI' ) || ! class_exists( '\ChaosShield\Settings' ) ) {
 	echo "Run with: wp eval-file tests/run.php\n";
@@ -94,7 +95,7 @@ echo 'Chaos Shield ' . CSHIELD_VERSION . ' integration tests against ' . home_ur
 $probe = http( 'GET', '/', ip() );
 if ( 200 !== $probe['status'] ) {
 	echo "The site did not answer with 200 ({$probe['status']}): start it first.\n";
-	return;
+	\WP_CLI::halt( 1 );
 }
 
 group(
@@ -1601,6 +1602,120 @@ group(
 		$editor = user( 'editor' );
 		$page   = http( 'GET', Network::admin_url( 'admin.php?page=chaos-shield' ), $me, array( 'cookies' => admin_cookies( $editor->ID ) ) );
 		check( 'editors cannot open the plugin', 200 !== $page['status'] || false === strpos( $page['body'], 'cshield-tabs' ) );
+	}
+);
+
+group(
+	'Updates from GitHub',
+	function () {
+		$file    = plugin_basename( CSHIELD_FILE );
+		$api     = '/repos/' . Updater::repo();
+		$release = static function ( $tag, array $extra = array() ) use ( $api ) {
+			return array(
+				'code' => 200,
+				'body' => wp_json_encode(
+					array_merge(
+						array(
+							'tag_name'     => $tag,
+							'html_url'     => 'https://github.com/' . Updater::repo() . '/releases/tag/' . $tag,
+							'body'         => "Big release\n* Fixed <script>alert(1)</script>\n* Faster scans",
+							'published_at' => '2026-10-21T10:00:00Z',
+							'assets'       => array(
+								array(
+									'name'                 => 'chaos-shield-' . ltrim( $tag, 'v' ) . '.zip',
+									'url'                  => 'https://api.github.com' . $api . '/releases/assets/123',
+									'browser_download_url' => 'https://github.com/' . Updater::repo() . '/releases/download/' . $tag . '/chaos-shield.zip',
+								),
+							),
+						),
+						$extra
+					)
+				),
+			);
+		};
+		$mock    = static function ( $latest ) use ( $api ) {
+			Network::delete_transient( Updater::RELEASE );
+			delete_site_transient( 'update_plugins' );
+			delete_site_option( 'sst_http_log' );
+			update_site_option(
+				'sst_http_mock',
+				array(
+					'api.github.com'      => array(
+						'routes' => array(
+							'GET ' . $api . '/releases/latest'     => $latest,
+							'GET ' . $api . '/releases/assets/123' => array(
+								'code'    => 302,
+								'body'    => '',
+								'headers' => array( 'location' => 'https://objects.example.com/signed/chaos-shield.zip' ),
+							),
+						),
+					),
+					'objects.example.com' => array( 'body' => 'PK-zip-bytes' ),
+					'api.wordpress.org'   => array( 'body' => '{"plugins":{},"translations":[],"no_update":{}}' ),
+				)
+			);
+		};
+		$calls   = static function ( $host ) {
+			return array_values(
+				array_filter(
+					(array) get_site_option( 'sst_http_log', array() ),
+					static function ( $r ) use ( $host ) {
+						return false !== strpos( $r['url'], $host );
+					}
+				)
+			);
+		};
+		$offered = static function () use ( $file ) {
+			wp_update_plugins();
+			$t = get_site_transient( 'update_plugins' );
+			return isset( $t->response[ $file ] ) ? $t->response[ $file ] : null;
+		};
+
+		try {
+			$mock( $release( 'v99.0.0' ) );
+			$up = $offered();
+			check( 'a newer GitHub release shows as a plugin update', $up && '99.0.0' === $up->new_version && false !== strpos( $up->package, '/releases/download/v99.0.0/' ) );
+			$org = $calls( 'api.wordpress.org/plugins/update-check' );
+			check( 'WordPress.org is told the plugin updates from GitHub', $org && false !== strpos( urldecode( $org[0]['body'] ), 'github.com\\/JugglingChaos\\/chaos-shield' ) );
+			$before = count( $calls( 'api.github.com' ) );
+			Updater::latest();
+			check( 'the release is cached instead of asking GitHub every time', count( $calls( 'api.github.com' ) ) === $before );
+
+			require_once ABSPATH . 'wp-admin/includes/plugin-install.php';
+			$info = plugins_api( 'plugin_information', array( 'slug' => dirname( $file ) ) );
+			check( 'View details shows the release notes, escaped', ! is_wp_error( $info ) && '99.0.0' === $info->version && false !== strpos( $info->sections['changelog'], '<li>Faster scans</li>' ) && false === strpos( $info->sections['changelog'], '<script>' ) );
+
+			$mock( $release( 'v' . CSHIELD_VERSION ) );
+			check( 'the same version is not offered', null === $offered() );
+			$mock( $release( 'v99.0.0', array( 'prerelease' => true ) ) );
+			check( 'a pre-release is not offered', null === $offered() );
+			$mock( $release( 'v99.0.0', array( 'assets' => array() ) ) );
+			check( 'a release without a zip is not offered', null === $offered() );
+			$mock(
+				array(
+					'code' => 500,
+					'body' => 'oops',
+				)
+			);
+			check( 'GitHub being down offers nothing and breaks nothing', null === $offered() && null === Updater::latest() );
+
+			$mock( $release( 'v99.0.0' ) );
+			define( 'CSHIELD_GITHUB_TOKEN', 'github_pat_test' );
+			$up = $offered();
+			check( 'with a token the download goes through the GitHub API', $up && 0 === strpos( $up->package, 'https://api.github.com' ) && ! empty( $calls( 'api.github.com' )[0]['auth'] ) );
+			$path = Updater::download( false, $up->package );
+			$hops = $calls( 'objects.example.com' );
+			check( 'the signed download is fetched without the token', is_string( $path ) && 'PK-zip-bytes' === file_get_contents( $path ) && $hops && empty( $hops[0]['auth'] ) );
+			if ( is_string( $path ) ) {
+				wp_delete_file( $path );
+			}
+			check( 'other downloads are left alone', false === Updater::download( false, 'https://downloads.wordpress.org/plugin/akismet.zip' ) );
+		} finally {
+			delete_site_option( 'sst_http_mock' );
+			delete_site_option( 'sst_http_log' );
+			Network::delete_transient( Updater::RELEASE );
+			delete_site_transient( 'update_plugins' );
+		}
 	}
 );
 

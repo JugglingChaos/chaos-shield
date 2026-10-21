@@ -1,0 +1,98 @@
+name: Checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  standards:
+    name: Coding standards
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer
+          coverage: none
+      - run: composer install --no-interaction --no-progress
+      - name: WordPress coding standards and PHP 7.4+ compatibility
+        run: vendor/bin/phpcs
+      - name: JavaScript syntax
+        run: for f in assets/js/*.js; do node --check "$f"; done
+
+  syntax:
+    name: PHP ${{ matrix.php }} syntax
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+      - run: find . -name '*.php' -not -path './vendor/*' -print0 | xargs -0 -n1 php -l > /dev/null
+
+  tests:
+    name: Integration tests (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['7.4', '8.3']
+    services:
+      db:
+        image: mariadb:10.11
+        env:
+          MARIADB_ROOT_PASSWORD: root
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=5s --health-retries=30
+    env:
+      ROOT: /tmp/cshield-sites
+      # The vulnerability fixtures match the plugins bundled with this release.
+      WP_VERSION: '7.1.3'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mysqli, zip, gd, intl, sodium, curl, mbstring
+          tools: wp-cli
+          coverage: none
+      - name: Build the test sites
+        run: sh tests/ci/setup.sh
+      - name: Single site
+        run: |
+          set -o pipefail
+          sh tests/run.sh "$ROOT/single" | tee single.txt
+          grep -qE '^[0-9]+ passed, 0 failed' single.txt
+          echo "::notice title=Single site (PHP ${{ matrix.php }})::$(grep -E '^[0-9]+ passed' single.txt | tr '\n' ' ')"
+      - name: Multisite
+        run: |
+          set -o pipefail
+          WP="wp --url=http://localhost:8081" sh tests/run.sh "$ROOT/multi" | tee multi.txt
+          grep -qE '^[0-9]+ passed, 0 failed' multi.txt
+          echo "::notice title=Multisite (PHP ${{ matrix.php }})::$(grep -E '^[0-9]+ passed' multi.txt | tr '\n' ' ')"
+      - name: Keep the logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-php${{ matrix.php }}
+          path: |
+            /tmp/cshield-sites/*.log
+            /tmp/cshield-sites/*/wp-content/debug.log
+          if-no-files-found: ignore

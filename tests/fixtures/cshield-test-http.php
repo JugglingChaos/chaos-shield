@@ -26,6 +26,7 @@ add_filter(
 			'url'    => $url,
 			'body'   => $body,
 			'method' => isset( $args['method'] ) ? strtoupper( $args['method'] ) : 'GET',
+			'auth'   => ! empty( $args['headers']['Authorization'] ),
 		);
 		update_site_option( 'sst_http_log', $log );
 		if ( ! empty( $entry['error'] ) ) {
@@ -53,15 +54,18 @@ add_filter(
 			}
 		}
 		$answer = isset( $entry['match'] ) && false === strpos( $body, $entry['match'] ) ? $entry['else'] : $entry['body'];
+		if ( ! empty( $args['stream'] ) && ! empty( $args['filename'] ) ) {
+			file_put_contents( $args['filename'], $answer ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Test fixture.
+		}
 		return array(
-			'headers'  => array(),
+			'headers'  => isset( $entry['headers'] ) ? $entry['headers'] : array(),
 			'body'     => $answer,
 			'response' => array(
 				'code'    => isset( $entry['code'] ) ? (int) $entry['code'] : 200,
 				'message' => '',
 			),
 			'cookies'  => array(),
-			'filename' => null,
+			'filename' => ! empty( $args['stream'] ) ? $args['filename'] : null,
 		);
 	},
 	99,
