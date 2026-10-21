@@ -1,0 +1,38 @@
+/* Sentinel Shield: passkey button on the login page. */
+.sshield-pk-login {
+	clear: both;
+	padding-top: 16px;
+}
+
+.sshield-pk-login__or {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin: 0 0 14px;
+	color: #646970;
+	font-size: 12px;
+	text-transform: uppercase;
+}
+
+.sshield-pk-login__or::before,
+.sshield-pk-login__or::after {
+	content: "";
+	flex: 1;
+	border-top: 1px solid #dcdcde;
+}
+
+.login .sshield-pk-login__btn {
+	width: 100%;
+	justify-content: center;
+	text-align: center;
+	float: none;
+}
+
+.sshield-pk-login__msg:empty {
+	display: none;
+}
+
+.sshield-pk-login__msg {
+	margin: 10px 0 0;
+	font-size: 13px;
+}
