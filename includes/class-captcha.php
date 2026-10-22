@@ -138,8 +138,9 @@ final class Captcha {
 		}
 		$data = json_decode( (string) wp_remote_retrieve_body( $response ), true );
 		if ( ! is_array( $data ) ) {
+			$code = (int) wp_remote_retrieve_response_code( $response );
 			/* translators: %d: HTTP status code. */
-			return new \WP_Error( 'cshield_captcha_http', sprintf( __( 'The service answered HTTP %d.', 'chaos-shield' ), (int) wp_remote_retrieve_response_code( $response ) ) );
+			return new \WP_Error( 'cshield_captcha_http', sprintf( __( 'The service answered HTTP %d.', 'chaos-shield' ), $code ), array( 'status' => $code ) );
 		}
 		return array(
 			'success' => ! empty( $data['success'] ),
@@ -239,11 +240,13 @@ final class Captcha {
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- The challenge token is the proof here.
 		$token  = isset( $_POST[ $d['field'] ] ) ? sanitize_text_field( wp_unslash( $_POST[ $d['field'] ] ) ) : '';
 		$failed = new \WP_Error( 'cshield_captcha', __( '<strong>Error:</strong> Please complete the security check and try again.', 'chaos-shield' ) );
-		if ( '' === $token ) {
+		// Real tokens are a few hundred characters; an oversized one only tries to make the service answer with an error.
+		if ( '' === $token || strlen( $token ) > 2048 ) {
 			return $failed;
 		}
 		$result = self::siteverify( self::provider(), (string) Settings::get( $d['key'] ), (string) Totp::open( Network::get_option( $d['secret'] ) ), $token );
-		if ( is_wp_error( $result ) ) {
+		$status = is_wp_error( $result ) ? $result->get_error_data() : null;
+		if ( is_wp_error( $result ) && ( ! isset( $status['status'] ) || (int) $status['status'] >= 500 ) ) {
 			// Fail open: a provider outage must not lock every administrator out. Login limits still apply.
 			$throttle = 'cshield_captcha_down';
 			if ( ! Network::get_transient( $throttle ) ) {
@@ -253,6 +256,6 @@ final class Captcha {
 			}
 			return null;
 		}
-		return $result['success'] ? null : $failed;
+		return ! is_wp_error( $result ) && $result['success'] ? null : $failed;
 	}
 }

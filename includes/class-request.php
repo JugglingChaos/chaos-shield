@@ -285,6 +285,24 @@ final class Request {
 	}
 
 	/**
+	 * The network an IP belongs to: its /24 for IPv4 and /64 for IPv6, where one
+	 * person or host usually holds every address.
+	 *
+	 * @param string $ip IP address.
+	 * @return string Such as 203.0.113.0/24, or '' for an invalid IP.
+	 */
+	public static function range( $ip ) {
+		$packed = @inet_pton( (string) $ip ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Invalid input returns false.
+		if ( false === $packed ) {
+			return '';
+		}
+		if ( 4 === strlen( $packed ) ) {
+			return inet_ntop( substr( $packed, 0, 3 ) . "\0" ) . '/24';
+		}
+		return inet_ntop( substr( $packed, 0, 8 ) . str_repeat( "\0", 8 ) ) . '/64';
+	}
+
+	/**
 	 * Reads a sanitized $_SERVER value.
 	 *
 	 * @param string $key Key.

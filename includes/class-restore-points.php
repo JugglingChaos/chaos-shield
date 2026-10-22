@@ -40,6 +40,13 @@ final class Restore_Points {
 	private static $restoring = false;
 
 	/**
+	 * A point that pruning must leave alone while it is being restored.
+	 *
+	 * @var string
+	 */
+	private static $hold = '';
+
+	/**
 	 * Registers hooks.
 	 */
 	public function register() {
@@ -317,9 +324,15 @@ final class Restore_Points {
 		}
 
 		$label = $index[ $id ]['label'];
-		$undo  = self::create( 'restore', $label, $files, $folders, is_array( $manifest['settings'] ) );
+		// The undo point must not prune away the point being restored.
+		self::$hold = $id;
+		$undo       = self::create( 'restore', $label, $files, $folders, is_array( $manifest['settings'] ) );
+		self::$hold = '';
 		if ( is_wp_error( $undo ) ) {
 			return $undo;
+		}
+		if ( ! is_dir( $dir ) ) {
+			return new \WP_Error( 'cshield_rp_missing', __( 'That restore point is gone.', 'chaos-shield' ) );
 		}
 
 		$moved = array();
@@ -418,7 +431,7 @@ final class Restore_Points {
 			++$count;
 			$total += (int) $point['bytes'];
 			$old    = time() - (int) $point['time'] > self::MAX_AGE;
-			if ( $id !== $keep && ( $old || $count > self::MAX_POINTS || $total > self::MAX_BYTES ) ) {
+			if ( $id !== $keep && $id !== self::$hold && ( $old || $count > self::MAX_POINTS || $total > self::MAX_BYTES ) ) {
 				self::delete( $id );
 			}
 		}

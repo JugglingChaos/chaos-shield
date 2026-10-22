@@ -66,6 +66,15 @@ final class Https {
 	}
 
 	/**
+	 * Whether a proxy header on this request says the visitor used HTTPS, trusted or not.
+	 *
+	 * @return bool
+	 */
+	private static function proxy_says_https() {
+		return 'https' === strtolower( Request::server( 'HTTP_X_FORWARDED_PROTO' ) ) || false !== strpos( Request::server( 'HTTP_CF_VISITOR' ), 'https' ) || 'on' === strtolower( Request::server( 'HTTP_X_FORWARDED_SSL' ) );
+	}
+
+	/**
 	 * Sends plain http visits to the same address on HTTPS.
 	 */
 	public static function redirect() {
@@ -75,6 +84,12 @@ final class Https {
 		$method = Request::server( 'REQUEST_METHOD' );
 		if ( ! in_array( $method, array( 'GET', 'HEAD' ), true ) ) {
 			return; // A redirect would drop the form the visitor sent.
+		}
+		// A proxy that says the visit was secure is believed here even when it is not a
+		// trusted one, such as Cloudflare's Flexible mode before its header is chosen:
+		// redirecting would loop forever, and skipping a redirect gives nobody anything.
+		if ( self::proxy_says_https() ) {
+			return;
 		}
 		$host = (string) wp_parse_url( home_url(), PHP_URL_HOST );
 		wp_safe_redirect( 'https://' . $host . Request::server( 'REQUEST_URI' ), 301, 'Chaos Shield' );
@@ -96,6 +111,10 @@ final class Https {
 		}
 		if ( Uptime::days_left( (int) $cert['expires'] ) < 0 ) {
 			return __( 'The certificate has expired. Renew it first.', 'chaos-shield' );
+		}
+		// Switched on from a page this site did not see as secure, every visit would be sent round again.
+		if ( ! ( defined( 'WP_CLI' ) && WP_CLI ) && ! self::secure_request() && ! self::proxy_says_https() ) {
+			return __( 'Open this page with https:// in the address first. If it already is, your site sits behind a proxy such as Cloudflare: choose its header under Access, so Chaos Shield can see that the visit was secure.', 'chaos-shield' );
 		}
 		return true;
 	}

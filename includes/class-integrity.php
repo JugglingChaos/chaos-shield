@@ -272,6 +272,7 @@ final class Integrity {
 		$state['checked'] = time();
 		Network::update_option( self::OPTION, $state, false );
 		Network::delete_option( self::OPTION . '_expect' );
+		self::$expect = array();
 
 		if ( $notify && $fresh ) {
 			$lines = array();
@@ -362,6 +363,11 @@ final class Integrity {
 	 * @param string $name File name.
 	 */
 	public static function expect( $name ) {
+		// A change already waiting for review stays waiting, so a planned edit cannot hide it.
+		$state = self::state();
+		if ( ! empty( $state['files'][ $name ]['now'] ) ) {
+			return;
+		}
 		self::$expect[ $name ] = time();
 		$saved                 = (array) Network::get_option( self::OPTION . '_expect', array() );
 		$saved[ $name ]        = time();
@@ -407,14 +413,18 @@ final class Integrity {
 	 * The active theme changed, so its functions.php joins the list as it is.
 	 */
 	public static function after_theme_switch() {
-		self::accept_group( 'theme' );
+		// Only the main site's theme is watched; a sub-site switching theme changes nothing here.
+		if ( is_main_site() ) {
+			self::accept_group( 'theme' );
+		}
 	}
 
 	/**
 	 * WordPress is about to write its rewrite rules to .htaccess.
 	 */
 	public static function rewrite_rules_saved() {
-		if ( current_user_can( 'manage_options' ) ) {
+		// WordPress never writes .htaccess on a network, so a sub-site saving permalinks proves nothing.
+		if ( ! is_multisite() && current_user_can( 'manage_options' ) ) {
 			self::expect( '.htaccess' );
 		}
 	}
@@ -468,13 +478,24 @@ final class Integrity {
 	}
 
 	/**
-	 * A config line with password, key and salt values hidden.
+	 * A config line with every quoted value hidden.
 	 *
 	 * @param string $line Line.
 	 * @return string
 	 */
 	public static function mask( $line ) {
-		$line = (string) preg_replace( '/(define\s*\(\s*[\'"][A-Z0-9_]*(?:KEY|SALT|PASSWORD|PASS|SECRET|TOKEN|USER)[A-Z0-9_]*[\'"]\s*,\s*)([\'"]).*?\2/i', '$1$2••••••$2', $line );
+		// Every quoted value is hidden except the name in define(), since any of them can be a secret.
+		$line = (string) preg_replace_callback(
+			'/([\'"])(?:\\\\.|(?!\1).)*\1/',
+			static function ( $m ) use ( $line ) {
+				$before = substr( $line, 0, $m[0][1] );
+				return preg_match( '/define\s*\(\s*$/i', $before ) ? $m[0][0] : $m[1][0] . '••••••' . $m[1][0];
+			},
+			$line,
+			-1,
+			$count,
+			PREG_OFFSET_CAPTURE
+		);
 		return mb_substr( $line, 0, 300 );
 	}
 

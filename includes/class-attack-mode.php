@@ -179,8 +179,14 @@ final class Attack_Mode {
 		if ( ! Settings::enabled( 'attack_auto' ) ) {
 			return;
 		}
-		$limit = (int) Settings::get( 'attack_threshold' );
-		$count = self::count( 'cshield_atk_' . (int) floor( time() / 60 ) );
+		$limit  = (int) Settings::get( 'attack_threshold' );
+		$minute = (int) floor( time() / 60 );
+		// One network counts for at most a tenth of the threshold, so a single attacker cannot trip the mode alone.
+		$source = self::count( 'cshield_atk_' . $minute . '_' . md5( Request::range( Request::ip() ) ) );
+		if ( $source > max( 1, (int) ceil( $limit / 10 ) ) ) {
+			return;
+		}
+		$count = self::count( 'cshield_atk_' . $minute );
 		if ( $limit <= 0 || $count < $limit ) {
 			return;
 		}
@@ -239,12 +245,12 @@ final class Attack_Mode {
 	}
 
 	/**
-	 * Hash of the visitor's browser name, so a pass cannot be handed to another program.
+	 * Hash of the visitor's browser name and network, so a pass cannot be handed to another program or another network.
 	 *
 	 * @return string
 	 */
 	private static function agent() {
-		return md5( Request::server( 'HTTP_USER_AGENT' ) );
+		return md5( Request::server( 'HTTP_USER_AGENT' ) . '|' . Request::range( Request::ip() ) );
 	}
 
 	/**
@@ -258,7 +264,7 @@ final class Attack_Mode {
 	}
 
 	/**
-	 * Checks a solved challenge: signed here, under ten minutes old, and the hash starts with enough zeros.
+	 * Checks a solved challenge: signed here, under ten minutes old, not used before, and the hash starts with enough zeros.
 	 *
 	 * @param string $challenge Challenge.
 	 * @param string $nonce     The visitor's answer.
@@ -273,7 +279,16 @@ final class Attack_Mode {
 		if ( $age < 0 || $age > 10 * MINUTE_IN_SECONDS || ! hash_equals( self::sign( 'c|' . $parts[0] . '.' . $parts[1] ), $parts[2] ) ) {
 			return false;
 		}
-		return 0 === strpos( hash( 'sha256', $challenge . ':' . $nonce ), str_repeat( '0', self::ZEROS ) );
+		if ( 0 !== strpos( hash( 'sha256', $challenge . ':' . $nonce ), str_repeat( '0', self::ZEROS ) ) ) {
+			return false;
+		}
+		// Each challenge buys one pass, so one answer cannot be shared around.
+		$used = 'cshield_pow_' . $parts[1];
+		if ( Network::get_transient( $used ) ) {
+			return false;
+		}
+		Network::set_transient( $used, 1, 11 * MINUTE_IN_SECONDS );
+		return true;
 	}
 
 	/**
@@ -306,9 +321,16 @@ final class Attack_Mode {
 		if ( ( defined( 'WP_CLI' ) && WP_CLI ) || wp_doing_cron() || wp_doing_ajax() || ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST ) ) {
 			return true;
 		}
-		$uri = Request::server( 'REQUEST_URI' );
 		// The REST API has its own rate limit, and apps that use it cannot solve a browser check.
-		if ( preg_match( '#^/(?:[^?]*/)?(wp-json/|\?rest_route=)|[?&]rest_route=|/\.well-known/|/robots\.txt$#', $uri ) ) {
+		// Only the path counts, so text added to the query string cannot claim to be one of these.
+		$path = (string) wp_parse_url( Request::server( 'REQUEST_URI' ), PHP_URL_PATH );
+		$home = rtrim( (string) wp_parse_url( home_url( '/' ), PHP_URL_PATH ), '/' );
+		if ( '' !== $home && 0 === strpos( $path, $home . '/' ) ) {
+			$path = substr( $path, strlen( $home ) );
+		}
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Only read to recognise REST requests.
+		$route = isset( $_GET['rest_route'] ) ? sanitize_text_field( wp_unslash( $_GET['rest_route'] ) ) : '';
+		if ( '' !== $route || preg_match( '#^/(?:wp-json/|\.well-known/|robots\.txt$)#', $path ) ) {
 			return true;
 		}
 		if ( Firewall::allowlisted() || Page_Check::is_self() ) {
@@ -346,7 +368,7 @@ final class Attack_Mode {
 					)
 				);
 				nocache_headers();
-				header( 'Location: ' . wp_sanitize_redirect( Request::server( 'REQUEST_URI' ) ), true, 303 );
+				header( 'Location: ' . wp_validate_redirect( wp_sanitize_redirect( '/' . ltrim( Request::server( 'REQUEST_URI' ), '/' ) ), home_url( '/' ) ), true, 303 );
 				exit;
 			}
 		}

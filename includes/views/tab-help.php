@@ -40,7 +40,7 @@ $cshield_hform    = static function ( $op, $label, $css, $id = '', $extra = arra
 	<div class="cshield-card__head">
 		<div>
 			<h2><?php esc_html_e( 'Messages from visitors', 'chaos-shield' ); ?></h2>
-			<p><?php esc_html_e( 'Visitors who were blocked, locked out or stuck can send you a message from the help assistant. Allow lifts their ban and lockout, unblocks their exact IP and lets the blocked request through next time.', 'chaos-shield' ); ?></p>
+			<p><?php esc_html_e( 'Visitors who were blocked, locked out or stuck can send you a message from the help assistant. Allow lifts their ban and lockout and unblocks their exact IP. When the firewall blocked them, you can also let that one request through, after checking what it contained.', 'chaos-shield' ); ?></p>
 		</div>
 		<?php
 		if ( count( $cshield_requests ) > count( $cshield_open_req ) ) {
@@ -81,13 +81,43 @@ $cshield_hform    = static function ( $op, $label, $css, $id = '', $extra = arra
 								· <code><?php echo esc_html( $cshield_r['page'] ); ?></code>
 							<?php endif; ?>
 						</p>
+						<?php
+						$cshield_hit = 'dismissed' !== $cshield_r['status'] && $cshield_r['ref'] ? Firewall::exceptable( $cshield_r['ref'], $cshield_r['ip'] ) : null;
+						if ( $cshield_hit ) :
+							$cshield_rules = Firewall::rules( true );
+							?>
+							<p class="cshield-small">
+								<?php
+								/* translators: %s: request path. */
+								printf( esc_html__( 'The firewall blocked %s because of:', 'chaos-shield' ), '<code>' . esc_html( strtoupper( $cshield_hit['method'] ) . ' ' . $cshield_hit['path'] ) . '</code>' );
+								?>
+							</p>
+							<ul class="cshield-small">
+								<?php foreach ( $cshield_hit['hits'] as $cshield_h ) : ?>
+									<li>
+										<?php echo esc_html( isset( $cshield_rules[ $cshield_h['rule'] ]['label'] ) ? $cshield_rules[ $cshield_h['rule'] ]['label'] : $cshield_h['rule'] ); ?>
+										<?php esc_html_e( 'in', 'chaos-shield' ); ?> <code><?php echo esc_html( $cshield_h['field'] ); ?></code>
+										<?php if ( ! empty( $cshield_h['snippet'] ) ) : ?>
+											: <code><?php echo esc_html( $cshield_h['snippet'] ); ?></code>
+										<?php endif; ?>
+									</li>
+								<?php endforeach; ?>
+							</ul>
+						<?php endif; ?>
 					</div>
-					<?php if ( 'open' === $cshield_r['status'] ) : ?>
+					<?php if ( 'open' === $cshield_r['status'] || $cshield_hit ) : ?>
 						<div class="cshield-finding__action cshield-inline-actions">
 							<?php
-							$cshield_hform( 'allow', __( 'Allow', 'chaos-shield' ), 'cshield-link', $cshield_r['id'] );
-							$cshield_hform( 'always', __( 'Always allow this IP', 'chaos-shield' ), 'cshield-link', $cshield_r['id'] );
-							$cshield_hform( 'dismiss', __( 'Dismiss', 'chaos-shield' ), 'cshield-link cshield-link--danger', $cshield_r['id'] );
+							if ( 'open' === $cshield_r['status'] ) {
+								$cshield_hform( 'allow', __( 'Allow', 'chaos-shield' ), 'cshield-link', $cshield_r['id'] );
+								$cshield_hform( 'always', __( 'Always allow this IP', 'chaos-shield' ), 'cshield-link', $cshield_r['id'] );
+							}
+							if ( $cshield_hit ) {
+								$cshield_hform( 'except', __( 'Let this request through the firewall', 'chaos-shield' ), 'cshield-link', $cshield_r['id'] );
+							}
+							if ( 'open' === $cshield_r['status'] ) {
+								$cshield_hform( 'dismiss', __( 'Dismiss', 'chaos-shield' ), 'cshield-link cshield-link--danger', $cshield_r['id'] );
+							}
 							?>
 						</div>
 					<?php endif; ?>

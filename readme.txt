@@ -4,7 +4,7 @@ Tags: security, firewall, two-factor, audit log, malware scanner
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.13.0
+Stable tag: 1.14.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -272,6 +272,21 @@ Counting every page view needs a persistent object cache such as Redis or Memcac
 Usually not. Current NIST guidance (SP 800-63B) recommends long passwords, breach screening and two-factor login instead of regular expiry, which is why expiry is off by default. Turn it on if a policy you must follow requires it.
 
 == Changelog ==
+
+= 1.14.0 =
+Security fixes from a review of everything added in 1.7 to 1.13.
+* Under attack mode: the query string can no longer make a page look like the REST API, a solved check buys one pass for one network only, one network can no longer switch the mode on alone, and the redirect after the check stays on this site.
+* Visitor help: Allow no longer adds firewall exceptions by itself. The inbox shows which rule, field and page blocked the visitor, and a separate button lets that one request through, only for a block of the sender's own IP and never on the front page. One network can no longer fill the inbox.
+* Firewall: exceptions made from a blocked request cover that exact page only. Bodies the REST API reads from PUT, PATCH and DELETE requests are inspected, long values are read in full, field names are checked, and more data than the firewall reads is refused instead of skipped.
+* Restore points: restoring the oldest point while the list is full no longer deletes it halfway and writes empty files.
+* Settings imports go through the same checks as the settings forms.
+* Quarantined files are stored under random names that can neither run nor be downloaded, also on Nginx.
+* Critical file fingerprints: a planned change can no longer hide one already waiting for review, sub-sites no longer mark .htaccess as expected, and every quoted value in a changed wp-config.php line is hidden.
+* Browser reports from the script policy are never approved in bulk, are capped, and send one alert at a time.
+* The daily page check's pass only works while a check runs, never travels over plain http or to another host, and other hosts are fetched the safe way.
+* HTTPS redirects never loop behind a proxy, such as Cloudflare's Flexible mode, that already used HTTPS.
+* CAPTCHA: oversized tokens are refused, and only a real outage lets logins through without the check.
+* Forcing a password reset for a whole group needs network admin rights on a network, and skips users the admin cannot edit.
 
 = 1.13.0 =
 * Updates from GitHub: new releases show up as normal plugin updates with one-click and automatic updating, View details with the release notes, and support for private repositories through a token in wp-config.php.
