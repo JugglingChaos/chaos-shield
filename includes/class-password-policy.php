@@ -372,7 +372,7 @@ final class Password_Policy {
 		$count = 0;
 		foreach ( get_users( $args ) as $id ) {
 			$id = (int) $id;
-			if ( get_current_user_id() === $id ) {
+			if ( get_current_user_id() === $id || ( is_user_logged_in() && ! current_user_can( 'edit_user', $id ) ) ) {
 				continue;
 			}
 			if ( 'admins' !== $group && ! self::applies( get_userdata( $id ) ) ) {
@@ -476,6 +476,10 @@ final class Password_Policy {
 		// phpcs:disable WordPress.Security.NonceVerification -- Each branch checks its own nonce.
 		$group = isset( $_REQUEST['group'] ) ? sanitize_key( wp_unslash( $_REQUEST['group'] ) ) : '';
 		if ( $group ) {
+			// Whole groups are a network-wide action, like the rest of the Hardening tab.
+			if ( ! current_user_can( Network::cap() ) ) {
+				wp_die( esc_html__( 'You are not allowed to do this.', 'chaos-shield' ), 403 );
+			}
 			check_admin_referer( 'cshield_force_group' );
 			$count = self::force_group( 'admins' === $group ? 'admins' : 'policy' );
 			wp_safe_redirect(

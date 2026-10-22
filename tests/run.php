@@ -326,7 +326,7 @@ group(
 		}
 		$acookies = admin_cookies( $admin->ID );
 		$me       = ip();
-		$path     = '/?sst_form=1';
+		$path     = '/contact/?sst_form=1';
 		$first    = http( 'POST', $path, ip(), array( 'body' => array( 'snippet' => '<script>track()</script>' ) ) );
 		preg_match( '/Reference: ([A-Z0-9]{8})/', $first['body'], $m );
 		$page = http( 'GET', Network::admin_url( 'admin.php?page=chaos-shield&tab=firewall' ), $me, array( 'cookies' => $acookies ) );
@@ -348,6 +348,43 @@ group(
 		);
 		check( 'after Allow, the same request passes', 403 !== http( 'POST', $path, ip(), array( 'body' => array( 'snippet' => '<script>track()</script>' ) ) )['status'] );
 		check( 'but the rule still covers other fields', 403 === http( 'POST', $path, ip(), array( 'body' => array( 'other' => '<script>track()</script>' ) ) )['status'] );
+		check( 'and other addresses under it', 403 === http( 'POST', '/contact/more/', ip(), array( 'body' => array( 'snippet' => '<script>track()</script>' ) ) )['status'] );
+		$front = http( 'POST', '/?sst_form=2', ip(), array( 'body' => array( 'comment' => '<script>track()</script>' ) ) );
+		preg_match( '/Reference: ([A-Z0-9]{8})/', $front['body'], $fm );
+		check( 'a block on the front page never becomes an exception', ! empty( $fm[1] ) && false === Firewall::allow_reference( $fm[1] ) && 403 === http( 'POST', '/', ip(), array( 'body' => array( 'comment' => '<script>track()</script>' ) ) )['status'] );
+		$sender = ip();
+		$second = http( 'POST', '/shop/', $sender, array( 'body' => array( 'note' => '<script>track()</script>' ) ) );
+		preg_match( '/Reference: ([A-Z0-9]{8})/', $second['body'], $sm );
+		check( 'a reference only becomes an exception for the IP it blocked', ! empty( $sm[1] ) && false === Firewall::allow_reference( $sm[1], ip() ) && true === Firewall::allow_reference( $sm[1], $sender ) );
+		check(
+			'POST bodies the REST API reads are inspected too',
+			403 === http( 'PUT', '/wp-json/wp/v2/posts/1', ip(), array( 'body' => 'content=' . rawurlencode( '<script>alert(1)</script>' ) ) )['status'] && 403 === http(
+				'POST',
+				'/wp-json/wp/v2/posts/1?_method=PUT',
+				ip(),
+				array(
+					'body'    => 'title=' . rawurlencode( '1 UNION SELECT user_pass FROM wp_users' ),
+					'headers' => array( 'Content-Type' => '' ),
+				)
+			)['status']
+		);
+		check( 'an attack after a long value is still found', 403 === http( 'POST', '/contact/', ip(), array( 'body' => array( 'msg' => str_repeat( 'a', 20000 ) . '<script>alert(1)</script>' ) ) )['status'] );
+		check(
+			'more form data than the firewall reads is refused',
+			403 === http(
+				'POST',
+				'/contact/',
+				ip(),
+				array(
+					'body' => array(
+						'pad'     => str_repeat( 'a ', 140000 ),
+						'comment' => 'hello',
+					),
+				)
+			)['status']
+		);
+		check( 'attacks in form field names are found', 403 === http( 'POST', '/contact/', ip(), array( 'body' => array( '<script>alert(1)</script>' => 'x' ) ) )['status'] );
+		check( 'a normal form still goes through', 403 !== http( 'POST', '/contact/', ip(), array( 'body' => array( 'name' => 'Sam', 'message' => str_repeat( 'Hello there. ', 400 ) ) ) )['status'] ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound -- Short test call.
 
 		// PHP in uploads.
 		Firewall::uploads_rule( true );
@@ -471,6 +508,8 @@ group(
 			)
 		);
 		check( 'a login with a solved challenge goes through', ! empty( $yes['cookies'][ LOGGED_IN_COOKIE ] ), (string) $yes['status'] );
+		$huge = login( $u->user_login, $pass, ip(), array( 'h-captcha-response' => 'sst-good' . str_repeat( 'x', 3000 ) ) );
+		check( 'an oversized challenge token is refused without asking the service', empty( $huge['cookies'][ LOGGED_IN_COOKIE ] ) );
 
 		Connections::disconnect( 'hcaptcha' );
 		Settings::forget();
@@ -677,6 +716,14 @@ group(
 			file_put_contents( $ht, "# sst original\n# permalinks\n" );
 			Integrity::check();
 			check( 'a change WordPress makes on request is accepted', ! Integrity::changed() );
+			file_put_contents( $ht, "# sst original\n# permalinks\nRewriteRule ^ http://evil.example [R]\n" );
+			Integrity::check();
+			Integrity::expect( '.htaccess' );
+			file_put_contents( $ht, "# sst original\n# permalinks\nRewriteRule ^ http://evil.example [R]\n# planned\n" );
+			Integrity::check();
+			check( 'a planned change cannot hide one already waiting for review', isset( Integrity::changed()['.htaccess'] ) );
+			Integrity::accept( '.htaccess' );
+			check( 'every quoted value in a config line is hidden', "define( 'SST_X', '••••••' ); \$y = '••••••';" === Integrity::mask( "define( 'SST_X', 'abc' ); \$y = 'AKIA0SECRET';" ) );
 
 			file_put_contents( $config, $cfg . "\ndefine( 'SST_TEST_KEY', 'sst-super-secret' ); // sst\n" );
 			Integrity::check();
@@ -1039,6 +1086,19 @@ group(
 		$latest = Restore_Points::all();
 		check( 'the state before the restore is kept as a new point', 'restore' === current( $latest )['reason'] );
 
+		// Restoring the oldest point while the list is full still works.
+		$tmp = WP_CONTENT_DIR . '/sst-oldest.txt';
+		file_put_contents( $tmp, 'oldest' );
+		$oldest = Restore_Points::create( 'manual', 'oldest', array( $tmp ), array(), false );
+		for ( $i = count( Restore_Points::all() ); $i < Restore_Points::MAX_POINTS; $i++ ) {
+			Restore_Points::create( 'manual', 'filler', array(), array(), false );
+		}
+		file_put_contents( $tmp, 'newer' );
+		$back = Restore_Points::restore( $oldest );
+		clearstatcache();
+		check( 'the oldest point can be restored when the list is full', true === $back && 'oldest' === file_get_contents( $tmp ), is_wp_error( $back ) ? $back->get_error_message() : '' );
+		unlink( $tmp );
+
 		// A tampered manifest cannot write outside the site or into the restore folder.
 		check( 'restore paths cannot leave the site', '' === Restore_Points::path( '@content/../../etc/passwd' ) && '' === Restore_Points::path( '@content/' . Restore_Points::DIR . '/x.php' ) && '' === Restore_Points::path( '/etc/passwd' ) );
 
@@ -1080,6 +1140,21 @@ group(
 		unset( $_SERVER['REMOTE_ADDR'] );
 		Request::reset();
 		check( 'an import never blocks the importer\'s own IP', array( '198.51.100.7' ) === $clean['ip_blocklist'] );
+		$clean = Backup::clean(
+			array(
+				'login_max_attempts' => 100000,
+				'rate_pages'         => 0,
+				'ip_allowlist'       => array( '0.0.0.0/0', 'not-an-ip' ),
+				'forward_webhook'    => 'file:///etc/passwd',
+				'forward_syslog'     => 'gopher://x',
+				'csp_mode'           => 'evil',
+				'fw_mode'            => 'learn',
+				'fw_learn_until'     => time() + 365 * DAY_IN_SECONDS,
+				'fw_rules_off'       => array( 'sqli', 'made-up' ),
+				'help_color'         => 'red;}</style><script>',
+			)
+		);
+		check( 'an import gets the same checks as the settings forms', 50 === $clean['login_max_attempts'] && 30 === $clean['rate_pages'] && array( '0.0.0.0/0' ) === $clean['ip_allowlist'] && '' === $clean['forward_webhook'] && '' === $clean['forward_syslog'] && 'off' === $clean['csp_mode'] && $clean['fw_learn_until'] <= time() + 7 * DAY_IN_SECONDS && array( 'sqli' ) === $clean['fw_rules_off'] && '#2563eb' === $clean['help_color'] );
 
 		$db  = http(
 			'POST',
@@ -1186,6 +1261,20 @@ group(
 				$last = http( 'POST', '/', $spam, array( 'body' => $form ) );
 			}
 			check( 'each IP can send three messages an hour', empty( json_decode( $last['body'], true )['ok'] ) && 4 === count( Help::requests() ) );
+			$net = '45.35.' . wp_rand( 1, 254 ) . '.';
+			for ( $i = 0; $i < 7; $i++ ) {
+				http( 'POST', '/', $net . ( $i + 1 ), array( 'body' => $form ) );
+			}
+			$from_net = array_filter(
+				Help::requests(),
+				static function ( $r ) use ( $net ) {
+					return 0 === strpos( $r['ip'], $net );
+				}
+			);
+			check( 'one network cannot fill the inbox from many addresses', 5 === count( $from_net ), (string) count( $from_net ) );
+			foreach ( $from_net as $r ) {
+				Help::dismiss( $r['id'] );
+			}
 
 			$id = '';
 			foreach ( Help::requests() as $r ) {
@@ -1385,7 +1474,7 @@ group(
 			preg_match( '/name="cshield_pow" value="([^"]+)"/', $gate['body'], $m );
 			$challenge = isset( $m[1] ) ? html_entity_decode( $m[1] ) : '';
 			$nonce     = 0;
-			while ( $challenge && ! Attack_Mode::solved( $challenge, (string) $nonce ) && $nonce < 5000000 ) {
+			while ( $challenge && 0 !== strpos( hash( 'sha256', $challenge . ':' . $nonce ), str_repeat( '0', Attack_Mode::ZEROS ) ) && $nonce < 5000000 ) {
 				++$nonce;
 			}
 			check( 'a wrong answer or a forged challenge is refused', ! Attack_Mode::solved( $challenge, (string) ( $nonce + 1 ) . 'x' ) && ! Attack_Mode::solved( preg_replace( '/\.[0-9a-f]+$/', '.' . str_repeat( 'a', 32 ), $challenge ), (string) $nonce ) );
@@ -1407,8 +1496,31 @@ group(
 			check( 'with the pass, pages load', 200 === $in['status'] );
 			$other = http( 'GET', '/', $visitor, array( 'headers' => $browser + array( 'User-Agent' => 'curl/8.0' ), 'cookies' => array( Attack_Mode::COOKIE => $cookie ) ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound -- Short test call.
 			check( 'a pass copied to another program does not work', 503 === $other['status'] );
+			$far = http( 'GET', '/', '45.34.' . wp_rand( 1, 254 ) . '.9', array( 'headers' => $browser, 'cookies' => array( Attack_Mode::COOKIE => $cookie ) ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound -- Short test call.
+			check( 'a pass shared with another network does not work', 503 === $far['status'] );
+			$again = http(
+				'POST',
+				'/',
+				ip(),
+				array(
+					'headers' => $browser,
+					'body'    => array(
+						'cshield_pow'   => $challenge,
+						'cshield_nonce' => (string) $nonce,
+					),
+				)
+			);
+			check( 'one solved check buys one pass only', empty( $again['cookies'][ Attack_Mode::COOKIE ] ) );
+			$sneak  = http( 'GET', '/?x=/wp-json/', ip(), array( 'headers' => $browser ) );
+			$sneak2 = http( 'GET', '/?robots.txt', ip(), array( 'headers' => $browser ) );
+			check( 'the query string cannot make a page look like the REST API or robots.txt', 503 === $sneak['status'] && 503 === $sneak2['status'] );
 			Attack_Mode::manual( false );
 			check( 'switched off, everyone gets in again', 200 === http( 'GET', '/', ip(), array( 'headers' => $browser ) )['status'] );
+			$set( array( 'force_https' => true ) );
+			$plain = http( 'GET', '/', ip() );
+			$edge  = http( 'GET', '/', ip(), array( 'headers' => array( 'CF-Visitor' => '{"scheme":"https"}' ) ) );
+			$set( array( 'force_https' => false ) );
+			check( 'HTTPS redirects never loop behind a proxy that already used HTTPS', 301 === $plain['status'] && 200 === $edge['status'] );
 			$set(
 				array(
 					'attack_auto'      => true,

@@ -174,14 +174,74 @@ final class Backup {
 				$clean[ $key ] = is_scalar( $value ) ? sanitize_text_field( (string) $value ) : $default;
 			}
 		}
+		// The same checks the settings forms make.
+		$bounds = array(
+			'login_max_attempts'   => array( 2, 50 ),
+			'login_window'         => array( 1, 1440 ),
+			'login_lockout'        => array( 1, 10080 ),
+			'autoban_strikes'      => array( 2, 20 ),
+			'autoban_hours'        => array( 1, 720 ),
+			'probe_404_limit'      => array( 5, 200 ),
+			'rate_login'           => array( 5, 600 ),
+			'rate_api'             => array( 20, 6000 ),
+			'rate_search'          => array( 5, 600 ),
+			'rate_pages'           => array( 30, 6000 ),
+			'pw_min_length'        => array( 8, 64 ),
+			'pw_classes'           => array( 1, 4 ),
+			'pw_max_age'           => array( 0, 730 ),
+			'attack_threshold'     => array( 20, 10000 ),
+			'log_retention'        => array( 7, 730 ),
+			'forward_min_severity' => array( 1, 3 ),
+			'siem_alert_min'       => array( 1, 4 ),
+		);
+		foreach ( $bounds as $key => $range ) {
+			$clean[ $key ] = max( $range[0], min( $range[1], (int) $clean[ $key ] ) );
+		}
+		$choices  = array(
+			'scan_schedule'  => array( 'daily', 'weekly', 'off' ),
+			'pw_roles'       => array( 'admins', 'staff', 'all' ),
+			'traffic_mode'   => array( 'security', 'all' ),
+			'fw_mode'        => array( 'block', 'learn' ),
+			'fw_sensitivity' => array_keys( Firewall::thresholds() ),
+			'csp_mode'       => array( 'off', 'report', 'enforce' ),
+			'country_mode'   => array( 'block', 'allow' ),
+			'country_scope'  => array( 'login', 'site' ),
+			'country_source' => array_keys( Geo::sources() ),
+			'proxy_header'   => array_keys( Settings::proxy_headers() ),
+		);
+		$defaults = Settings::defaults();
+		foreach ( $choices as $key => $allowed ) {
+			if ( ! in_array( $clean[ $key ], $allowed, true ) ) {
+				$clean[ $key ] = $defaults[ $key ];
+			}
+		}
+		// Learning mode lasts seven days at most, as when it is switched on by hand.
+		$clean['fw_learn_until'] = 'learn' === $clean['fw_mode'] ? min( (int) $clean['fw_learn_until'], time() + 7 * DAY_IN_SECONDS ) : 0;
+		$clean['fw_rules_off']   = array_values( array_intersect( $clean['fw_rules_off'], array_keys( Firewall::rules( true ) ) ) );
+		$clean['siem_rules_off'] = array_values( array_intersect( $clean['siem_rules_off'], array_keys( Detect::rules() ) ) );
+		foreach ( array( 'ip_allowlist', 'ip_blocklist', 'trusted_proxies' ) as $key ) {
+			$clean[ $key ] = Request::parse_list( implode( "\n", $clean[ $key ] ) )['valid'];
+		}
+		$clean['country_list']    = Geo::parse( implode( ',', $clean['country_list'] ) );
+		$clean['alert_email']     = is_email( $clean['alert_email'] ) ? $clean['alert_email'] : '';
+		$webhook                  = (string) $clean['forward_webhook'];
+		$clean['forward_webhook'] = in_array( wp_parse_url( $webhook, PHP_URL_SCHEME ), array( 'http', 'https' ), true ) && wp_parse_url( $webhook, PHP_URL_HOST ) ? esc_url_raw( $webhook ) : '';
+		$syslog                   = Forwarder::clean_syslog( (string) $clean['forward_syslog'] );
+		$clean['forward_syslog']  = false === $syslog ? '' : $syslog;
+		$clean['forward_secret']  = substr( (string) $clean['forward_secret'], 0, 128 );
+		$color                    = sanitize_hex_color( (string) $clean['help_color'] );
+		$clean['help_color']      = $color ? $color : $defaults['help_color'];
+		foreach ( array(
+			'help_title'    => 60,
+			'help_greeting' => 200,
+		) as $key => $max ) {
+			$clean[ $key ] = mb_substr( (string) $clean[ $key ], 0, $max );
+		}
 		// Belongs to this site: a different login address would surprise its users.
 		$clean['login_slug'] = $current['login_slug'];
 		// HTTPS redirects need this site's own certificate.
 		$clean['force_https'] = $current['force_https'];
-		if ( ! array_key_exists( $clean['proxy_header'], Settings::proxy_headers() ) ) {
-			$clean['proxy_header'] = '';
-		}
-		$own = Request::ip();
+		$own                  = Request::ip();
 		if ( $own ) {
 			$clean['ip_blocklist'] = array_values(
 				array_filter(
@@ -191,6 +251,16 @@ final class Backup {
 					}
 				)
 			);
+		}
+		// Never shut out the importer's own country.
+		$country = Geo::country();
+		if ( $country ) {
+			$listed = in_array( $country, $clean['country_list'], true );
+			if ( 'allow' === $clean['country_mode'] && ! $listed ) {
+				$clean['country_list'][] = $country;
+			} elseif ( 'block' === $clean['country_mode'] && $listed ) {
+				$clean['country_list'] = array_values( array_diff( $clean['country_list'], array( $country ) ) );
+			}
 		}
 		return $clean;
 	}

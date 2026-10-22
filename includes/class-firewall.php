@@ -276,6 +276,13 @@ final class Firewall {
 				'score'   => 5,
 				'targets' => array( 'file' ),
 			),
+			'oversize'   => array(
+				'label'   => 'Oversized request',
+				'info'    => 'More form data than the firewall reads, which could hide an attack past the part it checks.',
+				'pattern' => '#^over$#',
+				'score'   => 5,
+				'targets' => array( 'size' ),
+			),
 			'scanner'    => array(
 				'label'   => 'Attack tool',
 				'info'    => 'User agents of vulnerability scanners and attack tools.',
@@ -324,11 +331,22 @@ final class Firewall {
 		// Form fields last: they can be large, and the size budget runs out at the end.
 		self::flatten( 'body', 'POST', $_POST ? wp_unslash( $_POST ) : array(), $fields );
 		$type = isset( $_SERVER['CONTENT_TYPE'] ) ? strtolower( (string) $_SERVER['CONTENT_TYPE'] ) : '';
-		if ( ! $_POST && ( false !== strpos( $type, 'json' ) || false !== strpos( $type, 'xml' ) || false !== strpos( $type, 'text/plain' ) ) ) {
-			$raw = (string) file_get_contents( 'php://input', false, null, 0, self::MAX_BYTES ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reads the request body.
-			$doc = false !== strpos( $type, 'json' ) ? json_decode( $raw, true ) : null;
+		$over = false;
+		// PHP only fills $_POST for a POST form, but the REST API also reads PUT, PATCH and
+		// DELETE bodies, and bodies with no type at all, so read those here.
+		if ( ! $_POST && false === strpos( $type, 'multipart/' ) ) {
+			$raw  = (string) file_get_contents( 'php://input', false, null, 0, self::MAX_BYTES + 1 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reads the request body.
+			$over = strlen( $raw ) > self::MAX_BYTES;
+			$raw  = substr( $raw, 0, self::MAX_BYTES );
+			$doc  = false !== strpos( $type, 'json' ) ? json_decode( $raw, true ) : null;
+			$form = array();
+			if ( ! is_array( $doc ) && ( '' === $type || false !== strpos( $type, 'x-www-form-urlencoded' ) ) ) {
+				parse_str( $raw, $form );
+			}
 			if ( is_array( $doc ) ) {
 				self::flatten( 'body', 'JSON', $doc, $fields );
+			} elseif ( $form ) {
+				self::flatten( 'body', 'POST', $form, $fields );
 			} elseif ( '' !== $raw ) {
 				$fields[] = array( 'body', 'body', $raw );
 			}
@@ -341,6 +359,10 @@ final class Firewall {
 			}
 		}
 		// phpcs:enable
+		if ( $over || count( $fields ) >= self::MAX_FIELDS ) {
+			// Checked first, so it still counts when the size budget runs out.
+			array_unshift( $fields, array( 'size', 'request size', 'over' ) );
+		}
 		return $fields;
 	}
 
@@ -359,7 +381,13 @@ final class Firewall {
 		}
 		if ( is_array( $value ) ) {
 			foreach ( $value as $key => $child ) {
-				self::flatten( $target, $prefix . ( $depth ? '.' : ':' ) . substr( (string) $key, 0, 64 ), $child, $fields, $depth + 1 );
+				$name = $prefix . ( $depth ? '.' : ':' ) . substr( (string) $key, 0, 64 );
+				// Field names are input too, for plugins that store or print them. Plain names
+				// cannot match a rule, and the query string is already checked whole.
+				if ( 'query' !== $target && ! preg_match( '/^[\w\-]*$/', (string) $key ) && count( $fields ) < self::MAX_FIELDS ) {
+					$fields[] = array( $target, $name . ' (name)', (string) $key );
+				}
+				self::flatten( $target, $name, $child, $fields, $depth + 1 );
 			}
 			return;
 		}
@@ -411,44 +439,79 @@ final class Firewall {
 		$exceptions = self::exceptions();
 		$hits       = array();
 		$budget     = self::MAX_BYTES;
+		$skipped    = false;
 		foreach ( $fields as $field ) {
 			list( $target, $name, $raw ) = $field;
-			if ( '' === $raw || $budget <= 0 ) {
+			if ( '' === $raw ) {
 				continue;
 			}
-			$budget -= strlen( $raw );
-			$value   = 'file' === $target ? $raw : self::normalize( $raw );
-			if ( false !== strpos( $raw, '/*' ) || false !== strpos( $raw, '%2f%2a' ) || false !== strpos( $raw, '%2F%2A' ) ) {
-				// Comments can also split a keyword: un/**/ion. Check that reading too.
-				$value .= ' ' . preg_replace( '#/\*.*?\*/#s', '', self::normalize( preg_replace( '#/\*.*?\*/#s', '', rawurldecode( $raw ) ) ) );
+			// A long value is read in overlapping pieces, so an attack cannot hide past the first one.
+			$pieces = array( $raw );
+			if ( 'file' !== $target && strlen( $raw ) > self::MAX_VALUE ) {
+				$pieces = array();
+				$length = strlen( $raw );
+				for ( $at = 0; $at < $length; $at += self::MAX_VALUE - 1024 ) {
+					$pieces[] = substr( $raw, $at, self::MAX_VALUE );
+				}
 			}
-			foreach ( $rules as $key => $rule ) {
-				if ( isset( $hits[ $key ] ) || ! in_array( $target, (array) $rule['targets'], true ) ) {
-					continue;
+			foreach ( $pieces as $piece ) {
+				if ( $budget <= 0 ) {
+					$skipped = true;
+					break;
 				}
-				if ( $staff && 'body' === $target && empty( $rule['staff'] ) ) {
-					continue;
-				}
-				$subject = empty( $rule['raw'] ) ? $value : strtolower( substr( $raw, 0, self::MAX_VALUE ) );
-				if ( ! preg_match( $rule['pattern'], $subject, $m, PREG_OFFSET_CAPTURE ) ) {
-					continue;
-				}
-				if ( self::excepted( $exceptions, $key, $path, $name ) ) {
-					continue;
-				}
-				$start        = max( 0, $m[0][1] - 20 );
-				$hits[ $key ] = array(
-					'rule'    => $key,
-					'field'   => $name,
-					'snippet' => self::snippet( substr( $subject, $start, 90 ) ),
-					'score'   => (int) $rule['score'],
-				);
+				$budget -= strlen( $piece );
+				self::match( $rules, $exceptions, $path, $staff, $target, $name, $piece, $hits );
 			}
+		}
+		if ( $skipped ) {
+			self::match( $rules, $exceptions, $path, $staff, 'size', 'request size', 'over', $hits );
 		}
 		return array(
 			'score' => array_sum( wp_list_pluck( $hits, 'score' ) ),
 			'hits'  => array_values( $hits ),
 		);
+	}
+
+	/**
+	 * Runs the rules on one value.
+	 *
+	 * @param array  $rules      Rules.
+	 * @param array  $exceptions Exceptions.
+	 * @param string $path       Request path.
+	 * @param bool   $staff      Whether a signed-in author or editor sent it.
+	 * @param string $target     Rule target.
+	 * @param string $name       Field name.
+	 * @param string $raw        Raw value.
+	 * @param array  $hits       Hits so far, by rule, added to.
+	 */
+	private static function match( array $rules, array $exceptions, $path, $staff, $target, $name, $raw, array &$hits ) {
+		$value = 'file' === $target ? $raw : self::normalize( $raw );
+		if ( false !== strpos( $raw, '/*' ) || false !== strpos( $raw, '%2f%2a' ) || false !== strpos( $raw, '%2F%2A' ) ) {
+			// Comments can also split a keyword: un/**/ion. Check that reading too.
+			$value .= ' ' . preg_replace( '#/\*.*?\*/#s', '', self::normalize( preg_replace( '#/\*.*?\*/#s', '', rawurldecode( $raw ) ) ) );
+		}
+		foreach ( $rules as $key => $rule ) {
+			if ( isset( $hits[ $key ] ) || ! in_array( $target, (array) $rule['targets'], true ) ) {
+				continue;
+			}
+			if ( $staff && in_array( $target, array( 'body', 'size' ), true ) && empty( $rule['staff'] ) ) {
+				continue;
+			}
+			$subject = empty( $rule['raw'] ) ? $value : strtolower( substr( $raw, 0, self::MAX_VALUE ) );
+			if ( ! preg_match( $rule['pattern'], $subject, $m, PREG_OFFSET_CAPTURE ) ) {
+				continue;
+			}
+			if ( self::excepted( $exceptions, $key, $path, $name ) ) {
+				continue;
+			}
+			$start        = max( 0, $m[0][1] - 20 );
+			$hits[ $key ] = array(
+				'rule'    => $key,
+				'field'   => $name,
+				'snippet' => self::snippet( substr( $subject, $start, 90 ) ),
+				'score'   => (int) $rule['score'],
+			);
+		}
 	}
 
 	/**
@@ -524,7 +587,8 @@ final class Firewall {
 			if ( $e['rule'] !== $rule ) {
 				continue;
 			}
-			$path_ok  = '' === $e['path'] || $path === $e['path'] || ( '/' === substr( $e['path'], -1 ) && 0 === strpos( $path, $e['path'] ) );
+			$prefix   = empty( $e['exact'] ) && '/' === substr( $e['path'], -1 );
+			$path_ok  = '' === $e['path'] || $path === $e['path'] || ( $prefix && 0 === strpos( $path, $e['path'] ) );
 			$field_ok = '' === $e['field'] || $field === $e['field'];
 			if ( $path_ok && $field_ok ) {
 				return true;
@@ -539,9 +603,10 @@ final class Firewall {
 	 * @param string $rule  Rule key.
 	 * @param string $path  Path, exact, or a prefix when it ends with /. Empty for everywhere.
 	 * @param string $field Field such as POST:message, or empty for any field.
+	 * @param bool   $exact Match the path exactly, even when it ends with /.
 	 * @return bool Whether it was added.
 	 */
-	public static function add_exception( $rule, $path, $field ) {
+	public static function add_exception( $rule, $path, $field, $exact = false ) {
 		$rules = self::rules();
 		if ( ! isset( $rules[ $rule ] ) ) {
 			return false;
@@ -551,7 +616,7 @@ final class Firewall {
 		$path  = strtolower( $path );
 		$field = substr( (string) $field, 0, 120 );
 		foreach ( $list as $e ) {
-			if ( $e['rule'] === $rule && $e['path'] === $path && $e['field'] === $field ) {
+			if ( $e['rule'] === $rule && $e['path'] === $path && $e['field'] === $field && empty( $e['exact'] ) === ! $exact ) {
 				return false;
 			}
 		}
@@ -559,6 +624,7 @@ final class Firewall {
 			'rule'  => $rule,
 			'path'  => $path,
 			'field' => $field,
+			'exact' => (bool) $exact,
 			'time'  => time(),
 			'user'  => get_current_user_id(),
 		);
@@ -569,32 +635,54 @@ final class Firewall {
 	/**
 	 * Turns a recorded hit into exceptions, so the same request goes through next time.
 	 *
-	 * @param string $ref Block reference.
-	 * @return bool Whether the reference was found.
+	 * Each exception covers only the rule, the field and the exact path of that
+	 * request. The front page is never excepted, because a request made up for
+	 * it would otherwise switch a rule off for a field the whole site uses.
+	 *
+	 * @param string      $ref Block reference.
+	 * @param string|null $ip  Only when the hit came from this IP, such as the sender of a help message.
+	 * @return bool Whether exceptions were added.
 	 */
-	public static function allow_reference( $ref ) {
-		$ref = strtolower( (string) $ref );
-		foreach ( self::hits() as $hit ) {
-			if ( '' === $ref || strtolower( $hit['ref'] ) !== $ref ) {
-				continue;
-			}
-			foreach ( $hit['hits'] as $h ) {
-				self::add_exception( $h['rule'], $hit['path'], $h['field'] );
-			}
-			Events::add(
-				'settings',
-				/* translators: 1: request path, 2: reference. */
-				sprintf( __( 'Firewall exception added for %1$s (from blocked request %2$s).', 'chaos-shield' ), $hit['path'], $hit['ref'] ),
-				Request::ip(),
-				array(
-					'severity' => Events::NOTICE,
-					'action'   => 'fw.exception',
-					'subject'  => $hit['path'],
-				)
-			);
-			return true;
+	public static function allow_reference( $ref, $ip = null ) {
+		$hit = self::exceptable( $ref, $ip );
+		if ( ! $hit ) {
+			return false;
 		}
-		return false;
+		foreach ( $hit['hits'] as $h ) {
+			self::add_exception( $h['rule'], $hit['path'], $h['field'], true );
+		}
+		Events::add(
+			'settings',
+			/* translators: 1: request path, 2: reference. */
+			sprintf( __( 'Firewall exception added for %1$s (from blocked request %2$s).', 'chaos-shield' ), $hit['path'], $hit['ref'] ),
+			Request::ip(),
+			array(
+				'severity' => Events::NOTICE,
+				'action'   => 'fw.exception',
+				'subject'  => $hit['path'],
+			)
+		);
+		return true;
+	}
+
+	/**
+	 * The recorded hit for a reference, when it may become exceptions.
+	 *
+	 * @param string      $ref Block reference.
+	 * @param string|null $ip  Only when the hit came from this IP.
+	 * @return array|null
+	 */
+	public static function exceptable( $ref, $ip = null ) {
+		$hit = self::hit( $ref );
+		if ( ! $hit || empty( $hit['hits'] ) || ( null !== $ip && ( '' === (string) $ip || (string) $hit['ip'] !== (string) $ip ) ) ) {
+			return null;
+		}
+		$path = '/' . ltrim( (string) wp_parse_url( (string) $hit['path'], PHP_URL_PATH ), '/' );
+		$home = '/' . trim( (string) wp_parse_url( home_url( '/' ), PHP_URL_PATH ), '/' );
+		if ( '/' === $path || untrailingslashit( $path ) === untrailingslashit( $home ) ) {
+			return null;
+		}
+		return $hit;
 	}
 
 	/**

@@ -362,7 +362,7 @@ $cshield_box   = static function ( $key, $label, $hint = '' ) {
 			<p><?php esc_html_e( 'Every script your pages load, from your site and from others. Card skimmers and injected ads arrive as one extra script, so a new one alerts you. Scripts found on the first look are approved; later ones wait for you.', 'chaos-shield' ); ?></p>
 		</div>
 		<?php if ( $cshield_counts['new'] > 1 ) : ?>
-			<div class="cshield-inline-actions"><?php $cshield_eform( 'approve_all', __( 'Approve all new', 'chaos-shield' ), 'cshield-btn cshield-btn--ghost', array(), __( 'Approve every new script? Only do this if you added them.', 'chaos-shield' ) ); ?></div>
+			<div class="cshield-inline-actions"><?php $cshield_eform( 'approve_all', __( 'Approve all new', 'chaos-shield' ), 'cshield-btn cshield-btn--ghost', array(), __( 'Approve every new script the page check found? Only do this if you added them. Browser reports are approved one by one.', 'chaos-shield' ) ); ?></div>
 		<?php endif; ?>
 	</div>
 	<?php if ( ! Settings::enabled( 'script_watch' ) ) : ?>

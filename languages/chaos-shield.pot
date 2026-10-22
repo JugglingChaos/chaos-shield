@@ -2,14 +2,14 @@
 # This file is distributed under the GPL-2.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Chaos Shield 1.13.0\n"
+"Project-Id-Version: Chaos Shield 1.14.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/chaos-shield\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-21T21:43:12+00:00\n"
+"POT-Creation-Date: 2026-10-22T21:53:07+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: chaos-shield\n"
@@ -68,7 +68,7 @@ msgid "Disconnect this service? Its keys or address are deleted from this site."
 msgstr ""
 
 #: includes/class-admin.php:95
-#: includes/class-help.php:651
+#: includes/class-help.php:671
 msgid "Sending..."
 msgstr ""
 
@@ -219,8 +219,8 @@ msgstr ""
 
 #: includes/class-admin.php:561
 #: includes/class-edge.php:104
-#: includes/class-firewall.php:622
-#: includes/class-help.php:785
+#: includes/class-firewall.php:710
+#: includes/class-help.php:805
 msgid "You are not allowed to change Chaos Shield settings."
 msgstr ""
 
@@ -388,36 +388,36 @@ msgid ""
 "A flood large enough to fill your server's connection has to be stopped before it reaches the server. Connect Cloudflare on the Edge tab to switch on its own Under Attack mode at the same time."
 msgstr ""
 
-#: includes/class-attack-mode.php:379
+#: includes/class-attack-mode.php:401
 msgid "Checking your browser"
 msgstr ""
 
-#: includes/class-attack-mode.php:383
+#: includes/class-attack-mode.php:405
 msgid "Still checking. This can take a few seconds on older devices."
 msgstr ""
 
-#: includes/class-attack-mode.php:390
+#: includes/class-attack-mode.php:412
 msgid "The site is getting a lot of unusual traffic, so it checks that you are a person with a real browser. This happens once and takes about a second."
 msgstr ""
 
-#: includes/class-attack-mode.php:392
+#: includes/class-attack-mode.php:414
 msgid "Checking…"
 msgstr ""
 
-#: includes/class-attack-mode.php:393
+#: includes/class-attack-mode.php:415
 msgid "Turn on JavaScript and reload the page to continue."
 msgstr ""
 
-#: includes/class-attack-mode.php:394
-#: includes/class-help.php:741
+#: includes/class-attack-mode.php:416
+#: includes/class-help.php:761
 msgid "Protected by Chaos Shield"
 msgstr ""
 
-#: includes/class-attack-mode.php:418
+#: includes/class-attack-mode.php:440
 msgid "Under attack mode switched on by an administrator."
 msgstr ""
 
-#: includes/class-attack-mode.php:420
+#: includes/class-attack-mode.php:442
 msgid "Under attack mode switched off by an administrator."
 msgstr ""
 
@@ -701,7 +701,7 @@ msgid "That file is not a Chaos Shield settings export."
 msgstr ""
 
 #: includes/class-backup.php:138
-#: includes/class-restore-points.php:226
+#: includes/class-restore-points.php:233
 msgid "Chaos Shield settings"
 msgstr ""
 
@@ -748,17 +748,17 @@ msgid "%1$s is banned from the whole site until %2$s. Reason: %3$s."
 msgstr ""
 
 #. translators: %d: HTTP status code.
-#: includes/class-captcha.php:142
+#: includes/class-captcha.php:143
 #, php-format
 msgid "The service answered HTTP %d."
 msgstr ""
 
-#: includes/class-captcha.php:241
+#: includes/class-captcha.php:242
 msgid "<strong>Error:</strong> Please complete the security check and try again."
 msgstr ""
 
 #. translators: %s: service name, such as hCaptcha.
-#: includes/class-captcha.php:252
+#: includes/class-captcha.php:255
 #, php-format
 msgid "%s could not be reached, so logins were allowed without the security check."
 msgstr ""
@@ -783,102 +783,103 @@ msgstr ""
 msgid "This file cannot be quarantined from here."
 msgstr ""
 
-#: includes/class-cleanup.php:108
+#: includes/class-cleanup.php:111
+#: includes/class-cleanup.php:116
 msgid "Could not move the file. Check the file permissions."
 msgstr ""
 
 #. translators: %s: file.
-#: includes/class-cleanup.php:121
+#: includes/class-cleanup.php:129
 #, php-format
 msgid "Quarantined %s."
 msgstr ""
 
-#: includes/class-cleanup.php:134
+#: includes/class-cleanup.php:142
 msgid "Unknown quarantined file."
 msgstr ""
 
-#: includes/class-cleanup.php:138
+#: includes/class-cleanup.php:146
 msgid "A file already exists at the original place, so nothing was restored."
 msgstr ""
 
-#: includes/class-cleanup.php:142
+#: includes/class-cleanup.php:162
 msgid "Could not move the file back. Check the file permissions."
 msgstr ""
 
 #. translators: %s: file.
-#: includes/class-cleanup.php:145
+#: includes/class-cleanup.php:165
 #, php-format
 msgid "Restored %s from quarantine."
 msgstr ""
 
 #. translators: %s: file.
-#: includes/class-cleanup.php:161
+#: includes/class-cleanup.php:181
 #, php-format
 msgid "Deleted quarantined copy of %s."
 msgstr ""
 
-#: includes/class-cleanup.php:177
+#: includes/class-cleanup.php:197
 msgid "That finding is not an official file, or it is gone. Run a new scan."
 msgstr ""
 
-#: includes/class-cleanup.php:190
+#: includes/class-cleanup.php:210
 msgid "The official checksum for this file is not available, so it was not replaced."
 msgstr ""
 
-#: includes/class-cleanup.php:195
+#: includes/class-cleanup.php:215
 msgid "Could not download a copy that matches the official checksum. Reinstall WordPress from Dashboard > Updates instead."
 msgstr ""
 
-#: includes/class-cleanup.php:214
+#: includes/class-cleanup.php:234
 msgid "Could not write the file. Check the file permissions."
 msgstr ""
 
 #. translators: %s: file.
-#: includes/class-cleanup.php:218
+#: includes/class-cleanup.php:238
 #, php-format
 msgid "Repaired %s from the official WordPress.org copy."
 msgstr ""
 
-#: includes/class-cleanup.php:229
+#: includes/class-cleanup.php:249
 msgid "Could not download a copy that matches the official release. Reinstall the plugin or theme instead."
 msgstr ""
 
 #. translators: 1: post type, 2: title.
-#: includes/class-cleanup.php:326
+#: includes/class-cleanup.php:346
 #, php-format
 msgid "%1$s \"%2$s\""
 msgstr ""
 
 #. translators: %s: option name.
-#: includes/class-cleanup.php:352
-#: includes/class-cleanup.php:371
+#: includes/class-cleanup.php:372
+#: includes/class-cleanup.php:391
 #, php-format
 msgid "Setting %s"
 msgstr ""
 
-#: includes/class-cleanup.php:372
+#: includes/class-cleanup.php:392
 msgid "Site address contains code"
 msgstr ""
 
 #. translators: %d: number of findings.
-#: includes/class-cleanup.php:390
+#: includes/class-cleanup.php:410
 #, php-format
 msgid "Database scan finished: %d items need a look."
 msgstr ""
 
-#: includes/class-cleanup.php:416
+#: includes/class-cleanup.php:436
 msgid "Script loaded from another site"
 msgstr ""
 
-#: includes/class-cleanup.php:417
+#: includes/class-cleanup.php:437
 msgid "Obfuscated inline script"
 msgstr ""
 
-#: includes/class-cleanup.php:418
+#: includes/class-cleanup.php:438
 msgid "Hidden iframe"
 msgstr ""
 
-#: includes/class-cleanup.php:419
+#: includes/class-cleanup.php:439
 msgid "Code that decodes and runs hidden data"
 msgstr ""
 
@@ -1553,7 +1554,8 @@ msgstr ""
 #: includes/class-export.php:87
 #: includes/class-export.php:363
 #: includes/class-password-policy.php:474
-#: includes/class-restore-points.php:459
+#: includes/class-password-policy.php:481
+#: includes/class-restore-points.php:472
 #: includes/class-siem.php:211
 #: includes/class-siem.php:305
 msgid "You are not allowed to do this."
@@ -1861,33 +1863,33 @@ msgstr ""
 msgid "The server did not accept the rules, so they were taken out again. Your host may not allow these settings in .htaccess."
 msgstr ""
 
-#: includes/class-exposure.php:468
+#: includes/class-exposure.php:467
 msgid "Blocked downloads of backups, logs and hidden files in .htaccess."
 msgstr ""
 
-#: includes/class-exposure.php:468
+#: includes/class-exposure.php:467
 msgid "Removed the block on backups, logs and hidden files from .htaccess."
 msgstr ""
 
 #. translators: 1: request path, 2: reference.
-#: includes/class-firewall.php:587
+#: includes/class-firewall.php:657
 #, php-format
 msgid "Firewall exception added for %1$s (from blocked request %2$s)."
 msgstr ""
 
-#: includes/class-firewall.php:690
+#: includes/class-firewall.php:778
 msgid "The uploads folder could not be found."
 msgstr ""
 
-#: includes/class-firewall.php:705
+#: includes/class-firewall.php:793
 msgid "Could not write the .htaccess file in uploads. Check the folder permissions."
 msgstr ""
 
-#: includes/class-firewall.php:709
+#: includes/class-firewall.php:797
 msgid "PHP is now blocked from running in the uploads folder."
 msgstr ""
 
-#: includes/class-firewall.php:709
+#: includes/class-firewall.php:797
 msgid "The rule blocking PHP in the uploads folder was removed."
 msgstr ""
 
@@ -2236,30 +2238,30 @@ msgstr ""
 msgid "The form expired. Reload the page and try again."
 msgstr ""
 
-#: includes/class-help.php:411
+#: includes/class-help.php:415
 msgid "Your message could not be sent right now. Please try again later."
 msgstr ""
 
-#: includes/class-help.php:416
+#: includes/class-help.php:420
 msgid "Enter an email address the owner can reply to."
 msgstr ""
 
-#: includes/class-help.php:419
+#: includes/class-help.php:423
 msgid "Tell the owner a little more, in at least a sentence."
 msgstr ""
 
-#: includes/class-help.php:457
+#: includes/class-help.php:462
 msgid "Thanks, your message was sent to the site owner. They will reply by email."
 msgstr ""
 
 #. translators: %s: visitor email.
-#: includes/class-help.php:485
+#: includes/class-help.php:490
 #, php-format
 msgid "A visitor asked for help: %s"
 msgstr ""
 
 #. translators: 1: name and email, 2: IP, 3: what happened, 4: reference, 5: message.
-#: includes/class-help.php:488
+#: includes/class-help.php:493
 #, php-format
 msgid ""
 "From: %1$s\n"
@@ -2270,175 +2272,179 @@ msgid ""
 "%5$s"
 msgstr ""
 
-#: includes/class-help.php:494
+#: includes/class-help.php:499
 msgid "Let them in or dismiss it:"
 msgstr ""
 
-#: includes/class-help.php:508
+#: includes/class-help.php:513
 msgid "Blocked by the firewall"
 msgstr ""
 
-#: includes/class-help.php:509
+#: includes/class-help.php:514
 msgid "IP banned for a while"
 msgstr ""
 
-#: includes/class-help.php:510
+#: includes/class-help.php:515
 msgid "IP on your block list"
 msgstr ""
 
-#: includes/class-help.php:511
+#: includes/class-help.php:516
 msgid "Country not allowed"
 msgstr ""
 
-#: includes/class-help.php:512
+#: includes/class-help.php:517
 msgid "IP on a threat list"
 msgstr ""
 
-#: includes/class-help.php:513
+#: includes/class-help.php:518
 msgid "Too many requests"
 msgstr ""
 
-#: includes/class-help.php:514
+#: includes/class-help.php:519
 msgid "Login help"
 msgstr ""
 
-#: includes/class-help.php:515
+#: includes/class-help.php:520
 msgid "Question from the site"
 msgstr ""
 
-#: includes/class-help.php:516
+#: includes/class-help.php:521
 msgid "Missing page"
 msgstr ""
 
 #. translators: %s: IP address.
-#: includes/class-help.php:546
+#: includes/class-help.php:548
 #, php-format
 msgid "Let %s in from a help message and added it to the allow list."
 msgstr ""
 
 #. translators: %s: IP address.
-#: includes/class-help.php:546
+#: includes/class-help.php:548
 #, php-format
 msgid "Let %s in from a help message."
 msgstr ""
 
-#: includes/class-help.php:613
+#: includes/class-help.php:633
 msgid "Trouble signing in? Pick a question or type your own."
 msgstr ""
 
-#: includes/class-help.php:616
+#: includes/class-help.php:636
 msgid "Sign-in is paused for your network after too many failed attempts. Ask me what to do."
 msgstr ""
 
-#: includes/class-help.php:619
+#: includes/class-help.php:639
 msgid "I can explain what happened and what you can do. Pick a question or type your own."
 msgstr ""
 
-#: includes/class-help.php:621
+#: includes/class-help.php:641
 msgid "That page could not be found. Can I help you find what you need?"
 msgstr ""
 
-#: includes/class-help.php:626
-#: includes/views/tab-help.php:132
+#: includes/class-help.php:646
+#: includes/views/tab-help.php:162
 msgid "Help"
 msgstr ""
 
-#: includes/class-help.php:627
-#: includes/views/tab-help.php:134
+#: includes/class-help.php:647
+#: includes/views/tab-help.php:164
 msgid "Hi! Ask a question or pick one below."
 msgstr ""
 
-#: includes/class-help.php:640
+#: includes/class-help.php:660
 msgid "Open help"
 msgstr ""
 
-#: includes/class-help.php:641
+#: includes/class-help.php:661
 msgid "Close help"
 msgstr ""
 
-#: includes/class-help.php:642
+#: includes/class-help.php:662
 msgid "Type a question"
 msgstr ""
 
-#: includes/class-help.php:643
+#: includes/class-help.php:663
 msgid "Ask"
 msgstr ""
 
-#: includes/class-help.php:644
+#: includes/class-help.php:664
 msgid "I do not have an answer for that. Try one of these, or send the site owner a message."
 msgstr ""
 
-#: includes/class-help.php:645
+#: includes/class-help.php:665
 msgid "Related:"
 msgstr ""
 
-#: includes/class-help.php:646
+#: includes/class-help.php:666
 msgid "Message the site owner"
 msgstr ""
 
-#: includes/class-help.php:647
+#: includes/class-help.php:667
 msgid "Your name (optional)"
 msgstr ""
 
-#: includes/class-help.php:648
+#: includes/class-help.php:668
 msgid "Your email, for the reply"
 msgstr ""
 
-#: includes/class-help.php:649
+#: includes/class-help.php:669
 msgid "What happened, and what were you trying to do?"
 msgstr ""
 
-#: includes/class-help.php:650
+#: includes/class-help.php:670
 msgid "Send message"
 msgstr ""
 
-#: includes/class-help.php:652
+#: includes/class-help.php:672
 msgid "The message could not be sent. Check your connection and try again."
 msgstr ""
 
-#: includes/class-help.php:653
+#: includes/class-help.php:673
 msgid "Your reference is included."
 msgstr ""
 
-#: includes/class-help.php:654
+#: includes/class-help.php:674
 msgid "You"
 msgstr ""
 
-#: includes/class-help.php:655
+#: includes/class-help.php:675
 msgid "Assistant"
 msgstr ""
 
-#: includes/class-help.php:737
+#: includes/class-help.php:757
 #: includes/views/tab-help.php:77
 msgid "Reference"
 msgstr ""
 
-#: includes/class-help.php:740
+#: includes/class-help.php:760
 msgid "Turn on JavaScript to use the help assistant, or contact the site owner and quote the reference above."
 msgstr ""
 
-#: includes/class-help.php:798
+#: includes/class-help.php:818
 msgid "Visitor help settings updated."
 msgstr ""
 
-#: includes/class-https.php:92
+#: includes/class-https.php:107
 msgid "This site does not answer on HTTPS yet. Ask your host for a free certificate (most offer Let's Encrypt), or connect Cloudflare, then try again."
 msgstr ""
 
-#: includes/class-https.php:95
+#: includes/class-https.php:110
 msgid "The site answers on HTTPS, but browsers do not trust its certificate. Fix the certificate first, or visitors would see a warning on every page."
 msgstr ""
 
-#: includes/class-https.php:98
+#: includes/class-https.php:113
 msgid "The certificate has expired. Renew it first."
 msgstr ""
 
-#: includes/class-https.php:125
+#: includes/class-https.php:117
+msgid "Open this page with https:// in the address first. If it already is, your site sits behind a proxy such as Cloudflare: choose its header under Access, so Chaos Shield can see that the visit was secure."
+msgstr ""
+
+#: includes/class-https.php:144
 msgid "Your HTTPS certificate has expired"
 msgstr ""
 
 #. translators: %d: days.
-#: includes/class-https.php:127
+#: includes/class-https.php:146
 #, php-format
 msgid "Your HTTPS certificate expires in %d day"
 msgid_plural "Your HTTPS certificate expires in %d days"
@@ -2446,7 +2452,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: 1: site address, 2: date, 3: issuer.
-#: includes/class-https.php:130
+#: includes/class-https.php:149
 #, php-format
 msgid ""
 "The certificate of %1$s expires on %2$s (issued by %3$s). After that, visitors see a security warning instead of the site.\n"
@@ -2633,67 +2639,67 @@ msgid "Active theme"
 msgstr ""
 
 #. translators: %s: list of files.
-#: includes/class-integrity.php:284
+#: includes/class-integrity.php:285
 #, php-format
 msgid "Critical file changed: %s."
 msgstr ""
 
 #. translators: %d: number of files.
-#: includes/class-integrity.php:295
+#: includes/class-integrity.php:296
 #, php-format
 msgid "%d critical file changed"
 msgid_plural "%d critical files changed"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/class-integrity.php:296
+#: includes/class-integrity.php:297
 msgid "These files no longer match their accepted fingerprint. If you did not change them, treat this as a break-in:"
 msgstr ""
 
-#: includes/class-integrity.php:313
+#: includes/class-integrity.php:314
 msgid "deleted"
 msgstr ""
 
-#: includes/class-integrity.php:316
+#: includes/class-integrity.php:317
 msgid "new file"
 msgstr ""
 
 #. translators: 1: old size in bytes, 2: new size in bytes.
-#: includes/class-integrity.php:319
+#: includes/class-integrity.php:320
 #, php-format
 msgid "contents changed (%1$s to %2$s bytes)"
 msgstr ""
 
-#: includes/class-integrity.php:491
+#: includes/class-integrity.php:512
 msgid "That file has nothing to put back."
 msgstr ""
 
-#: includes/class-integrity.php:496
+#: includes/class-integrity.php:517
 msgid "Only config files can be put back from here. Use a restore point or a repair from the scan for this one."
 msgstr ""
 
-#: includes/class-integrity.php:511
+#: includes/class-integrity.php:532
 msgid "Could not write the file. Check its permissions."
 msgstr ""
 
 #. translators: %s: file name.
-#: includes/class-integrity.php:516
+#: includes/class-integrity.php:537
 #, php-format
 msgid "Put back the accepted version of %s."
 msgstr ""
 
-#: includes/class-integrity.php:566
+#: includes/class-integrity.php:587
 msgid "You are not allowed to do that."
 msgstr ""
 
 #. translators: %s: file name.
-#: includes/class-integrity.php:580
+#: includes/class-integrity.php:601
 #, php-format
 msgid "Accepted the change to %s as the new fingerprint."
 msgstr ""
 
 #. translators: %d: number of files.
-#: includes/class-integrity.php:582
+#: includes/class-integrity.php:603
 #, php-format
 msgid "Accepted %d changed critical files as their new fingerprints."
 msgstr ""
@@ -3040,7 +3046,7 @@ msgstr ""
 #: includes/class-passkeys.php:704
 #: includes/views/tab-edge.php:427
 #: includes/views/tab-firewall.php:165
-#: includes/views/tab-help.php:163
+#: includes/views/tab-help.php:193
 #: includes/views/tab-hub.php:245
 msgid "Remove"
 msgstr ""
@@ -3149,7 +3155,7 @@ msgid "Force password reset"
 msgstr ""
 
 #. translators: %d: number of users.
-#: includes/class-password-policy.php:514
+#: includes/class-password-policy.php:518
 #, php-format
 msgid "Password reset forced for %d user. They were signed out and will choose a new password at their next login."
 msgid_plural "Password reset forced for %d users. They were signed out and will choose a new password at their next login."
@@ -3508,103 +3514,104 @@ msgstr ""
 msgid "Sent weekly by Chaos Shield. Turn it off under Chaos Shield > Alerts."
 msgstr ""
 
-#: includes/class-restore-points.php:88
+#: includes/class-restore-points.php:95
 msgid "Made by hand"
 msgstr ""
 
-#: includes/class-restore-points.php:89
+#: includes/class-restore-points.php:96
 msgid "Before an update"
 msgstr ""
 
-#: includes/class-restore-points.php:90
+#: includes/class-restore-points.php:97
 msgid "Before a file repair"
 msgstr ""
 
-#: includes/class-restore-points.php:91
+#: includes/class-restore-points.php:98
 msgid "Before a settings change"
 msgstr ""
 
-#: includes/class-restore-points.php:92
+#: includes/class-restore-points.php:99
 msgid "Before a settings import"
 msgstr ""
 
-#: includes/class-restore-points.php:93
+#: includes/class-restore-points.php:100
 msgid "Before a restore"
 msgstr ""
 
-#: includes/class-restore-points.php:117
+#: includes/class-restore-points.php:124
 msgid "Could not create the restore point folder. Check the permissions of wp-content."
 msgstr ""
 
-#: includes/class-restore-points.php:186
-#: includes/class-restore-points.php:548
+#: includes/class-restore-points.php:193
+#: includes/class-restore-points.php:561
 msgid "Could not write the restore point. Check the free disk space."
 msgstr ""
 
 #. translators: 1: plugin name, 2: version.
-#: includes/class-restore-points.php:253
+#: includes/class-restore-points.php:260
 #, php-format
 msgid "Plugin %1$s %2$s"
 msgstr ""
 
 #. translators: 1: theme name, 2: version.
-#: includes/class-restore-points.php:265
+#: includes/class-restore-points.php:272
 #, php-format
 msgid "Theme %1$s %2$s"
 msgstr ""
 
 #. translators: 1: plugin or theme, 2: reason.
-#: includes/class-restore-points.php:276
+#: includes/class-restore-points.php:283
 #, php-format
 msgid "No restore point before updating %1$s: %2$s"
 msgstr ""
 
-#: includes/class-restore-points.php:297
+#: includes/class-restore-points.php:304
+#: includes/class-restore-points.php:335
 msgid "That restore point is gone."
 msgstr ""
 
-#: includes/class-restore-points.php:307
+#: includes/class-restore-points.php:314
 msgid "The restore point names a file outside the site, so it was not used."
 msgstr ""
 
-#: includes/class-restore-points.php:315
+#: includes/class-restore-points.php:322
 msgid "A file in this restore point is damaged, so nothing was restored."
 msgstr ""
 
-#: includes/class-restore-points.php:333
+#: includes/class-restore-points.php:346
 msgid "Could not replace the folder. Check the file permissions."
 msgstr ""
 
-#: includes/class-restore-points.php:342
+#: includes/class-restore-points.php:355
 msgid "Could not write a file back. Check the file permissions. The state from before the restore was saved as a new restore point."
 msgstr ""
 
 #. translators: 1: what was restored, 2: date.
-#: includes/class-restore-points.php:360
+#: includes/class-restore-points.php:373
 #, php-format
 msgid "Restored %1$s from the restore point of %2$s."
 msgstr ""
 
-#: includes/class-restore-points.php:468
+#: includes/class-restore-points.php:481
 msgid "wp-config.php and Chaos Shield settings"
 msgstr ""
 
-#: includes/class-restore-points.php:471
+#: includes/class-restore-points.php:484
 msgid "wp-config.php, .htaccess and Chaos Shield settings"
 msgstr ""
 
-#: includes/class-restore-points.php:507
+#: includes/class-restore-points.php:520
 msgid "Could not create the restore folder in wp-content. Check the folder permissions."
 msgstr ""
 
 #. translators: %s: file.
-#: includes/class-restore-points.php:543
+#: includes/class-restore-points.php:556
 #, php-format
 msgid "Could not read %s."
 msgstr ""
 
 #. translators: %s: size such as 60 MB.
-#: includes/class-restore-points.php:594
+#: includes/class-restore-points.php:607
 #, php-format
 msgid "the folder is larger than %s, so it was not copied."
 msgstr ""
@@ -3699,36 +3706,36 @@ msgstr ""
 msgid "Large encoded data block next to code that decodes or runs it"
 msgstr ""
 
-#: includes/class-scripts.php:219
+#: includes/class-scripts.php:220
 msgid "Looks like a cryptocurrency miner"
 msgstr ""
 
-#: includes/class-scripts.php:220
+#: includes/class-scripts.php:221
 msgid "Runs hidden code with eval"
 msgstr ""
 
-#: includes/class-scripts.php:221
+#: includes/class-scripts.php:222
 msgid "Carries a long block of encoded code"
 msgstr ""
 
-#: includes/class-scripts.php:222
+#: includes/class-scripts.php:223
 msgid "Writes hidden code into the page"
 msgstr ""
 
-#: includes/class-scripts.php:223
+#: includes/class-scripts.php:224
 msgid "Reads card details and sends them somewhere"
 msgstr ""
 
-#: includes/class-scripts.php:301
+#: includes/class-scripts.php:302
 msgid "Loaded from the uploads folder, where scripts do not belong"
 msgstr ""
 
-#: includes/class-scripts.php:385
+#: includes/class-scripts.php:388
 msgid "New or suspicious scripts on your pages"
 msgstr ""
 
 #. translators: 1: site address, 2: list of scripts.
-#: includes/class-scripts.php:388
+#: includes/class-scripts.php:391
 #, php-format
 msgid ""
 "Your pages at %1$s load scripts that were not there before, or that look harmful:\n"
@@ -3739,27 +3746,27 @@ msgid ""
 msgstr ""
 
 #. translators: %d: number of scripts.
-#: includes/class-scripts.php:397
+#: includes/class-scripts.php:400
 #, php-format
 msgid "%d new or suspicious script found on the site's pages."
 msgid_plural "%d new or suspicious scripts found on the site's pages."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/class-scripts.php:414
-#: includes/class-scripts.php:421
+#: includes/class-scripts.php:417
+#: includes/class-scripts.php:424
 msgid "Code written into the page"
 msgstr ""
 
-#: includes/class-scripts.php:418
+#: includes/class-scripts.php:421
 msgid "Code built at run time (eval)"
 msgstr ""
 
-#: includes/class-scripts.php:419
+#: includes/class-scripts.php:422
 msgid "Scripts made in the browser (blob:)"
 msgstr ""
 
-#: includes/class-scripts.php:420
+#: includes/class-scripts.php:423
 msgid "Scripts written into an address (data:)"
 msgstr ""
 
@@ -4790,7 +4797,7 @@ msgid "Theme"
 msgstr ""
 
 #: includes/views/dashboard.php:115
-#: includes/views/tab-help.php:119
+#: includes/views/tab-help.php:149
 msgid "Ban"
 msgstr ""
 
@@ -5116,7 +5123,7 @@ msgstr ""
 #: includes/views/dashboard.php:613
 #: includes/views/tab-alerts.php:118
 #: includes/views/tab-firewall.php:93
-#: includes/views/tab-help.php:171
+#: includes/views/tab-help.php:201
 msgid "Save changes"
 msgstr ""
 
@@ -6324,7 +6331,7 @@ msgid "Approve all new"
 msgstr ""
 
 #: includes/views/tab-edge.php:365
-msgid "Approve every new script? Only do this if you added them."
+msgid "Approve every new script the page check found? Only do this if you added them. Browser reports are approved one by one."
 msgstr ""
 
 #: includes/views/tab-edge.php:369
@@ -6603,7 +6610,7 @@ msgid "score %d"
 msgstr ""
 
 #: includes/views/tab-firewall.php:139
-#: includes/views/tab-help.php:88
+#: includes/views/tab-help.php:112
 msgid "Allow"
 msgstr ""
 
@@ -6652,7 +6659,7 @@ msgid "Messages from visitors"
 msgstr ""
 
 #: includes/views/tab-help.php:43
-msgid "Visitors who were blocked, locked out or stuck can send you a message from the help assistant. Allow lifts their ban and lockout, unblocks their exact IP and lets the blocked request through next time."
+msgid "Visitors who were blocked, locked out or stuck can send you a message from the help assistant. Allow lifts their ban and lockout and unblocks their exact IP. When the firewall blocked them, you can also let that one request through, after checking what it contained."
 msgstr ""
 
 #: includes/views/tab-help.php:47
@@ -6671,101 +6678,115 @@ msgstr ""
 msgid "Dismissed"
 msgstr ""
 
-#: includes/views/tab-help.php:89
-msgid "Always allow this IP"
+#. translators: %s: request path.
+#: includes/views/tab-help.php:92
+#, php-format
+msgid "The firewall blocked %s because of:"
 msgstr ""
 
-#: includes/views/tab-help.php:90
-msgid "Dismiss"
-msgstr ""
-
-#: includes/views/tab-help.php:97
-msgid "Reply by email from the address shown. Messages are kept for 30 days. Each IP can send three messages an hour."
-msgstr ""
-
-#: includes/views/tab-help.php:107
-msgid "Where the assistant appears"
-msgstr ""
-
-#: includes/views/tab-help.php:109
-msgid "On block and rate-limit pages, and as sign-in help on the login page"
-msgstr ""
-
-#: includes/views/tab-help.php:110
-msgid "As a help bubble on every page of the site, answering your questions below"
-msgstr ""
-
-#: includes/views/tab-help.php:111
-msgid "Let visitors send you a message from the assistant"
+#: includes/views/tab-help.php:99
+msgid "in"
 msgstr ""
 
 #: includes/views/tab-help.php:113
+msgid "Always allow this IP"
+msgstr ""
+
+#: includes/views/tab-help.php:116
+msgid "Let this request through the firewall"
+msgstr ""
+
+#: includes/views/tab-help.php:119
+msgid "Dismiss"
+msgstr ""
+
+#: includes/views/tab-help.php:127
+msgid "Reply by email from the address shown. Messages are kept for 30 days. Each IP can send three messages an hour."
+msgstr ""
+
+#: includes/views/tab-help.php:137
+msgid "Where the assistant appears"
+msgstr ""
+
+#: includes/views/tab-help.php:139
+msgid "On block and rate-limit pages, and as sign-in help on the login page"
+msgstr ""
+
+#: includes/views/tab-help.php:140
+msgid "As a help bubble on every page of the site, answering your questions below"
+msgstr ""
+
+#: includes/views/tab-help.php:141
+msgid "Let visitors send you a message from the assistant"
+msgstr ""
+
+#: includes/views/tab-help.php:143
 msgid "Answers are matched in the visitor's browser from the built-in security answers and your own. Nothing is sent to an outside service, and block pages never say which rule fired. Without the switch above, blocked visitors get a one-line text page."
 msgstr ""
 
-#: includes/views/tab-help.php:115
+#: includes/views/tab-help.php:145
 msgid "Preview:"
 msgstr ""
 
-#: includes/views/tab-help.php:118
+#: includes/views/tab-help.php:148
 msgid "Firewall block"
 msgstr ""
 
-#: includes/views/tab-help.php:120
+#: includes/views/tab-help.php:150
 #: includes/views/traffic-map.php:103
 msgid "Country"
 msgstr ""
 
-#: includes/views/tab-help.php:121
+#: includes/views/tab-help.php:151
 msgid "Rate limit"
 msgstr ""
 
-#: includes/views/tab-help.php:129
+#: includes/views/tab-help.php:159
 msgid "Look of the site bubble"
 msgstr ""
 
-#: includes/views/tab-help.php:131
+#: includes/views/tab-help.php:161
 msgid "Title"
 msgstr ""
 
-#: includes/views/tab-help.php:133
+#: includes/views/tab-help.php:163
 msgid "Greeting"
 msgstr ""
 
-#: includes/views/tab-help.php:135
+#: includes/views/tab-help.php:165
 msgid "Colour"
 msgstr ""
 
-#: includes/views/tab-help.php:140
+#: includes/views/tab-help.php:170
 msgid "Your questions and answers"
 msgstr ""
 
-#: includes/views/tab-help.php:141
+#: includes/views/tab-help.php:171
 msgid "Shown in the site bubble. Keywords help the assistant match how people actually ask, separated by commas. Write [link text](https://example.com/page) to add a link. Up to 50."
 msgstr ""
 
-#: includes/views/tab-help.php:154
-#: includes/views/tab-help.php:156
+#: includes/views/tab-help.php:184
+#: includes/views/tab-help.php:186
 msgid "Question"
 msgstr ""
 
-#: includes/views/tab-help.php:157
+#: includes/views/tab-help.php:187
 msgid "Do you ship abroad?"
 msgstr ""
 
-#: includes/views/tab-help.php:158
+#: includes/views/tab-help.php:188
 msgid "Keywords"
 msgstr ""
 
-#: includes/views/tab-help.php:159
+#: includes/views/tab-help.php:189
 msgid "shipping, delivery, international, abroad"
 msgstr ""
 
-#: includes/views/tab-help.php:161
+#: includes/views/tab-help.php:191
 msgid "Answer"
 msgstr ""
 
-#: includes/views/tab-help.php:167
+#: includes/views/tab-help.php:197
 msgid "Add a question"
 msgstr ""
 

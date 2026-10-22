@@ -18,12 +18,13 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Scripts {
 
-	const OPTION  = 'cshield_scripts';
-	const MAX     = 300;
-	const ROUTE   = '/csp';
-	const KEEP    = 30 * DAY_IN_SECONDS;
-	const FETCH   = 30;
-	const SCHEMES = array( 'chrome-extension', 'moz-extension', 'safari-extension', 'safari-web-extension', 'ms-browser-extension', 'webkit-masked-url', 'about' );
+	const OPTION      = 'cshield_scripts';
+	const MAX         = 300;
+	const MAX_REPORTS = 50;
+	const ROUTE       = '/csp';
+	const KEEP        = 30 * DAY_IN_SECONDS;
+	const FETCH       = 30;
+	const SCHEMES     = array( 'chrome-extension', 'moz-extension', 'safari-extension', 'safari-web-extension', 'ms-browser-extension', 'webkit-masked-url', 'about' );
 
 	/**
 	 * Registers hooks.
@@ -320,9 +321,10 @@ final class Scripts {
 			$items[ $key ]['snippet'] = mb_substr( preg_replace( '/\s+/', ' ', trim( $in['code'] ) ), 0, 160 );
 		}
 
-		// Scripts not seen on any page for a month are dropped; browser reports stay until handled.
+		// Scripts not seen on any page for a month are dropped, and so are browser reports nobody handled in that time.
 		foreach ( $items as $key => $item ) {
-			if ( 'report' !== $item['kind'] && 0 !== strpos( $key, 'keyword:' ) && $item['last'] < $now - self::KEEP ) {
+			$report = 'report' === $item['kind'] || 0 === strpos( $key, 'keyword:' );
+			if ( ( ! $report || 'new' === $item['status'] ) && $item['last'] < $now - self::KEEP ) {
 				unset( $items[ $key ] );
 			}
 		}
@@ -365,9 +367,10 @@ final class Scripts {
 	/**
 	 * Emails the owner about new and suspicious scripts.
 	 *
-	 * @param string[] $keys Keys.
+	 * @param string[] $keys   Keys.
+	 * @param string   $dedupe Alerts with the same value are sent at most every 15 minutes; empty for one per set of keys.
 	 */
-	private static function alert( array $keys ) {
+	private static function alert( array $keys, $dedupe = '' ) {
 		$items = self::state()['items'];
 		$lines = array();
 		foreach ( $keys as $key ) {
@@ -389,7 +392,7 @@ final class Scripts {
 				home_url(),
 				implode( "\n", $lines )
 			),
-			md5( implode( '|', $keys ) )
+			'' !== $dedupe ? $dedupe : md5( implode( '|', $keys ) )
 		);
 		Events::add(
 			'scan',
@@ -436,7 +439,8 @@ final class Scripts {
 		$state = self::state();
 		$n     = 0;
 		foreach ( $state['items'] as $key => $item ) {
-			$all = array( '*' ) === $keys && 'new' === $item['status'];
+			// Approve all covers scripts the page check found, never browser reports, which anyone can send.
+			$all = array( '*' ) === $keys && 'new' === $item['status'] && in_array( $item['kind'], array( 'own', 'external', 'inline' ), true );
 			if ( ! $all && ! in_array( $key, $keys, true ) ) {
 				continue;
 			}
@@ -599,7 +603,16 @@ final class Scripts {
 		++$state['reports'];
 		$new = ! isset( $state['items'][ $key ] );
 		if ( $new ) {
-			if ( count( $state['items'] ) >= self::MAX ) {
+			$reported = count(
+				array_filter(
+					$state['items'],
+					static function ( $i ) {
+						return in_array( $i['kind'], array( 'report', 'keyword' ), true );
+					}
+				)
+			);
+			// Reports have their own, smaller share, so they cannot crowd out what the page check finds.
+			if ( count( $state['items'] ) >= self::MAX || $reported >= self::MAX_REPORTS ) {
 				return '';
 			}
 			$kind                   = 0 === strpos( $key, 'keyword:' ) ? 'keyword' : 'report';
@@ -611,7 +624,7 @@ final class Scripts {
 		$state['items'][ $key ] = $item;
 		self::save( $state );
 		if ( $new && 'keyword:inline' !== $key ) {
-			self::alert( array( $key ) );
+			self::alert( array( $key ), 'reports' );
 		}
 		return $key;
 	}

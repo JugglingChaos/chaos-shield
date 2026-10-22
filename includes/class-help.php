@@ -397,17 +397,21 @@ final class Help {
 		if ( ! empty( $post['website'] ) || ! self::token_ok( isset( $post['token'] ) ? $post['token'] : '' ) ) {
 			return $fail( __( 'The form expired. Reload the page and try again.', 'chaos-shield' ) );
 		}
+		// Three an hour per IP and six per network, and no network may fill the inbox.
 		$throttle = 'cshield_help_ip_' . md5( (string) $ip );
+		$net      = Request::range( $ip );
+		$net_key  = 'cshield_help_net_' . md5( $net );
 		$sent     = (int) Network::get_transient( $throttle );
-		$open     = count(
-			array_filter(
-				self::requests(),
-				static function ( $r ) {
-					return 'open' === $r['status'];
-				}
-			)
-		);
-		if ( $sent >= 3 || $open >= self::MAX_OPEN ) {
+		$net_sent = (int) Network::get_transient( $net_key );
+		$open     = 0;
+		$net_open = 0;
+		foreach ( self::requests() as $r ) {
+			if ( 'open' === $r['status'] ) {
+				++$open;
+				$net_open += Request::range( $r['ip'] ) === $net ? 1 : 0;
+			}
+		}
+		if ( $sent >= 3 || $net_sent >= 6 || $open >= self::MAX_OPEN || $net_open >= self::MAX_OPEN / 10 ) {
 			return $fail( __( 'Your message could not be sent right now. Please try again later.', 'chaos-shield' ) );
 		}
 		$email   = isset( $post['email'] ) ? sanitize_email( (string) $post['email'] ) : '';
@@ -435,10 +439,11 @@ final class Help {
 			'agent'   => mb_substr( $ua, 0, 200 ),
 			'status'  => 'open',
 		);
-		$list   = self::requests();
+		Network::set_transient( $throttle, $sent + 1, HOUR_IN_SECONDS );
+		Network::set_transient( $net_key, $net_sent + 1, HOUR_IN_SECONDS );
+		$list = self::requests();
 		array_unshift( $list, $entry );
 		Network::update_option( self::REQUESTS, array_slice( $list, 0, 200 ), false );
-		Network::set_transient( $throttle, $sent + 1, HOUR_IN_SECONDS );
 		Events::add(
 			'system',
 			// Plain English: this can run before translations are loaded.
@@ -535,9 +540,6 @@ final class Help {
 				Login_Guard::release( $r['ip'] );
 				Settings::unblock_ip( $r['ip'], $always );
 			}
-			if ( $r['ref'] ) {
-				Firewall::allow_reference( $r['ref'] );
-			}
 			$list[ $i ]['status'] = 'allowed';
 			Network::update_option( self::REQUESTS, $list, false );
 			Events::add(
@@ -552,6 +554,24 @@ final class Help {
 				)
 			);
 			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Lets the request a message is about through the firewall from now on.
+	 *
+	 * Kept apart from Allow, so the owner sees which rule, field and page it
+	 * switches off first. Only a block of the sender's own IP counts.
+	 *
+	 * @param string $id Message ID.
+	 * @return bool Whether exceptions were added.
+	 */
+	public static function except( $id ) {
+		foreach ( self::requests() as $r ) {
+			if ( $r['id'] === $id ) {
+				return '' !== $r['ref'] && Firewall::allow_reference( $r['ref'], $r['ip'] );
+			}
 		}
 		return false;
 	}
@@ -799,6 +819,8 @@ final class Help {
 		} elseif ( 'allow' === $op || 'always' === $op ) {
 			self::allow( $id, 'always' === $op );
 			$notice = 'help_allowed';
+		} elseif ( 'except' === $op ) {
+			$notice = self::except( $id ) ? 'fw_allowed' : 'help_saved';
 		} elseif ( 'dismiss' === $op ) {
 			self::dismiss( $id );
 			$notice = 'help_dismissed';

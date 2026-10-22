@@ -138,15 +138,16 @@ function logged_in( array $res ) {
  * @param string $user Username.
  * @param string $pass Password.
  * @param string $from Client IP.
+ * @param array  $extra More form fields.
  * @return array
  */
-function login( $user, $pass, $from ) {
+function login( $user, $pass, $from, array $extra = array() ) {
 	return http(
 		'POST',
 		'/wp-login.php',
 		$from,
 		array(
-			'body' => array(
+			'body' => $extra + array(
 				'log'       => $user,
 				'pwd'       => $pass,
 				'wp-submit' => 'Log In',

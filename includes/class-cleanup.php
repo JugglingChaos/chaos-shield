@@ -101,10 +101,18 @@ final class Cleanup {
 		if ( is_wp_error( $dir ) ) {
 			return $dir;
 		}
-		$id     = substr( md5( $path . microtime() ), 0, 12 );
-		$stored = $dir . '/' . $id . '-' . sanitize_file_name( basename( $path ) ) . '.quarantined';
-		$hash   = (string) md5_file( $path );
-		if ( ! @rename( $path, $stored ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions.rename_rename -- Reported below.
+		// A random name ending in .php that exits first, so the copy can neither run nor be downloaded,
+		// even where the web server ignores the folder's .htaccess.
+		$id     = bin2hex( random_bytes( 6 ) );
+		$stored = $dir . '/' . bin2hex( random_bytes( 16 ) ) . '.php';
+		$body   = file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file.
+		$hash   = md5( (string) $body );
+		if ( false === $body || false === file_put_contents( $stored, Restore_Points::GUARD . $body ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- The plugin's own quarantine folder.
+			return new \WP_Error( 'cshield_q_move', __( 'Could not move the file. Check the file permissions.', 'chaos-shield' ) );
+		}
+		wp_delete_file( $path );
+		if ( file_exists( $path ) ) {
+			wp_delete_file( $stored );
 			return new \WP_Error( 'cshield_q_move', __( 'Could not move the file. Check the file permissions.', 'chaos-shield' ) );
 		}
 		$q        = self::quarantined();
@@ -138,7 +146,19 @@ final class Cleanup {
 			return new \WP_Error( 'cshield_q_exists', __( 'A file already exists at the original place, so nothing was restored.', 'chaos-shield' ) );
 		}
 		wp_mkdir_p( dirname( $path ) );
-		if ( ! @rename( $q[ $id ]['stored'], $path ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions.rename_rename -- Reported below.
+		$stored = (string) $q[ $id ]['stored'];
+		$body   = is_file( $stored ) ? (string) file_get_contents( $stored ) : ''; // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file.
+		$guard  = 0 === strpos( $body, Restore_Points::GUARD );
+		if ( $guard ) {
+			$moved = false !== file_put_contents( $path, substr( $body, strlen( Restore_Points::GUARD ) ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Puts the file back.
+			if ( $moved ) {
+				wp_delete_file( $stored );
+			}
+		} else {
+			// Quarantined before 1.14, moved as it was.
+			$moved = @rename( $stored, $path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions.rename_rename -- Reported below.
+		}
+		if ( ! $moved ) {
 			return new \WP_Error( 'cshield_q_move', __( 'Could not move the file back. Check the file permissions.', 'chaos-shield' ) );
 		}
 		/* translators: %s: file. */

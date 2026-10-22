@@ -19,6 +19,7 @@ final class Page_Check {
 	const HOOK   = 'cshield_page_check';
 	const HEADER = 'X-Cshield-Check';
 	const BUDGET = 45;
+	const RUN    = 'cshield_page_check_run';
 
 	/**
 	 * When this run started, to stay inside the time budget.
@@ -47,11 +48,14 @@ final class Page_Check {
 	/**
 	 * Proof that a request is this check, so the browser check and the firewall let it through.
 	 *
+	 * It is tied to the run in progress, so a token that leaks stops working when the run ends.
+	 *
 	 * @param int $time Issue time.
 	 * @return string
 	 */
 	private static function token( $time ) {
-		return (int) $time . '.' . substr( hash_hmac( 'sha256', 'pagecheck|' . (int) $time, wp_salt( 'nonce' ) ), 0, 32 );
+		$run = (string) Network::get_transient( self::RUN );
+		return (int) $time . '.' . substr( hash_hmac( 'sha256', 'pagecheck|' . (int) $time . '|' . $run, wp_salt( 'nonce' ) ), 0, 32 );
 	}
 
 	/**
@@ -62,7 +66,10 @@ final class Page_Check {
 	public static function is_self() {
 		$value = Request::server( 'HTTP_X_CSHIELD_CHECK' );
 		$parts = explode( '.', $value, 2 );
-		if ( 2 !== count( $parts ) || ! ctype_digit( $parts[0] ) || abs( time() - (int) $parts[0] ) > 5 * MINUTE_IN_SECONDS || ! function_exists( 'wp_salt' ) ) {
+		if ( 2 !== count( $parts ) || ! ctype_digit( $parts[0] ) || abs( time() - (int) $parts[0] ) > 2 * MINUTE_IN_SECONDS || ! function_exists( 'wp_salt' ) ) {
+			return false;
+		}
+		if ( ! Network::get_transient( self::RUN ) ) {
 			return false;
 		}
 		return hash_equals( self::token( (int) $parts[0] ), $value );
@@ -114,31 +121,47 @@ final class Page_Check {
 		if ( self::$started && microtime( true ) - self::$started > self::BUDGET ) {
 			return new \WP_Error( 'cshield_budget', 'Out of time' );
 		}
-		$own     = (string) wp_parse_url( $url, PHP_URL_HOST ) === (string) wp_parse_url( home_url(), PHP_URL_HOST );
+		$home    = home_url();
+		$own     = (string) wp_parse_url( $url, PHP_URL_HOST ) === (string) wp_parse_url( $home, PHP_URL_HOST );
 		$headers = array(
 			'User-Agent' => 'Mozilla/5.0 (compatible; ChaosShield/' . CSHIELD_VERSION . '; page check)',
 			'Accept'     => 'text/html,application/xhtml+xml,*/*;q=0.8',
 		);
-		if ( $own ) {
+		// The token only goes to this site, and never over plain http when the site has HTTPS.
+		$token = $own && Network::get_transient( self::RUN ) && ( 0 === strpos( $url, 'https://' ) || 0 === strpos( $home, 'http://' ) );
+		if ( $token ) {
 			$headers[ self::HEADER ] = self::token( time() );
 		}
-		return wp_remote_request(
-			$url,
-			array_merge(
-				array(
-					'method'              => 'GET',
-					'timeout'             => 10,
-					'redirection'         => 3,
-					// The certificate is checked on its own; a bad one must not hide what the pages load.
-					'sslverify'           => false,
-					'limit_response_size' => 2 * MB_IN_BYTES,
-					'headers'             => $headers,
-				),
-				$args,
-				isset( $args['headers'] ) ? array( 'headers' => array_merge( $headers, $args['headers'] ) ) : array()
+		$hops = isset( $args['redirection'] ) ? (int) $args['redirection'] : 3;
+		$args = array_merge(
+			array(
+				'method'              => 'GET',
+				'timeout'             => 10,
+				// The certificate is checked on its own; a bad one must not hide what the pages load.
+				'sslverify'           => false,
+				'limit_response_size' => 2 * MB_IN_BYTES,
+			),
+			$args,
+			array(
+				// Redirects are followed here, so the token never travels to another host.
+				'redirection' => 0,
+				'headers'     => isset( $args['headers'] ) ? array_merge( $headers, $args['headers'] ) : $headers,
 			)
 		);
+		// Other hosts are fetched the safe way, so a planted script address cannot reach private networks.
+		$res = $own ? wp_remote_request( $url, $args ) : wp_safe_remote_request( $url, $args );
+		if ( $hops > 0 && ! is_wp_error( $res ) && in_array( (int) wp_remote_retrieve_response_code( $res ), array( 301, 302, 303, 307, 308 ), true ) ) {
+			$to = (string) wp_remote_retrieve_header( $res, 'location' );
+			if ( '' !== $to ) {
+				$next                = $args;
+				$next['redirection'] = $hops - 1;
+				unset( $next['headers'][ self::HEADER ] );
+				return self::fetch( Scripts::absolute( $to, $url ), $next );
+			}
+		}
+		return $res;
 	}
+
 
 	/**
 	 * Loads the pages and runs every check on them.
@@ -147,6 +170,7 @@ final class Page_Check {
 	 */
 	public static function run() {
 		self::$started = microtime( true );
+		Network::set_transient( self::RUN, bin2hex( random_bytes( 16 ) ), self::BUDGET + 2 * MINUTE_IN_SECONDS );
 		if ( function_exists( 'set_time_limit' ) ) {
 			@set_time_limit( 120 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Not allowed on every host.
 		}
@@ -175,6 +199,7 @@ final class Page_Check {
 			'error'   => $pages ? '' : 'none',
 		);
 		Network::update_option( self::OPTION, $state, false );
+		Network::delete_transient( self::RUN );
 		self::$started = 0.0;
 		return $state;
 	}

@@ -462,7 +462,6 @@ final class Exposure {
 			self::protect( false );
 			return new \WP_Error( 'cshield_exposure', __( 'The server did not accept the rules, so they were taken out again. Your host may not allow these settings in .htaccess.', 'chaos-shield' ) );
 		}
-		Integrity::accept( '.htaccess' );
 		Events::add(
 			'settings',
 			$on ? __( 'Blocked downloads of backups, logs and hidden files in .htaccess.', 'chaos-shield' ) : __( 'Removed the block on backups, logs and hidden files from .htaccess.', 'chaos-shield' ),
