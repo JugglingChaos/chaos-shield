@@ -134,7 +134,7 @@ final class Siem {
 		if ( 'ip' === $kind && Settings::enabled( 'live_traffic' ) ) {
 			global $wpdb;
 			$table = Traffic::table();
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Own table.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Own table.
 			$rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE ip = %s ORDER BY id DESC LIMIT 200", $id ), ARRAY_A );
 			foreach ( (array) $rows as $r ) {
 				$items[] = array(
@@ -182,7 +182,7 @@ final class Siem {
 		global $wpdb;
 		$table = Events::table();
 		$start = (int) ( floor( time() / HOUR_IN_SECONDS ) * HOUR_IN_SECONDS ) - 23 * HOUR_IN_SECONDS;
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Own table.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Own table.
 		$rows    = $wpdb->get_results( $wpdb->prepare( "SELECT FLOOR((created - %d) / 3600) AS h, severity, COUNT(*) AS n FROM {$table} WHERE created >= %d GROUP BY h, severity", $start, $start ), ARRAY_A );
 		$buckets = array();
 		for ( $h = 0; $h < 24; $h++ ) {

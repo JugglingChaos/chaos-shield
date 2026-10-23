@@ -4,7 +4,7 @@ Tags: security, firewall, two-factor, audit log, malware scanner
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.14.0
+Stable tag: 1.14.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -180,6 +180,12 @@ Chaos Shield contacts these services. None of them is contacted for a feature th
 * **Sites you connect to the hub**: the hub only contacts the sites you add to it.
 
 == Changelog ==
+
+= 1.14.1 =
+WordPress.org Plugin Check cleanup.
+* The GitHub copy now links to the plugin's real home page, and the WordPress.org copy leaves out the GitHub updater.
+* Translations load the way WordPress.org language packs expect, without an extra loader on every page.
+* Notes on each database query, time limit, core sign-in hook and .htaccess edit say why it is safe, so Plugin Check no longer flags them.
 
 = 1.14.0 =
 Security fixes from a review of everything added in 1.7 to 1.13.

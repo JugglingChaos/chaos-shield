@@ -227,7 +227,7 @@ final class Traffic {
 		Network::set_transient( 'cshield_traffic_pruned', 1, 10 * MINUTE_IN_SECONDS );
 		global $wpdb;
 		$table = self::table();
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Own table.
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Own table.
 		$wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE created < %d", time() - self::KEEP ) );
 		$cut = (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} ORDER BY id DESC LIMIT 1 OFFSET %d", self::MAX_ROWS ) );
 		if ( $cut ) {
@@ -255,7 +255,7 @@ final class Traffic {
 		if ( preg_match( '/^[A-Z]{2}$/', (string) $country ) ) {
 			$where .= $wpdb->prepare( ' AND country = %s', $country );
 		}
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Own table; $where is prepared above.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Own table; $where is prepared above.
 		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE {$where} ORDER BY id DESC LIMIT %d", max( 1, min( 500, (int) $limit ) ) ), ARRAY_A );
 		return is_array( $rows ) ? $rows : array();
 	}
@@ -268,7 +268,7 @@ final class Traffic {
 	public static function counts() {
 		global $wpdb;
 		$table = self::table();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Own table.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Own table.
 		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT kind, COUNT(*) AS n FROM {$table} WHERE created >= %d GROUP BY kind", time() - self::KEEP ), ARRAY_A );
 		$out  = array_fill_keys( self::kinds(), 0 );
 		foreach ( (array) $rows as $row ) {
@@ -285,7 +285,7 @@ final class Traffic {
 	public static function by_country() {
 		global $wpdb;
 		$table = self::table();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Own table.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Own table.
 		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT country, COUNT(*) AS n, SUM(kind = 'blocked') AS blocked, SUM(kind = 'login') AS login, COUNT(DISTINCT ip) AS ips FROM {$table} WHERE created >= %d AND country <> '' GROUP BY country ORDER BY n DESC", time() - self::KEEP ), ARRAY_A );
 		$out  = array();
 		foreach ( (array) $rows as $row ) {
@@ -307,7 +307,7 @@ final class Traffic {
 	public static function unlocated() {
 		global $wpdb;
 		$table = self::table();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Own table.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Own table.
 		return (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE created >= %d AND country = ''", time() - self::KEEP ) );
 	}
 
@@ -430,7 +430,7 @@ final class Traffic {
 	public static function drop() {
 		global $wpdb;
 		$table = self::table();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Own table.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Own table.
 		$wpdb->query( "DROP TABLE IF EXISTS {$table}" );
 		Network::delete_option( self::DB_VERSION_OPTION );
 	}

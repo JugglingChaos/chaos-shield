@@ -455,7 +455,7 @@ final class Exposure {
 			// insert_with_markers leaves empty markers behind; take them out.
 			$body = (string) file_get_contents( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file.
 			$body = (string) preg_replace( '/\n?# BEGIN ' . preg_quote( self::MARKER, '/' ) . '.*?# END ' . preg_quote( self::MARKER, '/' ) . '\n?/s', "\n", $body );
-			file_put_contents( $file, ltrim( $body ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Local file.
+			file_put_contents( $file, ltrim( $body ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents, PluginCheck.CodeAnalysis.WriteFile.ABSPATHDetected -- Removes this plugin's own block from the site's .htaccess, which the owner turned on.
 		}
 		if ( $on && self::broken() ) {
 			// The server refused the rules: put the file back as it was.

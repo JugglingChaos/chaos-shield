@@ -380,7 +380,7 @@ final class Passkeys {
 			: new \WP_Error( 'cshield_pk', __( 'This passkey is not registered on this site.', 'chaos-shield' ) );
 
 		if ( is_wp_error( $result ) ) {
-			do_action( 'wp_login_failed', $user ? $user->user_login : '', $result );
+			do_action( 'wp_login_failed', $user ? $user->user_login : '', $result ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WordPress's own hook, fired so other plugins see this sign-in.
 			if ( 'cshield_pk_clone' === $result->get_error_code() && $user ) {
 				Events::add(
 					'blocked',
@@ -409,11 +409,11 @@ final class Passkeys {
 		Two_Factor::$passkey_login = true;
 		wp_set_auth_cookie( $user->ID, true, is_ssl() );
 		wp_set_current_user( $user->ID );
-		do_action( 'wp_login', $user->user_login, $user );
+		do_action( 'wp_login', $user->user_login, $user ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WordPress's own hook, fired so other plugins see this sign-in.
 
 		$redirect = wp_validate_redirect( esc_url_raw( self::post( 'redirect_to' ) ), admin_url() );
 		/** This filter is documented in wp-login.php. */
-		$redirect = apply_filters( 'login_redirect', $redirect, self::post( 'redirect_to' ), $user );
+		$redirect = apply_filters( 'login_redirect', $redirect, self::post( 'redirect_to' ), $user ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WordPress's own filter, so the usual redirect rules apply.
 		wp_send_json_success( array( 'redirect' => $redirect ? $redirect : admin_url() ) );
 	}
 

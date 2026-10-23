@@ -41,7 +41,7 @@ final class Backup {
 		);
 
 		if ( function_exists( 'set_time_limit' ) ) {
-			@set_time_limit( 0 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Some hosts disable it.
+			@set_time_limit( 0 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, Squiz.PHP.DiscouragedFunctions.Discouraged -- A large backup outlasts the default limit; some hosts disable it.
 		}
 		while ( ob_get_level() ) {
 			ob_end_clean();
@@ -60,13 +60,13 @@ final class Backup {
 		foreach ( $tables as $table ) {
 			$table  = (string) $table;
 			$quoted = '`' . str_replace( '`', '``', $table ) . '`';
-			$create = $wpdb->get_row( "SHOW CREATE TABLE {$quoted}", ARRAY_N ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table names come from SHOW TABLES.
+			$create = $wpdb->get_row( "SHOW CREATE TABLE {$quoted}", ARRAY_N ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table names come from SHOW TABLES.
 			if ( empty( $create[1] ) ) {
 				continue;
 			}
 			$out( "DROP TABLE IF EXISTS {$quoted};\n" . $create[1] . ";\n\n" );
 			for ( $offset = 0; ; $offset += 500 ) {
-				$rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$quoted} LIMIT %d OFFSET %d", 500, $offset ), ARRAY_N ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table names come from SHOW TABLES.
+				$rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$quoted} LIMIT %d OFFSET %d", 500, $offset ), ARRAY_N ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table names come from SHOW TABLES.
 				if ( ! $rows ) {
 					break;
 				}

@@ -117,7 +117,7 @@ final class Incidents {
 		$dedupe = md5( $data['rule'] . '|' . ( isset( $data['key'] ) ? $data['key'] : '' ) );
 		$events = array_values( array_unique( array_map( 'absint', isset( $data['events'] ) ? (array) $data['events'] : array() ) ) );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Own table.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Own table.
 		$open = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE dedupe = %s AND status IN ('open','investigating') AND updated >= %d ORDER BY id DESC LIMIT 1", $dedupe, time() - self::MERGE_WINDOW ), ARRAY_A );
 		if ( $open ) {
 			$merged = array_slice( array_values( array_unique( array_merge( (array) json_decode( $open['events'], true ), $events ) ) ), -self::MAX_EVENTS );
@@ -214,7 +214,7 @@ final class Incidents {
 	public static function get( $id ) {
 		global $wpdb;
 		$table = self::table();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Own table.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Own table.
 		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", (int) $id ), ARRAY_A );
 		return $row ? self::decode( $row ) : null;
 	}
@@ -237,7 +237,7 @@ final class Incidents {
 		);
 		$table = self::table();
 		$where = self::where( $args );
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Own table; $where is prepared.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Own table; $where is prepared.
 		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE {$where} ORDER BY updated DESC, id DESC LIMIT %d OFFSET %d", max( 1, min( 500, (int) $args['limit'] ) ), max( 0, (int) $args['offset'] ) ), ARRAY_A );
 		return array_map( array( __CLASS__, 'decode' ), is_array( $rows ) ? $rows : array() );
 	}
@@ -252,7 +252,7 @@ final class Incidents {
 		global $wpdb;
 		$table = self::table();
 		$where = self::where( wp_parse_args( $args, array( 'status' => 'active' ) ) );
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- Own table; $where is prepared.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Own table; $where is prepared.
 		return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table} WHERE {$where}" );
 	}
 
@@ -404,7 +404,7 @@ final class Incidents {
 	public static function summary() {
 		global $wpdb;
 		$table = self::table();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Own table.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Own table.
 		$rows = $wpdb->get_results( "SELECT severity, COUNT(*) AS n FROM {$table} WHERE status IN ('open','investigating') GROUP BY severity", ARRAY_A );
 		$by   = array_fill_keys( array( self::LOW, self::MEDIUM, self::HIGH, self::CRITICAL ), 0 );
 		foreach ( (array) $rows as $row ) {
@@ -434,7 +434,7 @@ final class Incidents {
 	public static function prune() {
 		global $wpdb;
 		$table = self::table();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Own table.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Own table.
 		$wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE status IN ('resolved','false_positive') AND updated < %d", time() - YEAR_IN_SECONDS ) );
 	}
 }

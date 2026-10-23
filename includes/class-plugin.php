@@ -89,8 +89,6 @@ final class Plugin {
 		if ( is_admin() ) {
 			( new Admin() )->register();
 		}
-
-		add_action( 'init', array( $this, 'load_textdomain' ) );
 	}
 
 	const DAILY = 'cshield_daily';
@@ -141,13 +139,6 @@ final class Plugin {
 		if ( 'daily' === $schedule || $age > 6 * DAY_IN_SECONDS ) {
 			Scanner::start( 'scheduled' );
 		}
-	}
-
-	/**
-	 * Loads translations.
-	 */
-	public function load_textdomain() {
-		load_plugin_textdomain( 'chaos-shield', false, dirname( plugin_basename( CSHIELD_FILE ) ) . '/languages' );
 	}
 
 	/**
