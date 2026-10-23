@@ -258,6 +258,16 @@ final class Siem {
 				}
 				$notice = $done ? 'incident_acted' : 'incident_skipped';
 				break;
+			case 'keys':
+				$rotated = Salts::rotate( sprintf( 'incident #%d', $id ) );
+				if ( true === $rotated ) {
+					Incidents::note_action( $id, __( 'Replaced the security keys and signed everyone out.', 'chaos-shield' ) );
+					wp_safe_redirect( Salts::login_url( Admin::url( 'siem', array( 'incident' => $id ) ) ) );
+					exit;
+				}
+				Network::set_transient( 'cshield_hardening_error_' . get_current_user_id(), $rotated->get_error_message(), MINUTE_IN_SECONDS );
+				wp_safe_redirect( Admin::url( 'hardening' ) );
+				exit;
 			case 'sessions':
 			case 'reset':
 				$user = $incident['user_id'] ? get_userdata( $incident['user_id'] ) : get_user_by( 'login', $incident['subject'] );

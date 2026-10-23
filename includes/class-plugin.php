@@ -68,6 +68,7 @@ final class Plugin {
 		( new Passkeys() )->register();
 		( new Passwords() )->register();
 		( new Password_Policy() )->register();
+		( new Accounts() )->register();
 		( new Audit() )->register();
 		( new Forwarder() )->register();
 		( new Export() )->register();

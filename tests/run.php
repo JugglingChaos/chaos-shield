@@ -15,6 +15,7 @@
 
 namespace ChaosShield\Tests;
 
+use ChaosShield\Accounts;
 use ChaosShield\Alerts;
 use ChaosShield\Api;
 use ChaosShield\Attack_Mode;
@@ -25,6 +26,7 @@ use ChaosShield\Https;
 use ChaosShield\Page_Check;
 use ChaosShield\Scripts;
 use ChaosShield\Captcha;
+use ChaosShield\Hub;
 use ChaosShield\Connections;
 use ChaosShield\Forwarder;
 use ChaosShield\Bans;
@@ -39,6 +41,7 @@ use ChaosShield\Network;
 use ChaosShield\Password_Policy;
 use ChaosShield\Request;
 use ChaosShield\Restore_Points;
+use ChaosShield\Salts;
 use ChaosShield\Backup;
 use ChaosShield\Scanner;
 use ChaosShield\Settings;
@@ -1842,6 +1845,284 @@ group(
 			delete_site_option( 'sst_http_log' );
 			Network::delete_transient( Updater::RELEASE );
 			delete_site_transient( 'update_plugins' );
+		}
+	}
+);
+
+group(
+	'Accounts',
+	function () {
+		$session = function ( $user_id, array $extra = array() ) {
+			$expire  = time() + HOUR_IN_SECONDS;
+			$manager = \WP_Session_Tokens::get_instance( $user_id );
+			$token   = $manager->create( $expire );
+			if ( $extra ) {
+				$manager->update( $token, array_merge( $manager->get( $token ), $extra ) );
+			}
+			return array(
+				'token'   => $token,
+				'cookies' => array(
+					AUTH_COOKIE      => wp_generate_auth_cookie( $user_id, $expire, 'auth', $token ),
+					LOGGED_IN_COOKIE => wp_generate_auth_cookie( $user_id, $expire, 'logged_in', $token ),
+				),
+			);
+		};
+		$set     = function ( array $changes ) {
+			Network::update_option( Settings::OPTION, array_merge( Settings::all(), $changes ) );
+			Settings::forget();
+		};
+
+		// Two-factor or a passkey required for administrators.
+		$set(
+			array(
+				'tf_required'   => 'admins',
+				'tf_grace_days' => 0,
+			)
+		);
+		$late = user();
+		$s    = $session( $late->ID );
+		$home = http( 'GET', '/wp-admin/', ip(), array( 'cookies' => $s['cookies'] ) );
+		check( 'an admin without a second step past the grace period is sent to their profile', 302 === $home['status'] && false !== strpos( $home['location'], 'profile.php' ) );
+		check( 'their profile still opens, to set it up', 200 === http( 'GET', '/wp-admin/profile.php', ip(), array( 'cookies' => $s['cookies'] ) )['status'] );
+		$ajax = http(
+			'POST',
+			'/wp-admin/admin-ajax.php',
+			ip(),
+			array(
+				'cookies' => $s['cookies'],
+				'body'    => array( 'action' => 'sst_anything' ),
+			)
+		);
+		check( 'other dashboard actions are refused meanwhile', 403 === $ajax['status'] );
+		$editor = user( 'editor' );
+		check( 'an editor is not covered by an administrators rule', 200 === http( 'GET', '/wp-admin/', ip(), array( 'cookies' => $session( $editor->ID )['cookies'] ) )['status'] );
+		update_user_meta( $late->ID, Two_Factor::META_SECRET, Totp::seal( Totp::new_secret() ) );
+		check( 'once two-factor is on the dashboard opens again', 200 === http( 'GET', '/wp-admin/', ip(), array( 'cookies' => $s['cookies'] ) )['status'] );
+
+		$set( array( 'tf_grace_days' => 7 ) );
+		$fresh = user();
+		$page  = http( 'GET', '/wp-admin/', ip(), array( 'cookies' => $session( $fresh->ID )['cookies'] ) );
+		$due   = (int) get_user_meta( $fresh->ID, Two_Factor::META_DUE, true );
+		check( 'during the grace period the dashboard opens with a reminder', 200 === $page['status'] && false !== strpos( $page['body'], 'requires a second login step' ) );
+		check( 'the grace period starts when the rule first meets the account', $due > time() + 6 * DAY_IN_SECONDS && $due <= time() + 7 * DAY_IN_SECONDS );
+		$set( array( 'tf_required' => 'off' ) );
+
+		// Trusted browsers.
+		$set( array( 'tf_trust_days' => 30 ) );
+		$user   = user();
+		$pass   = password( $user );
+		$secret = Totp::new_secret();
+		update_user_meta( $user->ID, Two_Factor::META_SECRET, Totp::seal( $secret ) );
+		$from = ip();
+		$name = 'cshield_trust_' . COOKIEHASH;
+		$step = login( $user->user_login, $pass, $from );
+		$form = http( 'GET', $step['location'], $from );
+		check( 'the code step offers to trust the browser', false !== strpos( $form['body'], 'name="cshield_trust"' ) );
+		$trusted = http(
+			'POST',
+			$step['location'],
+			$from,
+			array(
+				'body' => array(
+					'cshield_code'  => Totp::code( $secret, (int) floor( time() / 30 ) ),
+					'cshield_trust' => '1',
+				),
+			)
+		);
+		check( 'trusting the browser logs in and sets its cookie', logged_in( $trusted ) && ! empty( $trusted['cookies'][ $name ] ) );
+		$cookie = array( $name => isset( $trusted['cookies'][ $name ] ) ? $trusted['cookies'][ $name ] : '' );
+		$again  = http(
+			'POST',
+			'/wp-login.php',
+			$from,
+			array(
+				'cookies' => $cookie,
+				'body'    => array(
+					'log' => $user->user_login,
+					'pwd' => $pass,
+				),
+			)
+		);
+		check( 'a trusted browser skips the code step', logged_in( $again ) );
+		$forged = http(
+			'POST',
+			'/wp-login.php',
+			$from,
+			array(
+				'cookies' => array( $name => $user->ID . '.forged.' . str_repeat( 'a', 40 ) ),
+				'body'    => array(
+					'log' => $user->user_login,
+					'pwd' => $pass,
+				),
+			)
+		);
+		check( 'a forged trust cookie still gets the code step', ! logged_in( $forged ) && false !== strpos( $forged['location'], 'action=cshield_2fa' ) );
+		$pass  = password( $user );
+		$after = http(
+			'POST',
+			'/wp-login.php',
+			$from,
+			array(
+				'cookies' => $cookie,
+				'body'    => array(
+					'log' => $user->user_login,
+					'pwd' => $pass,
+				),
+			)
+		);
+		check( 'a new password forgets the trusted browser', ! logged_in( $after ) );
+		$set( array( 'tf_trust_days' => 0 ) );
+		check( 'with trust switched off no browser skips the code', ! Two_Factor::trusted_list( $user->ID ) );
+
+		// Idle sign out.
+		$set(
+			array(
+				'idle_minutes' => 10,
+				'idle_roles'   => 'staff',
+			)
+		);
+		$idle = user();
+		$old  = $session( $idle->ID, array( Accounts::SEEN => time() - HOUR_IN_SECONDS ) );
+		$out  = http( 'GET', '/wp-admin/', ip(), array( 'cookies' => $old['cookies'] ) );
+		check( 'an idle session is signed out', false !== strpos( $out['location'], 'cshield_idle' ) && null === \WP_Session_Tokens::get_instance( $idle->ID )->get( $old['token'] ) );
+		$busy = $session( $idle->ID, array( Accounts::SEEN => time() - 120 ) );
+		check( 'an active session stays signed in', 200 === http( 'GET', '/wp-admin/', ip(), array( 'cookies' => $busy['cookies'] ) )['status'] );
+		$seen = \WP_Session_Tokens::get_instance( $idle->ID )->get( $busy['token'] );
+		check( 'and its activity is noted', isset( $seen[ Accounts::SEEN ] ) && $seen[ Accounts::SEEN ] >= time() - 60 );
+		$set( array( 'idle_minutes' => 0 ) );
+
+		// Approval of new sign-ups.
+		$set( array( 'approve_signups' => true ) );
+		if ( ! is_multisite() ) {
+			$open = get_option( 'users_can_register' );
+			update_option( 'users_can_register', 1 );
+			$login = 'sst_signup_' . strtolower( wp_generate_password( 6, false ) );
+			http(
+				'POST',
+				'/wp-login.php?action=register',
+				ip(),
+				array(
+					'body' => array(
+						'user_login' => $login,
+						'user_email' => $login . '@example.invalid',
+						'wp-submit'  => 'Register',
+					),
+				)
+			);
+			update_option( 'users_can_register', $open );
+			$made = get_user_by( 'login', $login );
+			if ( $made ) {
+				$GLOBALS['sst']['users'][] = $made->ID;
+			}
+			check( 'an account a visitor makes waits for approval', $made && Accounts::pending( $made->ID ) );
+		}
+		check( 'accounts made by an administrator do not wait', ! Accounts::pending( user( 'subscriber' )->ID ) );
+		$held = user( 'subscriber' );
+		$pass = password( $held );
+		update_user_meta( $held->ID, Accounts::PENDING, time() );
+		$try = login( $held->user_login, $pass, ip() );
+		check( 'a held account cannot log in, even with the right password', ! logged_in( $try ) && false !== strpos( $try['body'], 'waiting for approval' ) );
+		$wrong = login( $held->user_login, 'wrong-pass', ip() );
+		check( 'a wrong password does not reveal that the account is held', false === strpos( $wrong['body'], 'waiting for approval' ) );
+		check( 'approving the account lets it log in', Accounts::approve( $held->ID ) && logged_in( login( $held->user_login, $pass, ip() ) ) );
+		update_user_meta( $held->ID, Accounts::PENDING, time() );
+		$s2 = $session( $held->ID );
+		http( 'GET', '/', ip(), array( 'cookies' => $s2['cookies'] ) );
+		check( 'a held account that a plugin logged in is signed out', ! \WP_Session_Tokens::get_instance( $held->ID )->get_all() );
+		delete_user_meta( $held->ID, Accounts::PENDING );
+		$set( array( 'approve_signups' => false ) );
+
+		// Public names.
+		$named = user( 'author' );
+		wp_update_user(
+			array(
+				'ID'           => $named->ID,
+				'display_name' => $named->user_login,
+			)
+		);
+		check( 'an author publishing under their username is flagged', in_array( $named->user_login, Accounts::public_logins(), true ) );
+	}
+);
+
+group(
+	'Security keys',
+	function () {
+		$ready = Salts::can_rotate();
+		if ( is_wp_error( $ready ) ) {
+			check( 'a read-only or unusual wp-config.php is refused with a reason', '' !== $ready->get_error_message() );
+			check( 'the lines to paste by hand hold eight keys', 8 === substr_count( Salts::block(), 'define(' ) );
+			return;
+		}
+		$path    = Salts::config_path();
+		$before  = file_get_contents( $path );
+		$options = array( \ChaosShield\Cloudflare::TOKEN, Api::SEALED, \ChaosShield\Connections::CHAT_URL, Hub::SITES_OPTION );
+		foreach ( Captcha::providers() as $provider ) {
+			$options[] = $provider['secret'];
+		}
+		$saved = array();
+		foreach ( $options as $option ) {
+			$saved[ $option ] = Network::get_option( $option, null );
+		}
+		$metas = array();
+		foreach ( array( Two_Factor::META_SECRET, Two_Factor::META_PENDING ) as $meta ) {
+			foreach ( get_users(
+				array(
+					'meta_key' => $meta, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Test setup.
+					'fields'   => 'ID',
+					'number'   => -1,
+					'blog_id'  => 0,
+				)
+			) as $id ) {
+				$metas[] = array( (int) $id, $meta, get_user_meta( (int) $id, $meta, true ) );
+			}
+		}
+		try {
+			$user   = user();
+			$pass   = password( $user );
+			$secret = Totp::new_secret();
+			update_user_meta( $user->ID, Two_Factor::META_SECRET, Totp::seal( $secret ) );
+			$metas[] = array( $user->ID, Two_Factor::META_SECRET, get_user_meta( $user->ID, Two_Factor::META_SECRET, true ) );
+			Network::update_option( \ChaosShield\Cloudflare::TOKEN, Totp::seal( 'sst-cf-token' ), false );
+			$expire  = time() + HOUR_IN_SECONDS;
+			$token   = \WP_Session_Tokens::get_instance( $user->ID )->create( $expire );
+			$cookies = array(
+				AUTH_COOKIE      => wp_generate_auth_cookie( $user->ID, $expire, 'auth', $token ),
+				LOGGED_IN_COOKIE => wp_generate_auth_cookie( $user->ID, $expire, 'logged_in', $token ),
+			);
+			check( 'a session works before the keys change', 200 === http( 'GET', '/wp-admin/', ip(), array( 'cookies' => $cookies ) )['status'] );
+
+			$done  = Salts::rotate( 'test' );
+			$after = file_get_contents( $path );
+			$fresh = 0;
+			foreach ( Salts::NAMES as $name ) {
+				$fresh += (int) ( preg_match( "/define\( '" . $name . "', '([^']{64})' \);/", $after, $m ) && constant( $name ) !== $m[1] );
+			}
+			check( 'all eight keys are replaced in wp-config.php', true === $done && 8 === $fresh );
+			// The test server caches compiled files for up to two seconds.
+			sleep( 3 );
+			check( 'the site still loads with the new file', 200 === http( 'GET', '/', ip() )['status'] );
+			check( 'sessions from before stop working', 200 !== http( 'GET', '/wp-admin/', ip(), array( 'cookies' => $cookies ) )['status'] );
+			$from = ip();
+			$step = login( $user->user_login, $pass, $from );
+			$ok   = http( 'POST', $step['location'], $from, array( 'body' => array( 'cshield_code' => Totp::code( $secret, (int) floor( time() / 30 ) ) ) ) );
+			check( 'two-factor keeps working with the new keys', logged_in( $ok ) );
+			preg_match( "/define\( 'SECURE_AUTH_KEY', '([^']+)' \);/", $after, $k );
+			preg_match( "/define\( 'SECURE_AUTH_SALT', '([^']+)' \);/", $after, $t );
+			check( 'connected services are sealed with the new keys', 'sst-cf-token' === Totp::open( Network::get_option( \ChaosShield\Cloudflare::TOKEN ), Totp::key_for( $k[1] . $t[1] ) ) );
+		} finally {
+			// Put the old keys back, with the secrets as they were sealed for them.
+			file_put_contents( $path, $before );
+			if ( function_exists( 'opcache_invalidate' ) ) {
+				opcache_invalidate( $path, true );
+			}
+			foreach ( $saved as $option => $value ) {
+				null === $value ? Network::delete_option( $option ) : Network::update_option( $option, $value, false );
+			}
+			foreach ( $metas as $row ) {
+				update_user_meta( $row[0], $row[1], $row[2] );
+			}
+			Network::delete_option( Salts::ROTATED );
+			sleep( 3 );
 		}
 	}
 );

@@ -129,7 +129,13 @@ if ( $cshield_incident_id ) :
 					}
 					?>
 				</div>
-				<?php if ( ( ! $cshield_i['ip'] || Request::ip() === $cshield_i['ip'] ) && ( ! $cshield_user || get_current_user_id() === $cshield_user->ID ) ) : ?>
+				<?php if ( (int) $cshield_i['severity'] >= 3 ) : ?>
+					<p class="cshield-small"><?php esc_html_e( 'If an account or cookie may have been stolen, replace the security keys: every session and stolen cookie stops working, and two-factor keeps working.', 'chaos-shield' ); ?></p>
+					<div class="cshield-respond">
+						<?php $cshield_post( 'keys', $cshield_i['id'], __( 'Replace security keys', 'chaos-shield' ), 'cshield-btn cshield-btn--ghost', __( 'Replace the security keys in wp-config.php? Everyone is signed out, you too, and must log in again.', 'chaos-shield' ) ); ?>
+					</div>
+				<?php endif; ?>
+				<?php if ( ( ! $cshield_i['ip'] || Request::ip() === $cshield_i['ip'] ) && ( ! $cshield_user || get_current_user_id() === $cshield_user->ID ) && (int) $cshield_i['severity'] < 3 ) : ?>
 					<p class="cshield-small"><?php esc_html_e( 'No response actions apply here: the incident names no other IP or user.', 'chaos-shield' ); ?></p>
 				<?php endif; ?>
 			</section>

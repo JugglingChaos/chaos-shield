@@ -43,6 +43,7 @@ final class Admin {
 		add_action( 'admin_post_cshield_vulns', array( $this, 'handle_vulns' ) );
 		add_action( 'admin_post_cshield_session', array( $this, 'handle_session' ) );
 		add_action( 'admin_post_cshield_cleanup', array( $this, 'handle_cleanup' ) );
+		add_action( 'admin_post_cshield_salts', array( $this, 'handle_salts' ) );
 		add_action( Network::active() ? 'wp_network_dashboard_setup' : 'wp_dashboard_setup', array( $this, 'dashboard_widget' ) );
 		if ( is_multisite() && ! Network::active() ) {
 			add_action( 'admin_notices', array( $this, 'network_notice' ) );
@@ -363,6 +364,21 @@ final class Admin {
 			Events::add( 'user', sprintf( __( 'A session of %s was signed out from the dashboard.', 'chaos-shield' ), $target->user_login ), Request::ip(), array( 'user_id' => $user ) );
 		}
 		$this->done( 'activity', 'session_end' );
+	}
+
+	/**
+	 * Replaces the security keys in wp-config.php, which signs everyone out, this user included.
+	 */
+	public function handle_salts() {
+		$this->require_cap();
+		check_admin_referer( 'cshield_salts' );
+		$done = Salts::rotate();
+		if ( is_wp_error( $done ) ) {
+			Network::set_transient( 'cshield_hardening_error_' . get_current_user_id(), $done->get_error_message(), MINUTE_IN_SECONDS );
+			$this->done( 'hardening', '' );
+		}
+		wp_safe_redirect( Salts::login_url( self::url( 'hardening' ) ) );
+		exit;
 	}
 
 	/**

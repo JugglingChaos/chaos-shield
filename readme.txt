@@ -4,7 +4,7 @@ Tags: security, firewall, two-factor, audit log, malware scanner
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.14.1
+Stable tag: 1.15.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -21,7 +21,8 @@ Disable XML-RPC, the file editor and application passwords, hide the WordPress v
 **Login protection**
 
 * Passkeys: sign in with a fingerprint, face or device PIN. Passkeys cannot be phished, and count as two-factor.
-* Two-factor with any authenticator app, with recovery codes and an admin reset.
+* Two-factor with any authenticator app, with recovery codes, trusted browsers and an admin reset. Require it, or a passkey, for administrators or all staff, with a grace period.
+* Idle sign out, approval of new sign-ups, a warning for authors who publish under their username, and one-click replacement of the wp-config.php security keys.
 * Breached passwords are refused, checked with Have I Been Pwned so only five characters of a hash leave your site.
 * A secret login address, an optional Cloudflare Turnstile or hCaptcha check, and a list of signed-in administrator sessions you can end remotely.
 * A password policy with optional expiry, and forced resets for one user, many, or all administrators.
@@ -139,7 +140,7 @@ By default Chaos Shield reads the visitor IP from REMOTE_ADDR, because forwarded
 
 = What happens to two-factor if my security keys change? =
 
-Two-factor secrets are encrypted with your wp-config.php security keys. If those keys change, users log in with a recovery code and set two-factor up again, or an administrator resets it from their profile.
+Two-factor secrets are encrypted with your wp-config.php security keys. Replace the keys with the button on the Hardening tab and Chaos Shield seals every secret again, so nothing breaks. If the keys are changed by hand, users log in with a recovery code and set two-factor up again, or an administrator resets it from their profile.
 
 = Is it tested? =
 
@@ -180,6 +181,15 @@ Chaos Shield contacts these services. None of them is contacted for a feature th
 * **Sites you connect to the hub**: the hub only contacts the sites you add to it.
 
 == Changelog ==
+
+= 1.15.0 =
+Accounts: everything All-In-One Security offers for logins, free.
+* Require two-factor or a passkey for administrators or everyone who can write posts. Each account gets a grace period, then can only reach its profile until it adds one.
+* Trusted browsers: a user can skip the code step on their own browser for up to 90 days. A new password forgets every trusted browser.
+* Idle sign out after the minutes you choose, for administrators, staff or everyone. An open dashboard tab does not count as activity.
+* Approve new sign-ups: accounts visitors make cannot log in until approved from the Users screen, with an email for each one.
+* Security keys: replace the wp-config.php keys in one click, from the Hardening tab or a serious incident. Everyone is signed out and two-factor, the hub and connected services keep working.
+* A new check warns about authors who publish under their username.
 
 = 1.14.1 =
 WordPress.org Plugin Check cleanup.

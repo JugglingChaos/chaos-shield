@@ -19,6 +19,9 @@ final class Two_Factor {
 	const META_RECOVERY = '_cshield_2fa_recovery';
 	const META_LAST     = '_cshield_2fa_last_step';
 	const META_LOGIN    = '_cshield_2fa_login';
+	const META_DUE      = '_cshield_2fa_due';
+	const META_TRUSTED  = '_cshield_2fa_trusted';
+	const TRUST_MAX     = 10;
 	const MAX_TRIES     = 5;
 	const CHALLENGE_TTL = 600;
 	const RECOVERY_KEYS = 10;
@@ -75,6 +78,10 @@ final class Two_Factor {
 		add_action( 'user_profile_update_errors', array( $this, 'profile_errors' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'profile_assets' ) );
 		add_action( 'admin_notices', array( $this, 'admin_nag' ) );
+
+		// Accounts that must have a second step and are past their grace period only reach their profile.
+		add_action( 'admin_init', array( $this, 'enforce' ), 1 );
+		add_filter( 'rest_authentication_errors', array( $this, 'enforce_rest' ), 150 );
 	}
 
 	/**
@@ -85,6 +92,96 @@ final class Two_Factor {
 	 */
 	public static function is_enabled( $user_id ) {
 		return '' !== (string) get_user_meta( $user_id, self::META_SECRET, true );
+	}
+
+	/**
+	 * Whether a user has a second login step: an authenticator app or a passkey.
+	 *
+	 * @param int $user_id User ID.
+	 * @return bool
+	 */
+	public static function has_second_factor( $user_id ) {
+		if ( self::is_enabled( $user_id ) ) {
+			return true;
+		}
+		$keys = get_user_meta( $user_id, Passkeys::META, true );
+		return Settings::enabled( 'passkeys' ) && is_array( $keys ) && count( $keys ) > 0;
+	}
+
+	/**
+	 * Whether the site requires a second login step from this user.
+	 *
+	 * @param \WP_User|null $user User.
+	 * @return bool
+	 */
+	public static function required( $user ) {
+		return self::active() && $user instanceof \WP_User && $user->exists() && Accounts::covers( $user, (string) Settings::get( 'tf_required' ) );
+	}
+
+	/**
+	 * Time left for a user who must set up a second step.
+	 *
+	 * The grace period starts the first time the rule meets the account.
+	 *
+	 * @param \WP_User|null $user User.
+	 * @return int|null Seconds left, zero or less when overdue, null when nothing is needed.
+	 */
+	public static function setup_left( $user ) {
+		if ( ! self::required( $user ) || self::has_second_factor( $user->ID ) ) {
+			return null;
+		}
+		$due = (int) get_user_meta( $user->ID, self::META_DUE, true );
+		if ( ! $due ) {
+			$due = time() + (int) Settings::get( 'tf_grace_days' ) * DAY_IN_SECONDS;
+			update_user_meta( $user->ID, self::META_DUE, $due );
+		}
+		return $due - time();
+	}
+
+	/**
+	 * Whether a user is past the grace period without a second step.
+	 *
+	 * @param \WP_User|null $user User.
+	 * @return bool
+	 */
+	public static function overdue( $user ) {
+		$left = self::setup_left( $user );
+		return null !== $left && $left <= 0;
+	}
+
+	/**
+	 * Keeps an overdue user on their profile until they add a second step.
+	 */
+	public function enforce() {
+		if ( ! self::overdue( wp_get_current_user() ) ) {
+			return;
+		}
+		if ( wp_doing_ajax() ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Only reads which AJAX action this is.
+			$action = isset( $_REQUEST['action'] ) ? sanitize_key( wp_unslash( $_REQUEST['action'] ) ) : '';
+			if ( in_array( $action, array( 'heartbeat', 'cshield_pk_reg_options', 'cshield_pk_register' ), true ) ) {
+				return;
+			}
+			wp_die( -1, 403 );
+		}
+		if ( 'profile.php' === $GLOBALS['pagenow'] ) {
+			return;
+		}
+		wp_safe_redirect( self_admin_url( 'profile.php' ) . '#cshield-2fa' );
+		exit;
+	}
+
+	/**
+	 * Refuses REST API requests from an overdue user.
+	 *
+	 * @param \WP_Error|null|true $result Result so far.
+	 * @return \WP_Error|null|true
+	 */
+	public function enforce_rest( $result ) {
+		if ( is_wp_error( $result ) || ! is_user_logged_in() || ! self::overdue( wp_get_current_user() ) ) {
+			return $result;
+		}
+		return new \WP_Error( 'cshield_2fa_setup', __( 'Set up two-factor login or a passkey on your profile first.', 'chaos-shield' ), array( 'status' => 403 ) );
 	}
 
 	/**
@@ -102,7 +199,7 @@ final class Two_Factor {
 		);
 		$enabled = 0;
 		foreach ( $ids as $id ) {
-			if ( self::is_enabled( (int) $id ) ) {
+			if ( self::has_second_factor( (int) $id ) ) {
 				++$enabled;
 			}
 		}
@@ -118,7 +215,7 @@ final class Two_Factor {
 	 * @param int $user_id User ID.
 	 */
 	public static function reset( $user_id ) {
-		foreach ( array( self::META_SECRET, self::META_PENDING, self::META_RECOVERY, self::META_LAST, self::META_LOGIN ) as $key ) {
+		foreach ( array( self::META_SECRET, self::META_PENDING, self::META_RECOVERY, self::META_LAST, self::META_LOGIN, self::META_TRUSTED ) as $key ) {
 			delete_user_meta( $user_id, $key );
 		}
 	}
@@ -148,6 +245,19 @@ final class Two_Factor {
 	 */
 	public function interrupt_login( $login, $user ) {
 		if ( $this->passed || self::$passkey_login || ! self::active() || ! $user instanceof \WP_User || ! self::is_enabled( $user->ID ) ) {
+			return;
+		}
+		if ( self::trusted( $user ) ) {
+			Events::add(
+				'twofactor',
+				/* translators: %s: username. */
+				sprintf( __( '%s skipped the code step on a trusted browser.', 'chaos-shield' ), $user->user_login ),
+				Request::ip(),
+				array(
+					'user_id' => $user->ID,
+					'action'  => 'auth.2fa_trusted',
+				)
+			);
 			return;
 		}
 
@@ -185,7 +295,7 @@ final class Two_Factor {
 	 * @return \WP_User|\WP_Error|null
 	 */
 	public function block_xmlrpc_password( $user ) {
-		if ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST && self::active() && $user instanceof \WP_User && self::is_enabled( $user->ID ) ) {
+		if ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST && self::active() && $user instanceof \WP_User && ( self::is_enabled( $user->ID ) || self::overdue( $user ) ) ) {
 			return new \WP_Error( 'cshield_2fa_required', __( 'This account uses two-factor login. Use an application password instead.', 'chaos-shield' ) );
 		}
 		return $user;
@@ -199,6 +309,7 @@ final class Two_Factor {
 		$user_id = isset( $_REQUEST['uid'] ) ? absint( $_REQUEST['uid'] ) : 0;
 		$token   = isset( $_REQUEST['token'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['token'] ) ) : '';
 		$code    = isset( $_POST['cshield_code'] ) ? sanitize_text_field( wp_unslash( $_POST['cshield_code'] ) ) : '';
+		$trust   = ! empty( $_POST['cshield_trust'] );
 		$posted  = isset( $_SERVER['REQUEST_METHOD'] ) && 'POST' === $_SERVER['REQUEST_METHOD'];
 		// phpcs:enable
 
@@ -215,6 +326,9 @@ final class Two_Factor {
 			if ( $ip && ! Firewall::allowlisted() && Login_Guard::locked_until( $ip ) ) {
 				$error = __( 'Too many failed login attempts. Try again later.', 'chaos-shield' );
 			} elseif ( $this->check_code( $user_id, $code ) ) {
+				if ( $trust ) {
+					self::trust_browser( $user );
+				}
 				$this->finish_login( $user, $challenge );
 			} else {
 				++$challenge['tries'];
@@ -298,6 +412,114 @@ final class Two_Factor {
 		return false;
 	}
 
+	// Trusted browsers.
+
+	/**
+	 * Name of the cookie that marks a trusted browser.
+	 *
+	 * @return string
+	 */
+	private static function trust_cookie() {
+		return 'cshield_trust_' . COOKIEHASH;
+	}
+
+	/**
+	 * Fingerprint of a trust token, tied to the password so a new password forgets every browser.
+	 *
+	 * @param \WP_User $user  User.
+	 * @param string   $token Token from the cookie.
+	 * @return string
+	 */
+	private static function trust_hash( $user, $token ) {
+		return hash_hmac( 'sha256', $token . '|' . substr( (string) $user->user_pass, 8, 4 ), wp_salt( 'auth' ) );
+	}
+
+	/**
+	 * Unexpired trusted browsers of a user, newest last.
+	 *
+	 * @param int $user_id User ID.
+	 * @return array Id => hash, at, exp, ip, ua.
+	 */
+	public static function trusted_list( $user_id ) {
+		$list = get_user_meta( (int) $user_id, self::META_TRUSTED, true );
+		$days = (int) Settings::get( 'tf_trust_days' );
+		$keep = array();
+		foreach ( is_array( $list ) ? $list : array() as $id => $entry ) {
+			// Shortening the setting also shortens browsers trusted before.
+			if ( is_array( $entry ) && (int) $entry['exp'] > time() && (int) $entry['at'] + $days * DAY_IN_SECONDS > time() ) {
+				$keep[ (string) $id ] = $entry;
+			}
+		}
+		return $keep;
+	}
+
+	/**
+	 * Whether the login comes from a browser this user trusted at an earlier code step.
+	 *
+	 * @param \WP_User $user User.
+	 * @return bool
+	 */
+	public static function trusted( $user ) {
+		$name = self::trust_cookie();
+		if ( ! (int) Settings::get( 'tf_trust_days' ) || empty( $_COOKIE[ $name ] ) ) {
+			return false;
+		}
+		$parts = explode( '.', sanitize_text_field( wp_unslash( $_COOKIE[ $name ] ) ) );
+		if ( 3 !== count( $parts ) || (int) $parts[0] !== $user->ID ) {
+			return false;
+		}
+		$list = self::trusted_list( $user->ID );
+		return isset( $list[ $parts[1] ] ) && hash_equals( (string) $list[ $parts[1] ]['hash'], self::trust_hash( $user, $parts[2] ) );
+	}
+
+	/**
+	 * Remembers this browser so the next logins skip the code step.
+	 *
+	 * @param \WP_User $user User.
+	 */
+	private static function trust_browser( $user ) {
+		$days = (int) Settings::get( 'tf_trust_days' );
+		if ( ! $days ) {
+			return;
+		}
+		$id          = strtolower( wp_generate_password( 12, false ) );
+		$token       = wp_generate_password( 40, false );
+		$expires     = time() + $days * DAY_IN_SECONDS;
+		$list        = self::trusted_list( $user->ID );
+		$list[ $id ] = array(
+			'hash' => self::trust_hash( $user, $token ),
+			'at'   => time(),
+			'exp'  => $expires,
+			'ip'   => Request::ip(),
+			'ua'   => substr( Request::server( 'HTTP_USER_AGENT' ), 0, 200 ),
+		);
+		update_user_meta( $user->ID, self::META_TRUSTED, array_slice( $list, -self::TRUST_MAX, null, true ) );
+		foreach ( array_unique( array( COOKIEPATH, SITECOOKIEPATH ) ) as $path ) {
+			setcookie(
+				self::trust_cookie(),
+				$user->ID . '.' . $id . '.' . $token,
+				array(
+					'expires'  => $expires,
+					'path'     => $path,
+					'domain'   => (string) COOKIE_DOMAIN,
+					'secure'   => is_ssl(),
+					'httponly' => true,
+					'samesite' => 'Lax',
+				)
+			);
+		}
+		Events::add(
+			'twofactor',
+			/* translators: 1: username, 2: number of days. */
+			sprintf( __( '%1$s trusted this browser for %2$d days.', 'chaos-shield' ), $user->user_login, $days ),
+			Request::ip(),
+			array(
+				'user_id' => $user->ID,
+				'action'  => 'auth.2fa_trust_added',
+			)
+		);
+	}
+
 	/**
 	 * Logs the user in after the code step.
 	 *
@@ -337,6 +559,15 @@ final class Two_Factor {
 				<label for="cshield_code"><?php esc_html_e( 'Authentication code', 'chaos-shield' ); ?></label>
 				<input type="text" name="cshield_code" id="cshield_code" class="input" value="" size="20" inputmode="numeric" autocomplete="one-time-code" autofocus required>
 			</p>
+			<?php $days = (int) Settings::get( 'tf_trust_days' ); ?>
+			<?php if ( $days ) : ?>
+				<p class="forgetmenot"><label><input type="checkbox" name="cshield_trust" value="1">
+					<?php
+					/* translators: %d: number of days. */
+					echo esc_html( sprintf( _n( 'Trust this browser for %d day', 'Trust this browser for %d days', $days, 'chaos-shield' ), $days ) );
+					?>
+				</label></p>
+			<?php endif; ?>
 			<p class="submit">
 				<input type="submit" class="button button-primary button-large" value="<?php esc_attr_e( 'Verify', 'chaos-shield' ); ?>">
 			</p>
@@ -431,8 +662,30 @@ final class Two_Factor {
 		<p><span class="cshield-2fa__on"><?php esc_html_e( 'On', 'chaos-shield' ); ?></span> <?php esc_html_e( 'This user signs in with an authenticator app.', 'chaos-shield' ); ?></p>
 		<?php if ( current_user_can( 'edit_user', $user->ID ) ) : ?>
 			<label><input type="checkbox" name="cshield_2fa_reset" value="1"> <?php esc_html_e( 'Turn off two-factor for this user (for a lost phone). They can set it up again afterwards.', 'chaos-shield' ); ?></label>
+			<?php $this->trusted_row( $user, false ); ?>
 		<?php endif; ?>
 		<?php
+	}
+
+	/**
+	 * Count of trusted browsers with a box to forget them.
+	 *
+	 * @param \WP_User $user  User.
+	 * @param bool     $table Print as a form table row.
+	 */
+	private function trusted_row( $user, $table ) {
+		$count = count( self::trusted_list( $user->ID ) );
+		if ( ! $count ) {
+			return;
+		}
+		/* translators: %d: number of browsers. */
+		$label = sprintf( _n( 'Forget the %d browser that skips the code step', 'Forget the %d browsers that skip the code step', $count, 'chaos-shield' ), $count );
+		$box   = '<label><input type="checkbox" name="cshield_2fa_forget" value="1"> ' . esc_html( $label ) . '</label>';
+		if ( $table ) {
+			echo '<tr><th scope="row">' . esc_html__( 'Trusted browsers', 'chaos-shield' ) . '</th><td>' . $box . '</td></tr>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped above.
+		} else {
+			echo '<p>' . $box . '</p>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped above.
+		}
 	}
 
 	/**
@@ -466,6 +719,7 @@ final class Two_Factor {
 				<th scope="row"><?php esc_html_e( 'Recovery codes', 'chaos-shield' ); ?></th>
 				<td><label><input type="checkbox" name="cshield_2fa_regen" value="1"> <?php esc_html_e( 'Replace my recovery codes with a new set', 'chaos-shield' ); ?></label></td>
 			</tr>
+			<?php $this->trusted_row( $user, true ); ?>
 			<tr>
 				<th scope="row"><label for="cshield_2fa_off_code"><?php esc_html_e( 'Turn off', 'chaos-shield' ); ?></label></th>
 				<td>
@@ -538,6 +792,11 @@ final class Two_Factor {
 		}
 		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Verified by core (update-user_{id}) before this hook.
 		$own = get_current_user_id() === (int) $user_id;
+
+		if ( ! empty( $_POST['cshield_2fa_forget'] ) ) {
+			delete_user_meta( $user_id, self::META_TRUSTED );
+			Events::add( 'twofactor', __( 'Trusted browsers were forgotten.', 'chaos-shield' ), Request::ip(), array( 'action' => 'auth.2fa_trust_cleared' ) );
+		}
 
 		if ( ! $own ) {
 			if ( ! empty( $_POST['cshield_2fa_reset'] ) && self::is_enabled( $user_id ) ) {
@@ -620,11 +879,29 @@ final class Two_Factor {
 	}
 
 	/**
-	 * Reminds administrators without two-factor, on the main dashboard only.
+	 * Tells a user who must add a second step how long they have, and reminds
+	 * other administrators without one, on the main dashboard only.
 	 */
 	public function admin_nag() {
 		$screen = get_current_screen();
-		if ( ! self::active() || ! $screen || 'dashboard' !== $screen->id || ! current_user_can( 'manage_options' ) || self::is_enabled( get_current_user_id() ) ) {
+		$left   = self::setup_left( wp_get_current_user() );
+		if ( null !== $left ) {
+			$days = (int) ceil( $left / DAY_IN_SECONDS );
+			printf(
+				'<div class="notice notice-%s"><p>%s <a href="%s">%s</a></p></div>',
+				$left > 0 ? 'warning' : 'error',
+				esc_html(
+					$left > 0
+						/* translators: %d: number of days. */
+						? sprintf( _n( 'Chaos Shield: this site requires a second login step for your account. Add one within %d day, or you will only be able to reach your profile until you do.', 'Chaos Shield: this site requires a second login step for your account. Add one within %d days, or you will only be able to reach your profile until you do.', $days, 'chaos-shield' ), $days )
+						: __( 'Chaos Shield: this site requires a second login step for your account. Set up an authenticator app below, or add a passkey, to use the rest of the dashboard.', 'chaos-shield' )
+				),
+				esc_url( self_admin_url( 'profile.php' ) . '#cshield-2fa' ),
+				esc_html__( 'Set it up now', 'chaos-shield' )
+			);
+			return;
+		}
+		if ( ! self::active() || ! $screen || 'dashboard' !== $screen->id || ! current_user_can( 'manage_options' ) || self::has_second_factor( get_current_user_id() ) ) {
 			return;
 		}
 		printf(
