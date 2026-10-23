@@ -69,7 +69,7 @@ final class Connections {
 				'kind'   => 'edge',
 				'name'   => 'Cloudflare',
 				'blurb'  => __( 'Free plan: stops floods and banned IPs before they reach your server.', 'chaos-shield' ),
-				'open'   => 'https://dash.cloudflare.com/profile/api-tokens',
+				'open'   => 'https://dash.cloudflare.com/profile/api-tokens', // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- A link the admin opens to make a token, not an asset.
 				'button' => __( 'Open Cloudflare', 'chaos-shield' ),
 				'steps'  => array(
 					/* translators: %s: this site's host name. */
