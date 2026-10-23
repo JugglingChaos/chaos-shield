@@ -489,7 +489,7 @@ final class Detect {
 		global $wpdb;
 		$table = Events::table();
 		$where = self::where( $f );
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- Own table; $where is prepared.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Own table; $where is prepared.
 		return array_map( 'intval', (array) $wpdb->get_col( "SELECT id FROM {$table} WHERE {$where} ORDER BY id DESC LIMIT 200" ) );
 	}
 
@@ -503,7 +503,7 @@ final class Detect {
 		global $wpdb;
 		$table = Events::table();
 		$where = self::where( $f );
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- Own table; $where is prepared.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Own table; $where is prepared.
 		return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table} WHERE {$where}" );
 	}
 
@@ -519,7 +519,7 @@ final class Detect {
 		$column = 'ip' === $column ? 'ip' : 'subject';
 		$table  = Events::table();
 		$where  = self::where( $f );
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- Own table; $where is prepared, $column is fixed.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Own table; $where is prepared, $column is fixed.
 		return array_values( array_filter( (array) $wpdb->get_col( "SELECT DISTINCT {$column} FROM {$table} WHERE {$where} LIMIT 500" ), 'strlen' ) );
 	}
 

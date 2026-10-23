@@ -147,7 +147,7 @@ final class Network {
 			return;
 		}
 		$table = $wpdb->get_blog_prefix( self::main_site() ) . 'options';
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- One-off copy from the main site's options table.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- One-off copy from the main site's options table.
 		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT option_name, option_value FROM {$table} WHERE option_name LIKE %s", $wpdb->esc_like( 'cshield_' ) . '%' ), ARRAY_A );
 		foreach ( (array) $rows as $row ) {
 			if ( false === get_site_option( $row['option_name'] ) ) {

@@ -172,7 +172,7 @@ final class Page_Check {
 		self::$started = microtime( true );
 		Network::set_transient( self::RUN, bin2hex( random_bytes( 16 ) ), self::BUDGET + 2 * MINUTE_IN_SECONDS );
 		if ( function_exists( 'set_time_limit' ) ) {
-			@set_time_limit( 120 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Not allowed on every host.
+			@set_time_limit( 120 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, Squiz.PHP.DiscouragedFunctions.Discouraged -- Several page loads can outlast the default limit; not allowed on every host.
 		}
 		$pages = array();
 		$codes = array();

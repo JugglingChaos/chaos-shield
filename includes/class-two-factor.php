@@ -218,7 +218,7 @@ final class Two_Factor {
 				$this->finish_login( $user, $challenge );
 			} else {
 				++$challenge['tries'];
-				do_action( 'wp_login_failed', $user->user_login, new \WP_Error( 'cshield_2fa_invalid' ) );
+				do_action( 'wp_login_failed', $user->user_login, new \WP_Error( 'cshield_2fa_invalid' ) ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WordPress's own hook, fired so other plugins see this sign-in.
 				if ( $challenge['tries'] >= self::MAX_TRIES ) {
 					delete_user_meta( $user_id, self::META_LOGIN );
 					wp_safe_redirect( add_query_arg( 'cshield_2fa', 'expired', wp_login_url() ) );

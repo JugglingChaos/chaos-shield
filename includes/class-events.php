@@ -102,7 +102,7 @@ final class Events {
 		}
 		$table = self::table();
 		// The main site's events were already in this table.
-		$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET blog_id = %d WHERE blog_id = 0", Network::main_site() ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Custom log table.
+		$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET blog_id = %d WHERE blog_id = 0", Network::main_site() ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom log table.
 		foreach ( get_sites(
 			array(
 				'number' => 0,
@@ -113,12 +113,12 @@ final class Events {
 			if ( $old === $table || $old !== $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $old ) ) ) ) { // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- One-off migration.
 				continue;
 			}
-			$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$old}`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name built from the blog prefix.
+			$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$old}`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table name built from the blog prefix.
 			$extra   = in_array( 'action', $columns, true ) ? 'action, subject' : "'', ''";
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table names built from the blog prefixes.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table names built from the blog prefixes.
 			$moved = $wpdb->query( $wpdb->prepare( "INSERT INTO {$table} (created, type, severity, user_id, ip, message, action, subject, blog_id) SELECT created, type, severity, user_id, ip, message, {$extra}, %d FROM `{$old}`", (int) $blog_id ) );
 			if ( false !== $moved ) {
-				$wpdb->query( "DROP TABLE IF EXISTS `{$old}`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Data moved above.
+				$wpdb->query( "DROP TABLE IF EXISTS `{$old}`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Data moved above.
 			}
 		}
 	}
@@ -284,7 +284,7 @@ final class Events {
 		$limit = max( 1, min( 5000, (int) $args['limit'] ) );
 		$off   = max( 0, (int) $args['offset'] );
 		$where = self::where( $args );
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Custom log table; the WHERE clause is prepared above.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom log table; the WHERE clause is prepared above.
 		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT id, created AS time, type, severity, user_id, ip, message, action, subject, blog_id FROM {$table} WHERE {$where} ORDER BY created DESC, id DESC LIMIT %d OFFSET %d", $limit, $off ), ARRAY_A );
 		return is_array( $rows ) ? $rows : array();
 	}
@@ -300,7 +300,7 @@ final class Events {
 		$args  = is_array( $args ) ? $args : array( 'type' => (string) $args );
 		$table = self::table();
 		$where = self::where( $args );
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- Custom log table; the WHERE clause is prepared above.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom log table; the WHERE clause is prepared above.
 		return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table} WHERE {$where}" );
 	}
 
@@ -313,7 +313,7 @@ final class Events {
 	public static function counts_since( $since ) {
 		global $wpdb;
 		$table = self::table();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Custom log table.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom log table.
 		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT type, COUNT(*) AS n FROM {$table} WHERE created >= %d GROUP BY type", (int) $since ), ARRAY_A );
 		$out  = array();
 		foreach ( (array) $rows as $row ) {
@@ -330,7 +330,7 @@ final class Events {
 	public static function types() {
 		global $wpdb;
 		$table = self::table();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Custom log table.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom log table.
 		$types = $wpdb->get_col( "SELECT DISTINCT type FROM {$table} ORDER BY type" );
 		return is_array( $types ) ? $types : array();
 	}
@@ -343,7 +343,7 @@ final class Events {
 	public static function prune( $days ) {
 		global $wpdb;
 		$table = self::table();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Custom log table.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom log table.
 		$wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE created < %d", time() - max( 1, (int) $days ) * DAY_IN_SECONDS ) );
 	}
 
@@ -353,6 +353,6 @@ final class Events {
 	public static function drop() {
 		global $wpdb;
 		$table = self::table();
-		$wpdb->query( "DROP TABLE IF EXISTS {$table}" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Uninstall cleanup.
+		$wpdb->query( "DROP TABLE IF EXISTS {$table}" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Uninstall cleanup.
 	}
 }

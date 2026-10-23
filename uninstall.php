@@ -28,7 +28,7 @@ function cshield_uninstall_site() {
 		wp_unschedule_hook( $hook );
 	}
 	foreach ( array( 'cshield_log', 'cshield_traffic', 'cshield_incidents' ) as $table ) {
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Drops this plugin's own tables.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Drops this plugin's own tables.
 		$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}{$table}" );
 	}
 	wp_cache_flush();
@@ -95,7 +95,7 @@ if ( is_file( $cshield_root_ht ) && is_writable( $cshield_root_ht ) ) { // phpcs
 	$cshield_body = (string) file_get_contents( $cshield_root_ht ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file.
 	if ( false !== strpos( $cshield_body, '# BEGIN Chaos Shield sensitive files' ) ) {
 		$cshield_body = (string) preg_replace( '/\n?# BEGIN Chaos Shield sensitive files.*?# END Chaos Shield sensitive files\n?/s', "\n", $cshield_body );
-		file_put_contents( $cshield_root_ht, ltrim( $cshield_body ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Local file.
+		file_put_contents( $cshield_root_ht, ltrim( $cshield_body ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents, PluginCheck.CodeAnalysis.WriteFile.ABSPATHDetected -- Takes this plugin's own rules back out of the site's .htaccess.
 	}
 }
 

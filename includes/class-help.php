@@ -85,11 +85,12 @@ final class Help {
 			return;
 		}
 		if ( function_exists( 'wp_get_current_user' ) ) {
+			// phpcs:ignore PluginCheck.CodeAnalysis.DiscouragedFunctions.load_plugin_textdomainFound -- Needed this early: WordPress's own loader warns before after_setup_theme.
 			load_plugin_textdomain( 'chaos-shield', false, dirname( plugin_basename( CSHIELD_FILE ) ) . '/languages' );
 			return;
 		}
-		$GLOBALS['l10n_unloaded']                 = (array) ( isset( $GLOBALS['l10n_unloaded'] ) ? $GLOBALS['l10n_unloaded'] : array() ); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Marks the domain as not loaded, the documented way.
-		$GLOBALS['l10n_unloaded']['chaos-shield'] = true; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- See above.
+		$GLOBALS['l10n_unloaded']                 = (array) ( isset( $GLOBALS['l10n_unloaded'] ) ? $GLOBALS['l10n_unloaded'] : array() ); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited, WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- WordPress's own global; marks the domain as not loaded, the documented way.
+		$GLOBALS['l10n_unloaded']['chaos-shield'] = true; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited, WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- See above.
 	}
 
 	// The assistant's knowledge.
