@@ -8,7 +8,7 @@ Stable tag: 1.14.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Lightweight security hub: hardening, passkeys and two-factor login, a firewall with rate limits, malware scanning and cleanup, an activity log, alerts and a hub for all your sites.
+Security for WordPress in one plugin: hardening, passkeys and two-factor, a firewall, malware scans, an activity log and alerts.
 
 == Description ==
 
@@ -217,11 +217,11 @@ The plugin source (not the release zip) has an integration suite in `tests/` tha
 
 = Updates =
 
-Chaos Shield updates from its GitHub releases, not from WordPress.org. When a new release is published, the usual "update available" notice, one-click update, View details and automatic updates work as for any other plugin. Sites check GitHub at most every six hours; "Check again" on Dashboard > Updates asks straight away. To update from a private repository, add a fine-grained GitHub token with read-only access to its contents to wp-config.php as `define( 'CSHIELD_GITHUB_TOKEN', '...' );`. A fork can point updates at itself with `CSHIELD_UPDATE_REPO` or the `cshield_update_repo` filter.
+Installed from WordPress.org, Chaos Shield updates from there like any other plugin. The zip on GitHub (chaos-shield-x.y.z.zip on each release) updates from GitHub releases instead: the usual "update available" notice, one-click update, View details and automatic updates all work, sites check GitHub at most every six hours, and "Check again" on Dashboard > Updates asks straight away. To update from a private repository, add a fine-grained GitHub token with read-only access to its contents to wp-config.php as `define( 'CSHIELD_GITHUB_TOKEN', '...' );`. A fork can point updates at itself with `CSHIELD_UPDATE_REPO` or the `cshield_update_repo` filter.
 
 == Installation ==
 
-1. Upload the plugin zip from Plugins > Add New > Upload Plugin.
+1. Search for Chaos Shield under Plugins > Add New, or upload the plugin zip from Plugins > Add New > Upload Plugin.
 2. Activate it. Recommended protections switch on immediately.
 3. Open Chaos Shield in the admin menu to see your score.
 
@@ -245,7 +245,7 @@ No. Hardening and the firewall are a few checks per request, and the file scan r
 
 = Does it send data anywhere? =
 
-Nothing that identifies your site's users, unless you turn on log forwarding, which sends events (including usernames and IPs) to the webhook or syslog server you choose. Repair downloads the original file from core.svn.wordpress.org, plugins.svn.wordpress.org or themes.svn.wordpress.org. The daily vulnerability check asks wpvulnerability.net about each installed slug and your WordPress version, the scan fetches plugin checksums and theme releases from downloads.wordpress.org, and the threat blocklist downloads Spamhaus DROP (and the Tor exit list, if chosen) once a day, the built-in country lookup downloads its database from github.com once a week; all of these can be switched off under Hardening. With a login CAPTCHA on, login tokens are checked with Cloudflare or hCaptcha, and their script loads on the login page; while you connect one, its script also loads in the dialog for the live test. A connected chat receives the text of each alert. The daily page check loads your own pages and downloads the outside scripts they include, so their servers see your server's address. To look for updates, the site asks api.github.com for the latest Chaos Shield release at most every six hours. With Cloudflare connected, the plugin sends banned IPs and settings changes to api.cloudflare.com with your token. Help messages from visitors (name, email, message and IP) are stored on your site for 30 days and never sent anywhere except your own alert email or chat. Scans fetch core checksums from api.wordpress.org, the breached password check sends the first five characters of a password's SHA-1 hash to api.pwnedpasswords.com (switch it off under Hardening if you prefer), and the hub contacts only the sites you connect.
+Nothing that identifies your site's users, unless you turn on log forwarding or connect a chat. Every outside service the plugin can contact, what it sends and when, is listed under External services below, and most of them can be switched off under Hardening. Help messages from visitors (name, email, message and IP) are stored on your site for 30 days and never sent anywhere except your own alert email or chat.
 
 = Does it replace Cloudflare? =
 
@@ -270,6 +270,24 @@ Counting every page view needs a persistent object cache such as Redis or Memcac
 = Should I make passwords expire? =
 
 Usually not. Current NIST guidance (SP 800-63B) recommends long passwords, breach screening and two-factor login instead of regular expiry, which is why expiry is off by default. Turn it on if a policy you must follow requires it.
+
+== External services ==
+
+Chaos Shield contacts these services. None of them is contacted for a feature that is switched off.
+
+* **WordPress.org** (api.wordpress.org, downloads.wordpress.org, core.svn.wordpress.org, plugins.svn.wordpress.org, themes.svn.wordpress.org): the file scan fetches the official checksums of WordPress, your plugins and themes, and repair downloads the original copy of a changed file. Only slugs and version numbers are sent. [Privacy policy](https://wordpress.org/about/privacy/).
+* **WPVulnerability** (www.wpvulnerability.net): once a day the vulnerability check sends the slug and version of each installed plugin and theme and your WordPress version. [Terms and privacy](https://www.wpvulnerability.com/privacy/).
+* **Have I Been Pwned, Pwned Passwords** (api.pwnedpasswords.com): when someone sets a password, the breached password check sends the first five characters of its SHA-1 hash, never the password. [Terms](https://haveibeenpwned.com/TermsOfUse) and [privacy policy](https://haveibeenpwned.com/Privacy).
+* **Spamhaus** (www.spamhaus.org): once a day the threat blocklist downloads the public DROP list. Nothing about your site is sent. [Terms](https://www.spamhaus.org/legal/) and [privacy policy](https://www.spamhaus.org/legal/privacy-policy/).
+* **Tor Project** (check.torproject.org): when you choose to block Tor, the list of Tor exit addresses is downloaded once a day. Nothing about your site is sent. [Privacy policy](https://www.torproject.org/about/privacy/).
+* **GitHub** (github.com, api.github.com): once a week the built-in country lookup downloads the public domain ip-location-db country lists from github.com. The copy of Chaos Shield from GitHub (not the WordPress.org one) also asks api.github.com for its latest release at most every six hours. Only your site's address is sent, in the user agent. [Terms](https://docs.github.com/en/site-policy/github-terms/github-terms-of-service) and [privacy policy](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement).
+* **Cloudflare Turnstile** (challenges.cloudflare.com): with Turnstile as the login CAPTCHA, its script loads on the login page and the token from each login is checked with Cloudflare, together with the visitor's IP. [Terms](https://www.cloudflare.com/website-terms/) and [privacy policy](https://www.cloudflare.com/privacypolicy/).
+* **hCaptcha** (js.hcaptcha.com, api.hcaptcha.com): with hCaptcha as the login CAPTCHA, the same as Turnstile. [Terms](https://www.hcaptcha.com/terms) and [privacy policy](https://www.hcaptcha.com/privacy).
+* **Cloudflare API** (api.cloudflare.com): only when you connect Cloudflare. Banned IPs, under attack mode changes, cache purges and the Always Use HTTPS switch are sent with your API token. [Terms](https://www.cloudflare.com/website-terms/) and [privacy policy](https://www.cloudflare.com/privacypolicy/).
+* **Slack, Discord, Microsoft Teams and Google Chat** (hooks.slack.com, discord.com, your Teams or Power Automate webhook, chat.googleapis.com): only when you connect one. The text of each alert is sent to the channel you chose. [Slack](https://slack.com/trust/privacy/privacy-policy), [Discord](https://discord.com/privacy), [Microsoft](https://privacy.microsoft.com/privacystatement), [Google](https://policies.google.com/privacy).
+* **Your own webhook or syslog server**: only when you turn on log forwarding. Events, including usernames and IPs, go to the address you enter.
+* **Scripts your pages load**: the daily page check loads your own public pages and downloads the outside scripts they include, so those servers see your server's address.
+* **Sites you connect to the hub**: the hub only contacts the sites you add to it.
 
 == Changelog ==
 

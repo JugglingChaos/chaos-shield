@@ -30,6 +30,20 @@ jobs:
       - name: JavaScript syntax
         run: for f in assets/js/*.js; do node --check "$f"; done
 
+  plugin-check:
+    name: Plugin Check (WordPress.org copy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the WordPress.org copy
+        run: |
+          sh bin/build-zip.sh --wporg dist
+          unzip -q dist/wporg-*.zip -d build
+      - name: WordPress.org Plugin Check
+        uses: WordPress/plugin-check-action@v1
+        with:
+          build-dir: ./build/chaos-shield
+
   syntax:
     name: PHP ${{ matrix.php }} syntax
     runs-on: ubuntu-latest

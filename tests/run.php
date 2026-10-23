@@ -1804,6 +1804,21 @@ group(
 			$mock( $release( 'v99.0.0', array( 'assets' => array() ) ) );
 			check( 'a release without a zip is not offered', null === $offered() );
 			$mock(
+				$release(
+					'v99.0.0',
+					array(
+						'assets' => array(
+							array(
+								'name'                 => 'wporg-chaos-shield-99.0.0.zip',
+								'url'                  => 'https://api.github.com' . $api . '/releases/assets/124',
+								'browser_download_url' => 'https://github.com/' . Updater::repo() . '/releases/download/v99.0.0/wporg-chaos-shield-99.0.0.zip',
+							),
+						),
+					)
+				)
+			);
+			check( 'the WordPress.org copy, which has no GitHub updater, is never offered', null === $offered() );
+			$mock(
 				array(
 					'code' => 500,
 					'body' => 'oops',

@@ -80,7 +80,9 @@ final class Plugin {
 		( new Vulns() )->register();
 		( new Restore_Points() )->register();
 		( new Api() )->register();
-		( new Updater() )->register();
+		if ( class_exists( __NAMESPACE__ . '\\Updater' ) ) {
+			( new Updater() )->register();
+		}
 		add_action( self::DAILY, array( $this, 'daily' ) );
 		add_action( 'init', array( $this, 'schedule' ) );
 
