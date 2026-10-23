@@ -3,6 +3,7 @@ name: Release
 # Run it from the Actions tab (Release > Run workflow) to release the version in
 # chaos-shield.php, or push a tag such as v1.13.0. The checks run first; the zip is
 # attached to a GitHub release, which sites running Chaos Shield pick up as an update.
+# The WordPress.org copy (no GitHub updater) is attached next to it, ready to submit.
 on:
   workflow_dispatch:
   push:
@@ -35,8 +36,10 @@ jobs:
           done
           grep -q "^= $VERSION =" readme.txt || { echo "::error::readme.txt has no changelog entry for $VERSION"; exit 1; }
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
-      - name: Build the zip
-        run: sh bin/build-zip.sh dist
+      - name: Build the zips
+        run: |
+          sh bin/build-zip.sh dist
+          sh bin/build-zip.sh --wporg dist
       - name: Release notes from the readme changelog
         run: awk -v head="= $VERSION =" '$0 == head { on = 1; next } /^= / && on { exit } on' readme.txt > notes.md
       - name: Publish
@@ -44,7 +47,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           if gh release view "v$VERSION" > /dev/null 2>&1; then
-            gh release upload "v$VERSION" "dist/chaos-shield-$VERSION.zip" --clobber
+            gh release upload "v$VERSION" "dist/chaos-shield-$VERSION.zip" "dist/wporg-chaos-shield-$VERSION.zip" --clobber
           else
-            gh release create "v$VERSION" "dist/chaos-shield-$VERSION.zip" --target "$GITHUB_SHA" --title "Chaos Shield $VERSION" --notes-file notes.md
+            gh release create "v$VERSION" "dist/chaos-shield-$VERSION.zip" "dist/wporg-chaos-shield-$VERSION.zip" --target "$GITHUB_SHA" --title "Chaos Shield $VERSION" --notes-file notes.md
           fi

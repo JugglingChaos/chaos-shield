@@ -119,7 +119,7 @@ final class Updater {
 		$package = '';
 		$asset   = '';
 		foreach ( isset( $data['assets'] ) ? (array) $data['assets'] : array() as $a ) {
-			if ( isset( $a['name'], $a['url'], $a['browser_download_url'] ) && preg_match( '/^chaos-shield[^\/]*\.zip$/', (string) $a['name'] ) ) {
+			if ( isset( $a['name'], $a['url'], $a['browser_download_url'] ) && preg_match( '/^chaos-shield-[0-9.]+\.zip$/', (string) $a['name'] ) ) {
 				$package = (string) $a['browser_download_url'];
 				$asset   = (string) $a['url'];
 				break;

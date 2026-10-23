@@ -8,220 +8,74 @@ Stable tag: 1.14.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Lightweight security hub: hardening, passkeys and two-factor login, a firewall with rate limits, malware scanning and cleanup, an activity log, alerts and a hub for all your sites.
+Security for WordPress in one plugin: hardening, passkeys and two-factor, a firewall, malware scans, an activity log and alerts.
 
 == Description ==
 
-Chaos Shield gives you a single dashboard for the security basics, without slowing your site down.
+Chaos Shield gives you one dashboard for WordPress security, without slowing your site down and without accounts, keys or a second plugin.
 
 **Hardening, one switch each**
 
-* Disable XML-RPC and pingbacks
-* Disable the theme and plugin file editor
-* Hide the WordPress version
-* Block username enumeration (author URLs, REST API, sitemaps, oEmbed)
-* Security headers (nosniff, frame options, referrer and permissions policy, HSTS on HTTPS)
-* Limit login attempts with temporary IP lockouts
-* Generic login error messages
-* Optionally disable application passwords
+Disable XML-RPC, the file editor and application passwords, hide the WordPress version, block username enumeration, send security headers, limit login attempts and use generic login errors.
 
-**Automatic bans**
+**Login protection**
 
-* IPs that get locked out again and again, or keep tripping the firewall, are banned from the whole site for a day.
-* Bots that request lots of missing pages while hunting for vulnerable files are banned too. Missing images, scripts and fonts do not count, so broken links on your own pages never ban a visitor.
-* IPs an administrator has logged in from, the allow list, and Google and Bing crawlers (verified by DNS) are never banned.
+* Passkeys: sign in with a fingerprint, face or device PIN. Passkeys cannot be phished, and count as two-factor.
+* Two-factor with any authenticator app, with recovery codes and an admin reset.
+* Breached passwords are refused, checked with Have I Been Pwned so only five characters of a hash leave your site.
+* A secret login address, an optional Cloudflare Turnstile or hCaptcha check, and a list of signed-in administrator sessions you can end remotely.
+* A password policy with optional expiry, and forced resets for one user, many, or all administrators.
 
-**Breached password protection**
+**Firewall, bans and rate limits**
 
-New and reset passwords that appear in public data breaches are refused, and administrators who still log in with one see a warning. Checks use the Have I Been Pwned range API: only the first five characters of the password's SHA-1 hash leave your site.
+* A scoring firewall that decodes and checks every part of a request: the address, form and JSON fields, XML bodies, cookies, headers and upload names. Fourteen rules, from SQL and script injection to PHP object injection, XXE and SSRF, with three sensitivity levels and a 7 day learning mode.
+* Blocked visitors see a reference you can look up, and you can let one request through with an exception for that page and field.
+* Per-IP rate limits for logins, the REST API, AJAX and searches, and automatic bans for repeat offenders and bots probing for vulnerable files. Your own IP, the allow list and verified Google and Bing crawlers are never banned.
+* IP allow and block lists with CIDR and IPv6, country blocking with a built-in country database, and the free Spamhaus DROP and Tor exit lists.
+* One click stops PHP from running in the uploads folder.
 
-**Known vulnerability alerts**
+**Scans and cleanup**
 
-Works out of the box, with no account, key or second plugin. Every day Chaos Shield checks WordPress, every plugin and every theme against WPVulnerability.net, a free and open database built from public sources such as CVE records. Affected items show on the Scan tab with severity, CVE, CVSS score, the fixed version and an Update now button, count against the security score and trigger an email. Plugins and themes that were closed on WordPress.org or not updated in two years are flagged too. Only slugs and your WordPress version are sent, never your site address.
+* Daily vulnerability alerts for WordPress, plugins and themes from WPVulnerability.net, with CVE, CVSS, the fixed version and an Update now button. Closed and abandoned plugins are flagged.
+* Core, plugin and theme files compared with the official WordPress.org copies, with one-click repair checked against the official checksum.
+* Hourly fingerprints of wp-config.php, .htaccess, drop-ins, must-use plugins and other files attackers change first, with line-by-line changes and secrets hidden.
+* A malware scan of plugins, themes and uploads, and a database scan for injected scripts and links. Suspicious files can be quarantined where they cannot run.
+* A check for backups, logs, .env, .git and API keys that anyone could download.
 
-**Threat intelligence blocklist**
+**Activity log, alerts and SIEM**
 
-Blocks networks run by criminals and spammers using the free Spamhaus DROP list, downloaded once a day. Tor exit nodes can be blocked too. Lookups are a binary search over a few kilobytes, so the check costs next to nothing on each request.
+* Logs logins, lockouts, blocks, user and role changes, content and settings changes, updates and scans, with filters, CSV export and retention up to two years.
+* Alerts by email or in Slack, Discord, Microsoft Teams or Google Chat, plus a weekly report.
+* Twelve detection rules mapped to MITRE ATT&CK open incidents with evidence, severity, notes and an assignee. Respond from the incident: ban or block an IP, end sessions or force a password reset.
+* Field search, IP and user timelines, live traffic with a world map, and log forwarding to a webhook or syslog for your own SIEM.
+* A printable compliance report with the SOC 2 and ISO/IEC 27001 controls each protection supports.
 
-**Visitor help assistant**
+**Edge protection**
 
-Blocked, rate-limited and locked-out visitors get a clear page in place of a bare error: what happened in plain words, what they can try, the block reference, and a small help assistant that answers common questions. Visitors who are still stuck can message you from the page, even while banned, and Allow in the Visitor help tab lifts their ban and lockout and lets the blocked request through. The login page gets a sign-in help bubble, and you can add a help bubble to every page that answers your own questions. Answers are matched in the visitor's browser with no AI service, and block pages never say which rule fired. Scripts and tools still get the one-line text answer.
+* Under attack mode puts a one-second browser check in front of the site during a flood, and switches on by itself.
+* A daily look at your pages lists every script they load and alerts you to new or harmful ones, with an optional Content Security Policy.
+* HTTPS checks for the certificate, the redirect and mixed content, with safe switches to send visitors to HTTPS.
+* Connect Cloudflare and banned IPs are refused at Cloudflare. A ban list address feeds any other firewall or CDN.
 
-**Live traffic**
+**Visitor help**
 
-Watch requests as they happen: blocked requests, logins, XML-RPC calls and missing pages, or every visit if you choose. Filter by type, see the IP, country, user, request and browser, and block an IP in one click. The last 24 hours are kept in a small table of their own.
-
-**Login page protection**
-
-* Move the login page to a secret address. wp-login.php and wp-admin then answer 404 to visitors who are not logged in. The address is emailed to you when it changes; `define( 'CSHIELD_DISABLE_LOGIN_SLUG', true );` in wp-config.php switches it off if you lose it.
-* Optional CAPTCHA on the login, lost password and registration forms, with Cloudflare Turnstile or hCaptcha. Connecting opens the service's sign-up page in a small window beside the dashboard and checks the keys with a live test challenge before switching it on. If the service cannot be reached during a login, the login is allowed and the outage is logged, so you are never locked out by a third party.
-* See every signed-in administrator session, with IP and browser, and sign out any of them remotely.
-
-**Passkey login**
-
-Users add a passkey from their profile and sign in with their fingerprint, face or device PIN, using Windows Hello, Touch ID, Android, iCloud Keychain, Google Password Manager, 1Password or a security key. Passkeys cannot be phished or reused on another site, and because the device checks who you are, a passkey login counts as two-factor and skips the code step. Failed passkey attempts count toward login lockouts, and a passkey whose signature counter goes backwards (a sign of a copied key) is refused. Passkeys need HTTPS.
-
-**Two-factor login**
-
-Each user can add an authenticator app (Google Authenticator, Microsoft Authenticator, Authy, 1Password and others) from their profile. Setup uses a QR code, gives ten one-time recovery codes, and administrators can reset two-factor for a user who lost their phone. Secrets are encrypted with a key derived from your site's security keys.
-
-**Rate limiting**
-
-Each IP gets a per-minute budget for login and XML-RPC requests, REST API and AJAX calls, and searches, with limits you can change. Over the limit it gets 429 Too Many Requests, and an IP that keeps hitting the limit is banned. With a persistent object cache such as Redis, every page view can be limited too. Administrators and the allow list are never limited.
-
-**Country blocking**
-
-Block a list of countries, or allow only the countries you list, for the login page or the whole site. The country comes from Cloudflare's CF-IPCountry header or a GeoIP header set by your host, so no database download is needed. Signed-in users keep using the site, and you cannot save a rule that blocks your own country.
-
-**Firewall and access control**
-
-* A scoring firewall that decodes and checks every part of a request: the address, form and JSON fields, XML bodies, cookies, the referrer, the user agent and uploaded file names.
-* Fourteen rules, from SQL and script injection to PHP object injection, XXE and server-side request forgery. Clear attacks block on their own; suspicious signs add up. Relaxed, balanced and strict sensitivity, and any rule can be switched off.
-* Learning mode records for 7 days what would have been blocked, so you can allow your own traffic before blocking starts.
-* Blocked visitors see a reference you can look up in the Firewall tab, and Allow turns that hit into an exception for that address and field.
-* One click blocks PHP from running in the uploads folder (Apache and LiteSpeed; an nginx rule is shown).
-* IP allow list (never locked out or blocked) and block list (403 everywhere), with CIDR ranges and IPv6.
-* Locked out IPs can be moved to the block list in one click.
-* Password reset no longer reveals whether an account exists.
-
-**File and malware scan**
-
-* Checks every core file against the official WordPress.org checksums and reports modified or missing files.
-* Compares every plugin and theme from WordPress.org with its official release, reporting modified files and PHP files the release does not contain. Modified files can be repaired from WordPress.org in one click.
-* Fingerprints critical files every hour with SHA-256 and MD5: wp-config.php, .htaccess, .user.ini and php.ini, drop-ins such as object-cache.php, must-use plugins, the active theme's functions.php and the core files that run on every request. A change, a deleted file or a new drop-in alerts you at once and stays listed until you accept it. Config files show exactly which lines changed and can be put back in one click; for wp-config.php only line fingerprints are kept, and new lines are shown with passwords, keys and salts hidden. Updates and permalink changes you make are accepted on their own, and the fingerprints can be downloaded to keep off the site.
-* Finds backups, logs and secrets that the web server would hand to anyone, such as wp-config.php.bak, .env, .git, debug.log and database dumps.
-* Flags PHP files that WordPress did not ship inside wp-admin, wp-includes or the site root, and any PHP file in uploads.
-* Searches plugins, themes and uploads for common backdoor and malware patterns, with file, line and the matching code.
-* Runs in small steps from the dashboard or in the background every day or week, so it works on shared hosting.
-* Reports plugin and theme files that changed, or new PHP files that appeared, since the last scan without going through the WordPress updater. A change keeps showing until you mark it reviewed.
-* Findings can be marked as reviewed; they come back if the file changes.
-
-**Cleanup**
-
-* Repair a modified core file in one click. The original is downloaded from WordPress.org for your exact version, checked against the official checksum before anything is written, and the modified file is kept as a backup.
-* Quarantine a suspicious plugin, theme or upload file. It moves to a locked folder where it cannot run, and can be restored or deleted for good.
-* Scan the database for code injected into posts, pages and settings: scripts loaded from other sites, obfuscated scripts, hidden iframes and eval code, plus tampered site addresses.
-
-**Activity log and alerts**
-
-* Logs logins, lockouts, firewall blocks, user creation, role changes, password resets, plugin and theme changes, core updates, scans and setting changes, in its own database table with filtering and paging.
-* Email alerts for administrator logins from a new IP, new or promoted administrators, plugin and theme changes, scan findings and (optionally) lockouts. Each alert is throttled to one email per 15 minutes.
-* A weekly report with logins, lockouts, bans, changes, scan results and what to fix.
-
-**Audit trail and compliance**
-
-* Records who changed what: posts and pages published, edited, trashed and deleted, media, categories, menus, widgets and Customizer changes, core settings such as the site address, admin email and registration, profile email and password changes, logouts, failed logins, application passwords, content exports and personal data export and erasure requests.
-* Filter the log by type, user, text or IP and date range, and export the result to CSV.
-* A printable compliance report (save it as PDF from the browser) with the security score, twelve controls marked in place or gap with evidence and the SOC 2 and ISO/IEC 27001:2022 controls they support, every administrator's second factor and last login, and the notable events of the period. It is evidence for an assessment, not a certification.
-* Alerts in Slack, Discord, Microsoft Teams or Google Chat as well as by email. Connect a channel from the Alerts tab: the service opens in a small window, a test message proves the webhook works, and alert text is escaped so it can never ping a whole channel.
-* Keep the log up to two years, or forward every event as it happens to a webhook (JSON, signed with HMAC-SHA256 if you set a secret; Slack and Discord hooks work too) or to syslog (local, UDP or TCP, RFC 5424) for your SIEM.
-
-**Traffic map and built-in country lookup**
-
-The Live traffic tab shows a world heatmap of where requests, blocks and logins come from, with a top countries table. Countries come from a public domain IP to country database (ip-location-db, compiled from the regional internet registries, BGP routing data and operator geofeeds) that Chaos Shield downloads once a week into your uploads folder and searches locally in microseconds. No account, no key, and no visitor data is sent anywhere. The same database can drive country blocking, so that no longer needs Cloudflare or a host header. The map uses Natural Earth country shapes (public domain).
-
-**Built-in SIEM**
-
-No ELK stack, Splunk or outside service. Every event carries an action code (such as auth.failed or plugin.activated), and twelve detection rules mapped to MITRE ATT&CK watch them as they are logged:
-
-* Login after brute force, credential stuffing, distributed login attacks, and repeat attackers
-* New administrators, risky changes soon after a login from a new IP, and the account takeover pattern (email and password changed together)
-* Site address, admin email or registration changes, with open registration as administrator rated critical
-* Protections or security plugins switched off, malware found by the scan, mass deletion of content, and suspicious sign-in methods
-
-A match opens an incident with a severity, the evidence events and the ATT&CK technique. Repeats merge into the same incident instead of flooding you, and high and critical incidents are emailed (you choose the threshold).
-
-* Work each incident as a case: status, assignee and notes, with every change recorded.
-* Respond from the incident: ban or block the IP, end the user's sessions or force a password reset. Your own IP and account, and IPs administrators logged in from, are protected.
-* Timelines for any IP or user join the log, live traffic and incidents in one list.
-* Search the log with fields: action:auth.* ip:203.0.113.7 user:admin sev:3 since:24h.
-* A 24 hour chart of events by severity, and open incidents by severity at a glance.
-* Switch any rule off. Switching rules or protections off is itself logged.
-* The hub shows open incidents for every connected site, worst first.
-
-**Password policy and forced resets**
-
-* Minimum length, a mix of character kinds and no username or email inside the password, for administrators, everyone who writes posts, or all users. Optional expiry.
-* Force a password reset for one user or many from the Users screen, or for all other administrators in one click. They are signed out everywhere, and at their next login they go straight to the screen for choosing a new password.
+Blocked or locked-out visitors get a clear page with the reason, what to try and a small help assistant. They can message you even while banned, and you can let them in from the Visitor help tab. A help bubble can answer your own FAQ on every page, matched in the browser with no AI service.
 
 **Backups and restore points**
 
-* Before a plugin or theme updates, before a file is repaired from WordPress.org and before Chaos Shield settings change, a restore point saves what is about to be replaced. One click on the Backups tab puts it back, and the state from just before is saved too, so a restore can be undone.
-* Make a restore point of wp-config.php, .htaccess and the settings by hand before you try something risky.
-* Download the whole database as a compressed SQL file, ready for phpMyAdmin, Adminer or `wp db import`.
-* Export the settings and import them on another site. The receiving site keeps its login address and never blocks the importer's own IP.
-* Points are kept for 30 days, up to 20 of them, in a locked folder in wp-content. Every stored file starts with a PHP exit line, so a direct request shows nothing even where the folder's deny rules are ignored.
+A restore point is saved before plugin and theme updates, file repairs and settings changes, and one click puts it back. Download the database as SQL, and export settings to another site.
 
-**Edge protection and outside services**
+**Multisite and many sites**
 
-The Edge tab brings the free parts of a CDN's security that a plugin can do itself, and connects to Cloudflare or any other firewall for the rest.
-
-* Under attack mode puts a one-second browser check in front of the site. Browsers solve a small proof-of-work puzzle and keep a signed pass for 12 hours, while bots and scripts that flood the site never reach WordPress. It switches on by itself when more than 100 requests a minute are blocked (you choose the number) and ends an hour after the flood stops. Logged-in users, the allow list, Google, Bing and the REST API are never checked.
-* Page script monitor: every day the plugin loads your home page, newest post and page, and a shop's cart and checkout, and lists every script they load. Scripts found on the first look are approved; a new one, one that changes, one loaded from the uploads folder, or one that looks like a card skimmer, miner or hidden code sends an alert. A Content Security Policy built from the approved list can run in report-only mode, so browsers report scripts other scripts load later, or enforce it so browsers refuse scripts from domains you did not approve. Editors only get reports, so page builders keep working.
-* HTTPS checks: the certificate's expiry and trust, whether plain http is sent to HTTPS, and mixed content on your pages. "Send every visitor to HTTPS" only switches on once the site answers on HTTPS with a trusted certificate, so it cannot lock you out, and a separate switch upgrades http:// images and scripts in the browser.
-* Exposed files and keys: about 40 addresses such as .env, .git, database dumps, backup archives, logs and phpinfo are asked for over the web and only count when the answer looks like the real thing. Backups and logs in public folders are listed even when they cannot be downloaded, pages and scripts are searched for live API keys (shown masked), and one button blocks these files in .htaccess, with a snippet for nginx.
-* Cloudflare: paste an API token and banned and blocked IPs are refused at Cloudflare before they reach your server, under attack mode switches Cloudflare's own Under Attack mode with it, and you can purge the cache, turn on Always Use HTTPS and trust Cloudflare's visitor IP header from the same card. Disconnecting removes the plugin's rules from Cloudflare.
-* Any other firewall or CDN: a secret ban list address returns every banned and blocked IP as plain text, one per line, for server firewalls, fail2ban, CDN IP lists or a scheduled script.
-
-**Multisite networks**
-
-Network activate Chaos Shield and the whole network shares one set of settings, one activity log, one ban list and one set of background jobs, managed by super admins from Network Admin. A lockout earned on one site holds on all of them, because they share one login. The log, the SIEM search (`site:shop`) and the CSV export show which site each event happened on. Site administrators do not see the plugin screens and cannot change its settings, while two-factor and passkeys keep working on every site's profile page.
+Network activate it for one set of settings, one log and one ban list across the network. The hub shows the score, findings, uptime and certificate expiry of every site you connect, and can run scans, release bans and push settings to them.
 
 **Security score**
 
-A weighted score from 0 to 100 based on HTTPS, pending updates, debug output, the default admin username, PHP version, database prefix and which protections are on, with a plain explanation of what to fix.
-
-**Hub for several sites**
-
-Install Chaos Shield on each site, create a hub key on its Hub tab, and connect it from the site you use as your hub. The Hub tab then shows every site's score, open checks, scan findings and lockouts in one list.
-
-* Uptime checks every five minutes with response time and 24 hour uptime, plus HTTPS certificate expiry and trust, with an email when a site goes down, comes back, or its certificate has less than 14 days left.
-* With a key that allows actions, start scans, release lockouts and bans, and push your hardening settings (switches, login and rate limits, password policy) to one site or all of them. Login addresses, IP lists and email settings are never pushed.
-* Read keys are stored only as a hash. Actions are never sent with the key: the hub signs the time, a random nonce, the route and the body with HMAC-SHA256, the site refuses requests older than five minutes or seen before, and wrong signatures count toward the lockout.
-
-**WordPress dashboard widget**
-
-A small widget on the main WordPress dashboard shows the score, failed logins and firewall blocks for the last 24 hours, and the top things to fix.
-
-= REST API =
-
-Routes live under `/wp-json/chaos-shield/v1/` (or `?rest_route=/chaos-shield/v1/` without pretty permalinks).
-
-* Read: `GET /status`, `GET /events`, `GET /scan`, `GET /lockouts`. Accepts a logged-in administrator or a request signed with the hub key (`X-Chaos-Time`, `X-Chaos-Nonce`, `X-Chaos-Signature`), so the key itself never travels. The older `X-Chaos-Key` header still works.
-* Write: `POST /scan`, `POST /scan/step`, `DELETE /lockouts/{ip}`, `POST /blocklist`, `GET` and `POST /settings`. Needs an administrator, for example with an application password. The hub key can never write.
-* A wrong hub key counts as a failed login, so guessing gets the caller locked out.
-
-= Behind a proxy or CDN =
-
-By default Chaos Shield reads the visitor IP from REMOTE_ADDR, because forwarded headers can be faked. Under Access you can choose Cloudflare, X-Forwarded-For or X-Real-IP, and the header is only believed when the connection comes from a trusted proxy: by default a private network address, plus Cloudflare's published ranges for the Cloudflare header. List your proxy IPs if they are public. The dashboard warns you when requests arrive through a proxy that is not configured or not trusted.
-
-= Two-factor and changed security keys =
-
-Two-factor secrets are encrypted with your wp-config.php security keys. If those keys change, users log in with a recovery code and set two-factor up again, or an administrator resets it from their profile.
-
-= Running the tests =
-
-The plugin source (not the release zip) has an integration suite in `tests/` that drives a live test site over HTTP: logins, two-factor, the firewall, bans, the SIEM, the hub API, restore points, updates and the admin screens, plus network checks when the site is a multisite. Run `tests/run.sh /path/to/wordpress` on a throwaway site, never on production; `tests/ci/setup.sh` builds a fresh single site and multisite for it. On GitHub every pull request runs the coding standards, PHP 7.4 to 8.4 syntax checks and the whole suite on both kinds of site.
-
-= Filters =
-
-* `cshield_client_ip` - the client IP used for login limits.
-* `cshield_security_headers` - the array of security headers sent.
-* `cshield_critical_files` - the files whose fingerprints are watched, by name, with path, group, text (keep a copy to compare and put back) and appear (report the file appearing).
-* `cshield_firewall_rules` - the firewall rules, keyed by id. Each has `label`, `info`, `pattern`, `score` (5 blocks, 3 adds up), `targets` (all, path, agent or file) and an optional `staff` flag to keep checking post content from authors and editors.
-* `cshield_scan_signatures` - the malware signatures used by the file scan.
-* `cshield_check_pages` - the page addresses the daily page check loads (up to 8).
-* `cshield_exposure_paths` - the addresses asked for by the exposed files check, by id, with path and kind.
-* `cshield_attack_mode` (action) - runs with true or false when under attack mode switches on or off.
-* `cshield_update_repo` - the GitHub repository (owner/name) updates come from.
-
-= Updates =
-
-Chaos Shield updates from its GitHub releases, not from WordPress.org. When a new release is published, the usual "update available" notice, one-click update, View details and automatic updates work as for any other plugin. Sites check GitHub at most every six hours; "Check again" on Dashboard > Updates asks straight away. To update from a private repository, add a fine-grained GitHub token with read-only access to its contents to wp-config.php as `define( 'CSHIELD_GITHUB_TOKEN', '...' );`. A fork can point updates at itself with `CSHIELD_UPDATE_REPO` or the `cshield_update_repo` filter.
+A score from 0 to 100 with a plain explanation of what to fix, also shown in a dashboard widget.
 
 == Installation ==
 
-1. Upload the plugin zip from Plugins > Add New > Upload Plugin.
+1. Search for Chaos Shield under Plugins > Add New, or upload the plugin zip from Plugins > Add New > Upload Plugin.
 2. Activate it. Recommended protections switch on immediately.
 3. Open Chaos Shield in the admin menu to see your score.
 
@@ -245,7 +99,7 @@ No. Hardening and the firewall are a few checks per request, and the file scan r
 
 = Does it send data anywhere? =
 
-Nothing that identifies your site's users, unless you turn on log forwarding, which sends events (including usernames and IPs) to the webhook or syslog server you choose. Repair downloads the original file from core.svn.wordpress.org, plugins.svn.wordpress.org or themes.svn.wordpress.org. The daily vulnerability check asks wpvulnerability.net about each installed slug and your WordPress version, the scan fetches plugin checksums and theme releases from downloads.wordpress.org, and the threat blocklist downloads Spamhaus DROP (and the Tor exit list, if chosen) once a day, the built-in country lookup downloads its database from github.com once a week; all of these can be switched off under Hardening. With a login CAPTCHA on, login tokens are checked with Cloudflare or hCaptcha, and their script loads on the login page; while you connect one, its script also loads in the dialog for the live test. A connected chat receives the text of each alert. The daily page check loads your own pages and downloads the outside scripts they include, so their servers see your server's address. To look for updates, the site asks api.github.com for the latest Chaos Shield release at most every six hours. With Cloudflare connected, the plugin sends banned IPs and settings changes to api.cloudflare.com with your token. Help messages from visitors (name, email, message and IP) are stored on your site for 30 days and never sent anywhere except your own alert email or chat. Scans fetch core checksums from api.wordpress.org, the breached password check sends the first five characters of a password's SHA-1 hash to api.pwnedpasswords.com (switch it off under Hardening if you prefer), and the hub contacts only the sites you connect.
+Nothing that identifies your site's users, unless you turn on log forwarding or connect a chat. Every outside service the plugin can contact, what it sends and when, is listed under External services below, and most of them can be switched off under Hardening. Help messages from visitors (name, email, message and IP) are stored on your site for 30 days and never sent anywhere except your own alert email or chat.
 
 = Does it replace Cloudflare? =
 
@@ -270,6 +124,60 @@ Counting every page view needs a persistent object cache such as Redis or Memcac
 = Should I make passwords expire? =
 
 Usually not. Current NIST guidance (SP 800-63B) recommends long passwords, breach screening and two-factor login instead of regular expiry, which is why expiry is off by default. Turn it on if a policy you must follow requires it.
+
+= Is there a REST API? =
+
+Routes live under `/wp-json/chaos-shield/v1/` (or `?rest_route=/chaos-shield/v1/` without pretty permalinks).
+
+* Read: `GET /status`, `GET /events`, `GET /scan`, `GET /lockouts`. Accepts a logged-in administrator or a request signed with the hub key (`X-Chaos-Time`, `X-Chaos-Nonce`, `X-Chaos-Signature`), so the key itself never travels. The older `X-Chaos-Key` header still works.
+* Write: `POST /scan`, `POST /scan/step`, `DELETE /lockouts/{ip}`, `POST /blocklist`, `GET` and `POST /settings`. Needs an administrator, for example with an application password. The hub key can never write.
+* A wrong hub key counts as a failed login, so guessing gets the caller locked out.
+
+= Does it work behind a proxy or CDN? =
+
+By default Chaos Shield reads the visitor IP from REMOTE_ADDR, because forwarded headers can be faked. Under Access you can choose Cloudflare, X-Forwarded-For or X-Real-IP, and the header is only believed when the connection comes from a trusted proxy: by default a private network address, plus Cloudflare's published ranges for the Cloudflare header. List your proxy IPs if they are public. The dashboard warns you when requests arrive through a proxy that is not configured or not trusted.
+
+= What happens to two-factor if my security keys change? =
+
+Two-factor secrets are encrypted with your wp-config.php security keys. If those keys change, users log in with a recovery code and set two-factor up again, or an administrator resets it from their profile.
+
+= Is it tested? =
+
+The plugin source (not the release zip) has an integration suite in `tests/` that drives a live test site over HTTP: logins, two-factor, the firewall, bans, the SIEM, the hub API, restore points, updates and the admin screens, plus network checks when the site is a multisite. Run `tests/run.sh /path/to/wordpress` on a throwaway site, never on production; `tests/ci/setup.sh` builds a fresh single site and multisite for it. On GitHub every pull request runs the coding standards, PHP 7.4 to 8.4 syntax checks and the whole suite on both kinds of site.
+
+= Which filters can developers use? =
+
+* `cshield_client_ip` - the client IP used for login limits.
+* `cshield_security_headers` - the array of security headers sent.
+* `cshield_critical_files` - the files whose fingerprints are watched, by name, with path, group, text (keep a copy to compare and put back) and appear (report the file appearing).
+* `cshield_firewall_rules` - the firewall rules, keyed by id. Each has `label`, `info`, `pattern`, `score` (5 blocks, 3 adds up), `targets` (all, path, agent or file) and an optional `staff` flag to keep checking post content from authors and editors.
+* `cshield_scan_signatures` - the malware signatures used by the file scan.
+* `cshield_check_pages` - the page addresses the daily page check loads (up to 8).
+* `cshield_exposure_paths` - the addresses asked for by the exposed files check, by id, with path and kind.
+* `cshield_attack_mode` (action) - runs with true or false when under attack mode switches on or off.
+* `cshield_update_repo` - the GitHub repository (owner/name) updates come from.
+
+= How does it update? =
+
+Installed from WordPress.org, Chaos Shield updates from there like any other plugin. The zip on GitHub (chaos-shield-x.y.z.zip on each release) updates from GitHub releases instead: the usual "update available" notice, one-click update, View details and automatic updates all work, sites check GitHub at most every six hours, and "Check again" on Dashboard > Updates asks straight away. To update from a private repository, add a fine-grained GitHub token with read-only access to its contents to wp-config.php as `define( 'CSHIELD_GITHUB_TOKEN', '...' );`. A fork can point updates at itself with `CSHIELD_UPDATE_REPO` or the `cshield_update_repo` filter.
+
+== External services ==
+
+Chaos Shield contacts these services. None of them is contacted for a feature that is switched off.
+
+* **WordPress.org** (api.wordpress.org, downloads.wordpress.org, core.svn.wordpress.org, plugins.svn.wordpress.org, themes.svn.wordpress.org): the file scan fetches the official checksums of WordPress, your plugins and themes, and repair downloads the original copy of a changed file. Only slugs and version numbers are sent. [Privacy policy](https://wordpress.org/about/privacy/).
+* **WPVulnerability** (www.wpvulnerability.net): once a day the vulnerability check sends the slug and version of each installed plugin and theme and your WordPress version. [Terms and privacy](https://www.wpvulnerability.com/privacy/).
+* **Have I Been Pwned, Pwned Passwords** (api.pwnedpasswords.com): when someone sets a password, the breached password check sends the first five characters of its SHA-1 hash, never the password. [Terms](https://haveibeenpwned.com/TermsOfUse) and [privacy policy](https://haveibeenpwned.com/Privacy).
+* **Spamhaus** (www.spamhaus.org): once a day the threat blocklist downloads the public DROP list. Nothing about your site is sent. [Terms](https://www.spamhaus.org/legal/) and [privacy policy](https://www.spamhaus.org/legal/privacy-policy/).
+* **Tor Project** (check.torproject.org): when you choose to block Tor, the list of Tor exit addresses is downloaded once a day. Nothing about your site is sent. [Privacy policy](https://www.torproject.org/about/privacy/).
+* **GitHub** (github.com, api.github.com): once a week the built-in country lookup downloads the public domain ip-location-db country lists from github.com. The copy of Chaos Shield from GitHub (not the WordPress.org one) also asks api.github.com for its latest release at most every six hours. Only your site's address is sent, in the user agent. [Terms](https://docs.github.com/en/site-policy/github-terms/github-terms-of-service) and [privacy policy](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement).
+* **Cloudflare Turnstile** (challenges.cloudflare.com): with Turnstile as the login CAPTCHA, its script loads on the login page and the token from each login is checked with Cloudflare, together with the visitor's IP. [Terms](https://www.cloudflare.com/website-terms/) and [privacy policy](https://www.cloudflare.com/privacypolicy/).
+* **hCaptcha** (js.hcaptcha.com, api.hcaptcha.com): with hCaptcha as the login CAPTCHA, the same as Turnstile. [Terms](https://www.hcaptcha.com/terms) and [privacy policy](https://www.hcaptcha.com/privacy).
+* **Cloudflare API** (api.cloudflare.com): only when you connect Cloudflare. Banned IPs, under attack mode changes, cache purges and the Always Use HTTPS switch are sent with your API token. [Terms](https://www.cloudflare.com/website-terms/) and [privacy policy](https://www.cloudflare.com/privacypolicy/).
+* **Slack, Discord, Microsoft Teams and Google Chat** (hooks.slack.com, discord.com, your Teams or Power Automate webhook, chat.googleapis.com): only when you connect one. The text of each alert is sent to the channel you chose. [Slack](https://slack.com/trust/privacy/privacy-policy), [Discord](https://discord.com/privacy), [Microsoft](https://privacy.microsoft.com/privacystatement), [Google](https://policies.google.com/privacy).
+* **Your own webhook or syslog server**: only when you turn on log forwarding. Events, including usernames and IPs, go to the address you enter.
+* **Scripts your pages load**: the daily page check loads your own public pages and downloads the outside scripts they include, so those servers see your server's address.
+* **Sites you connect to the hub**: the hub only contacts the sites you add to it.
 
 == Changelog ==
 

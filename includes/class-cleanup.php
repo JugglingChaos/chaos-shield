@@ -59,7 +59,7 @@ final class Cleanup {
 		);
 		foreach ( $guards as $name => $content ) {
 			if ( ! file_exists( $dir . '/' . $name ) ) {
-				file_put_contents( $dir . '/' . $name, $content ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Small guard files in the plugin's own folder.
+				file_put_contents( $dir . '/' . $name, $content ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents, PluginCheck.CodeAnalysis.WriteFile.PluginDirectoryWrite -- Guard files in wp-content/cshield-quarantine, which updates never touch; kept out of uploads so the folder is not public.
 			}
 		}
 		return $dir;
@@ -463,6 +463,8 @@ final class Cleanup {
 	 * @return string[]
 	 */
 	private static function trusted_script_hosts() {
+		// Host names the database scan compares against; nothing is loaded from them.
+		// phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- See above.
 		$hosts = array( 'www.googletagmanager.com', 'www.google-analytics.com', 'www.google.com', 'www.gstatic.com', 'js.stripe.com', 'platform.twitter.com', 'connect.facebook.net', 'www.youtube.com', 'player.vimeo.com', 'static.cloudflareinsights.com', 'challenges.cloudflare.com', 'cdn.jsdelivr.net', 'cdnjs.cloudflare.com', 'unpkg.com', 'code.jquery.com' );
 		/**
 		 * Filters the script hosts the database scan does not report.
