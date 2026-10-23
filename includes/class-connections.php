@@ -35,7 +35,7 @@ final class Connections {
 				'kind'   => 'captcha',
 				'name'   => 'Cloudflare Turnstile',
 				'blurb'  => __( 'Free and private: most visitors never see a puzzle.', 'chaos-shield' ),
-				'open'   => 'https://dash.cloudflare.com/?to=/:account/turnstile',
+				'open'   => 'https://dash.cloudflare.com/?to=/:account/turnstile', // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- A link the admin opens to sign up, not an asset.
 				'button' => __( 'Open Cloudflare', 'chaos-shield' ),
 				'steps'  => array(
 					__( 'Sign in, or create a free Cloudflare account. Your site does not need to use Cloudflare.', 'chaos-shield' ),

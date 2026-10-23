@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Captcha {
 
-	const VERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+	const VERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- The server-side token check of the Turnstile service, not an asset.
 	const SECRET     = 'cshield_turnstile_secret';
 
 	/**
@@ -26,7 +26,7 @@ final class Captcha {
 		return array(
 			'turnstile' => array(
 				'name'     => 'Cloudflare Turnstile',
-				'script'   => 'https://challenges.cloudflare.com/turnstile/v0/api.js',
+				'script'   => 'https://challenges.cloudflare.com/turnstile/v0/api.js', // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- The Turnstile widget must load from Cloudflare; listed under External services.
 				'verify'   => self::VERIFY_URL,
 				'class'    => 'cf-turnstile',
 				'field'    => 'cf-turnstile-response',
