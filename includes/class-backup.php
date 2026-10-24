@@ -228,6 +228,7 @@ final class Backup {
 			$clean[ $key ] = Request::parse_list( implode( "\n", $clean[ $key ] ) )['valid'];
 		}
 		$clean['country_list']    = Geo::parse( implode( ',', $clean['country_list'] ) );
+		$clean['country_pages']   = Geo::parse_page_rules( implode( "\n", $clean['country_pages'] ) )['valid'];
 		$clean['ua_blocklist']    = Server::parse_agents( implode( "\n", $clean['ua_blocklist'] ), Request::server( 'HTTP_USER_AGENT' ) )['valid'];
 		$clean['rest_allow']      = Server::parse_routes( implode( "\n", $clean['rest_allow'] ) );
 		$clean['hotlink_allow']   = Server::parse_hosts( implode( "\n", $clean['hotlink_allow'] ) );
