@@ -192,6 +192,9 @@ final class Page_Check {
 		if ( Settings::enabled( 'exposure_check' ) ) {
 			Exposure::check( $pages, $scripts );
 		}
+		if ( Settings::enabled( 'reputation_check' ) ) {
+			Reputation::check();
+		}
 		$state = array(
 			'checked' => time(),
 			'took'    => round( microtime( true ) - self::$started, 1 ),

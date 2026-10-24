@@ -26,6 +26,7 @@ $cshield_notices = array(
 	'help_saved'        => __( 'Visitor help saved.', 'chaos-shield' ),
 	'edge_saved'        => __( 'Edge settings saved.', 'chaos-shield' ),
 	'edge_checked'      => __( 'Pages checked: scripts, HTTPS, exposed files and keys.', 'chaos-shield' ),
+	'rep_checked'       => __( 'Blocklists and the domain checked.', 'chaos-shield' ),
 	'edge_error'        => '',
 	'attack_on'         => __( 'Under attack mode is on. Visitors who are not logged in see a short browser check.', 'chaos-shield' ),
 	'attack_off'        => __( 'Under attack mode is off.', 'chaos-shield' ),
@@ -657,6 +658,14 @@ $cshield_events_table = static function ( array $events, array $labels, $date_fo
 				?>
 			</div>
 		<?php endif; ?>
+		<?php if ( ! empty( $cshield_rejected['pages'] ) ) : ?>
+			<div class="cshield-notice cshield-notice--warn" role="alert">
+				<?php
+				/* translators: %s: list of lines. */
+				echo esc_html( sprintf( __( 'These page rules could not be read and were skipped. Write each as an address, block or allow, then country codes, such as /shop allow US, CA: %s', 'chaos-shield' ), implode( ' | ', $cshield_rejected['pages'] ) ) );
+				?>
+			</div>
+		<?php endif; ?>
 		<?php if ( ! empty( $cshield_rejected['agent'] ) ) : ?>
 			<div class="cshield-notice cshield-notice--warn" role="alert">
 				<?php
@@ -727,6 +736,11 @@ $cshield_events_table = static function ( array $events, array $labels, $date_fo
 							<input type="text" name="cshield[country_list]" value="<?php echo esc_attr( implode( ', ', (array) Settings::get( 'country_list' ) ) ); ?>" placeholder="RU, CN, KP" spellcheck="false"></label>
 					</div>
 					<p class="cshield-small"><?php esc_html_e( 'Use ISO country codes, such as US, GB or DE. With Cloudflare, T1 means Tor. Logged-in users are not blocked from the site, and you cannot save a rule that blocks your own country.', 'chaos-shield' ); ?></p>
+					<div class="cshield-fields cshield-fields--one cshield-fields--spaced">
+					<label><span><?php esc_html_e( 'Rules for single pages, one per line: the address, block or allow, then the countries', 'chaos-shield' ); ?></span>
+						<textarea name="cshield[country_pages]" rows="4" class="cshield-textarea" spellcheck="false" placeholder="/shop allow US, CA&#10;/contact block RU, CN"><?php echo esc_textarea( implode( "\n", (array) Settings::get( 'country_pages' ) ) ); ?></textarea></label>
+					</div>
+					<p class="cshield-small"><?php esc_html_e( 'A rule covers its page and everything below it, so /shop also covers /shop/cart. The first matching rule applies, on top of the rule for the whole site. Logged-in users are never blocked by these.', 'chaos-shield' ); ?></p>
 				</section>
 				<section class="cshield-card cshield-card--full">
 					<h2><?php esc_html_e( 'Visitor IP detection', 'chaos-shield' ); ?></h2>
