@@ -74,6 +74,7 @@ final class Plugin {
 		( new Export() )->register();
 		( new Uptime() )->register();
 		( new Captcha() )->register();
+		( new Comments() )->register();
 		( new Connections() )->register();
 		( new Monitor() )->register();
 		( new Scanner() )->register();

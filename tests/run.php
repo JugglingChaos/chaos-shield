@@ -26,6 +26,7 @@ use ChaosShield\Https;
 use ChaosShield\Page_Check;
 use ChaosShield\Scripts;
 use ChaosShield\Captcha;
+use ChaosShield\Comments;
 use ChaosShield\Hub;
 use ChaosShield\Connections;
 use ChaosShield\Forwarder;
@@ -513,6 +514,50 @@ group(
 		check( 'a login with a solved challenge goes through', ! empty( $yes['cookies'][ LOGGED_IN_COOKIE ] ), (string) $yes['status'] );
 		$huge = login( $u->user_login, $pass, ip(), array( 'h-captcha-response' => 'sst-good' . str_repeat( 'x', 3000 ) ) );
 		check( 'an oversized challenge token is refused without asking the service', empty( $huge['cookies'][ LOGGED_IN_COOKIE ] ) );
+
+		$settings                     = Settings::all();
+		$settings['captcha_comments'] = true;
+		Network::update_option( Settings::OPTION, $settings );
+		Settings::forget();
+		$post    = wp_insert_post(
+			array(
+				'post_title'     => 'sst comments ' . wp_rand(),
+				'post_status'    => 'publish',
+				'comment_status' => 'open',
+			)
+		);
+		$comment = static function ( array $extra ) use ( $post ) {
+			$n = wp_rand();
+			return http(
+				'POST',
+				'/wp-comments-post.php',
+				ip(),
+				array(
+					'body' => $extra + array(
+						'comment_post_ID' => $post,
+						'comment'         => 'Nice post ' . $n,
+						'author'          => 'Sam ' . $n,
+						'email'           => 'sam' . $n . '@example.invalid',
+						Comments::STAMP   => Comments::stamp( $post, time() - 30 ),
+					),
+				)
+			);
+		};
+		$page    = http( 'GET', get_permalink( $post ), ip() );
+		check( 'the comment form shows the challenge to visitors', false !== strpos( $page['body'], 'class="h-captcha"' ) );
+		check( 'a comment without the challenge is refused', 403 === $comment( array() )['status'] );
+		check( 'a comment with a solved challenge goes through', 302 === $comment( array( 'h-captcha-response' => 'sst-good' ) )['status'] );
+		$settings['captcha_comments'] = false;
+		Network::update_option( Settings::OPTION, $settings );
+		Settings::forget();
+		wp_delete_post( $post, true );
+
+		$forms = new Captcha();
+		$cf7   = $forms->cf7_widget( '<p><input type="email" name="your-email"></p><input class="wpcf7-form-control wpcf7-submit" type="submit" value="Send">' );
+		check( 'Contact Form 7 gets the challenge just before its send button', false !== strpos( $cf7, 'h-captcha' ) && strpos( $cf7, 'h-captcha' ) < strpos( $cf7, 'wpcf7-submit' ) && strpos( $cf7, 'your-email' ) < strpos( $cf7, 'h-captcha' ) );
+		check( 'a Contact Form 7 message without the challenge counts as spam', true === $forms->cf7_check( false ) );
+		$errors = $forms->check_errors( new \WP_Error() );
+		check( 'a WooCommerce login without the challenge gets an error', $errors->has_errors() );
 
 		Connections::disconnect( 'hcaptcha' );
 		Settings::forget();
@@ -2041,6 +2086,99 @@ group(
 			)
 		);
 		check( 'an author publishing under their username is flagged', in_array( $named->user_login, Accounts::public_logins(), true ) );
+	}
+);
+
+group(
+	'Comment spam',
+	function () {
+		$post   = wp_insert_post(
+			array(
+				'post_title'     => 'sst spam ' . wp_rand(),
+				'post_status'    => 'publish',
+				'comment_status' => 'open',
+			)
+		);
+		$send   = static function ( array $fields, $from = '' ) use ( $post ) {
+			$n = wp_rand();
+			return http(
+				'POST',
+				'/wp-comments-post.php',
+				$from ? $from : ip(),
+				array(
+					'body' => $fields + array(
+						'comment_post_ID' => $post,
+						'comment'         => 'Thoughtful words ' . $n,
+						'author'          => 'Robin ' . $n,
+						'email'           => 'robin' . $n . '@example.invalid',
+					),
+				)
+			);
+		};
+		$latest = static function () use ( $post ) {
+			$rows = get_comments(
+				array(
+					'post_id' => $post,
+					'number'  => 1,
+					'orderby' => 'comment_ID',
+					'order'   => 'DESC',
+					'status'  => 'all',
+				)
+			);
+			$spam = get_comments(
+				array(
+					'post_id' => $post,
+					'number'  => 1,
+					'orderby' => 'comment_ID',
+					'order'   => 'DESC',
+					'status'  => 'spam',
+				)
+			);
+			$all  = array_merge( $rows, $spam );
+			usort(
+				$all,
+				static function ( $a, $b ) {
+					return (int) $b->comment_ID <=> (int) $a->comment_ID;
+				}
+			);
+			return $all ? $all[0] : null;
+		};
+		try {
+			$page = http( 'GET', get_permalink( $post ), ip() );
+			check( 'the comment form carries the hidden field and the stamp', false !== strpos( $page['body'], 'name="' . Comments::TRAP . '"' ) && false !== strpos( $page['body'], 'name="' . Comments::STAMP . '"' ) );
+
+			$ok = $send( array( Comments::STAMP => Comments::stamp( $post, time() - 20 ) ) );
+			$c  = $latest();
+			check( 'a person who took their time gets through', 302 === $ok['status'] && $c && 'spam' !== wp_get_comment_status( $c ) );
+
+			check(
+				'a filled hidden field is refused',
+				403 === $send(
+					array(
+						Comments::TRAP  => 'http://spam.example',
+						Comments::STAMP => Comments::stamp( $post, time() - 20 ),
+					)
+				)['status']
+			);
+			check( 'a comment sent within a second of the page is refused', 403 === $send( array( Comments::STAMP => Comments::stamp( $post, time() ) ) )['status'] );
+			check( 'a forged stamp is refused', 403 === $send( array( Comments::STAMP => ( time() - 20 ) . '.forged' ) )['status'] );
+
+			$send( array() );
+			$c = $latest();
+			check( 'a comment that skipped the form goes to the spam folder', $c && 'spam' === wp_get_comment_status( $c ) );
+
+			$send( array( Comments::STAMP => Comments::stamp( $post, time() - 40 * DAY_IN_SECONDS ) ) );
+			$c = $latest();
+			check( 'a form older than a month is held for moderation', $c && 'unapproved' === wp_get_comment_status( $c ) );
+
+			$bot = ip();
+			for ( $i = 0; $i < Comments::BAN_HITS; $i++ ) {
+				$send( array( Comments::TRAP => 'x' . $i ), $bot );
+			}
+			check( 'a bot that keeps trying is banned', Bans::until( $bot ) > time() );
+		} finally {
+			wp_delete_post( $post, true );
+		}
 	}
 );
 

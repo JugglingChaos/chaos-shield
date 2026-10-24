@@ -107,6 +107,7 @@ $cshield_event_labels = array(
 	'system'    => __( 'System', 'chaos-shield' ),
 	'blocked'   => __( 'Firewall', 'chaos-shield' ),
 	'twofactor' => __( 'Two-factor', 'chaos-shield' ),
+	'spam'      => __( 'Spam', 'chaos-shield' ),
 	'login'     => __( 'Login', 'chaos-shield' ),
 	'user'      => __( 'User', 'chaos-shield' ),
 	'plugin'    => __( 'Plugin', 'chaos-shield' ),
@@ -505,6 +506,12 @@ $cshield_events_table = static function ( array $events, array $labels, $date_fo
 				$cshield_kind = 'captcha';
 				require CSHIELD_DIR . 'includes/views/connections.php';
 				?>
+				<fieldset class="cshield-captcha-forms">
+					<legend class="cshield-small"><?php esc_html_e( 'Also show the check on:', 'chaos-shield' ); ?></legend>
+					<?php foreach ( Captcha::form_options() as $cshield_key => $cshield_label ) : ?>
+						<label class="cshield-check-line"><input type="checkbox" name="cshield[<?php echo esc_attr( $cshield_key ); ?>]" value="1" <?php checked( Settings::enabled( $cshield_key ) ); ?>> <?php echo esc_html( $cshield_label ); ?></label>
+					<?php endforeach; ?>
+				</fieldset>
 				<p class="cshield-small"><?php esc_html_e( 'Connecting checks the keys with the service and switches Login CAPTCHA on. If the service cannot be reached during a login, the login is allowed and the outage is logged, so you are never locked out.', 'chaos-shield' ); ?></p>
 			</section>
 

@@ -2,14 +2,14 @@
 # This file is distributed under the GPL-2.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Chaos Shield 1.15.0\n"
+"Project-Id-Version: Chaos Shield 1.16.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/chaos-shield\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-23T21:11:35+00:00\n"
+"POT-Creation-Date: 2026-10-24T15:01:13+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: chaos-shield\n"
@@ -19,8 +19,8 @@ msgstr ""
 #: includes/class-admin.php:59
 #: includes/class-admin.php:60
 #: includes/class-admin.php:233
-#: includes/views/dashboard.php:164
-#: includes/views/dashboard.php:169
+#: includes/views/dashboard.php:165
+#: includes/views/dashboard.php:170
 msgid "Chaos Shield"
 msgstr ""
 
@@ -221,7 +221,7 @@ msgid "Open network plugins"
 msgstr ""
 
 #: includes/class-admin.php:262
-#: includes/views/dashboard.php:197
+#: includes/views/dashboard.php:198
 #: includes/views/report-compliance.php:110
 msgid "Security score"
 msgstr ""
@@ -344,7 +344,7 @@ msgid "Edge"
 msgstr ""
 
 #: includes/class-admin.php:605
-#: includes/views/dashboard.php:114
+#: includes/views/dashboard.php:115
 #: includes/views/tab-hub.php:236
 msgid "Scan"
 msgstr ""
@@ -820,26 +820,32 @@ msgstr ""
 msgid "Locked out %d times within 24 hours"
 msgstr ""
 
+#. translators: %d: number of refused comments.
+#: includes/class-bans.php:109
+#, php-format
+msgid "Sent %d bot comments within 24 hours"
+msgstr ""
+
 #. translators: 1: IP address, 2: reason.
-#: includes/class-bans.php:176
+#: includes/class-bans.php:183
 #, php-format
 msgid "Did not ban %1$s because an administrator has logged in from it (%2$s)."
 msgstr ""
 
 #. translators: 1: IP address, 2: hours, 3: reason.
-#: includes/class-bans.php:204
+#: includes/class-bans.php:211
 #, php-format
 msgid "Banned %1$s for %2$d hours: %3$s."
 msgstr ""
 
 #. translators: %s: IP address.
-#: includes/class-bans.php:241
+#: includes/class-bans.php:248
 #, php-format
 msgid "IP %s banned"
 msgstr ""
 
 #. translators: 1: IP address, 2: date the ban ends, 3: reason.
-#: includes/class-bans.php:244
+#: includes/class-bans.php:251
 #, php-format
 msgid "%1$s is banned from the whole site until %2$s. Reason: %3$s."
 msgstr ""
@@ -850,12 +856,33 @@ msgstr ""
 msgid "The service answered HTTP %d."
 msgstr ""
 
-#: includes/class-captcha.php:242
+#: includes/class-captcha.php:195
+msgid "Comments from visitors who are not logged in"
+msgstr ""
+
+#: includes/class-captcha.php:196
+msgid "WooCommerce login, sign-up and lost password forms"
+msgstr ""
+
+#: includes/class-captcha.php:197
+msgid "Contact Form 7 forms"
+msgstr ""
+
+#: includes/class-captcha.php:198
+msgid "WPForms forms"
+msgstr ""
+
+#: includes/class-captcha.php:268
+#: includes/class-comments.php:101
+msgid "Comment not sent"
+msgstr ""
+
+#: includes/class-captcha.php:384
 msgid "<strong>Error:</strong> Please complete the security check and try again."
 msgstr ""
 
 #. translators: %s: service name, such as hCaptcha.
-#: includes/class-captcha.php:255
+#: includes/class-captcha.php:397
 #, php-format
 msgid "%s could not be reached, so logins were allowed without the security check."
 msgstr ""
@@ -1036,6 +1063,18 @@ msgstr ""
 
 #: includes/class-cloudflare.php:510
 msgid "Switched Cloudflare's security level back."
+msgstr ""
+
+#: includes/class-comments.php:67
+msgid "Leave this field empty"
+msgstr ""
+
+#: includes/class-comments.php:91
+msgid "A comment from a bot was refused."
+msgstr ""
+
+#: includes/class-comments.php:100
+msgid "Your comment looks automated, so it was not saved. If you are a person, go back, wait a few seconds and send it again."
 msgstr ""
 
 #: includes/class-connections.php:37
@@ -1671,7 +1710,7 @@ msgstr ""
 
 #: includes/class-export.php:205
 #: includes/class-settings.php:89
-#: includes/views/dashboard.php:361
+#: includes/views/dashboard.php:362
 msgid "Password policy"
 msgstr ""
 
@@ -3016,7 +3055,7 @@ msgstr ""
 
 #: includes/class-passkeys.php:332
 #: includes/class-passkeys.php:357
-#: includes/class-two-factor.php:327
+#: includes/class-two-factor.php:332
 msgid "Too many failed login attempts. Try again later."
 msgstr ""
 
@@ -3275,15 +3314,15 @@ msgid_plural "<strong>Error:</strong> This password has appeared in %s known dat
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/class-plugin.php:155
+#: includes/class-plugin.php:156
 msgid "Chaos Shield protects the whole network, so it has to be network activated. Go to Network Admin, Plugins, and choose Network Activate."
 msgstr ""
 
-#: includes/class-plugin.php:156
+#: includes/class-plugin.php:157
 msgid "Network activation needed"
 msgstr ""
 
-#: includes/class-plugin.php:168
+#: includes/class-plugin.php:169
 msgid "Chaos Shield activated."
 msgstr ""
 
@@ -3386,7 +3425,7 @@ msgid "A custom table prefix is in use."
 msgstr ""
 
 #: includes/class-posture.php:115
-#: includes/views/dashboard.php:627
+#: includes/views/dashboard.php:634
 msgid "Visitor IP detection"
 msgstr ""
 
@@ -3530,7 +3569,7 @@ msgid "Security report for %1$s. Score: %2$d out of 100."
 msgstr ""
 
 #: includes/class-report.php:80
-#: includes/views/dashboard.php:855
+#: includes/views/dashboard.php:862
 msgid "Last 7 days"
 msgstr ""
 
@@ -3736,18 +3775,18 @@ msgstr ""
 msgid "The keys in wp-config.php are not in the usual form, so they cannot be changed safely from here."
 msgstr ""
 
-#: includes/class-salts.php:220
-#: includes/class-salts.php:225
+#: includes/class-salts.php:221
+#: includes/class-salts.php:226
 msgid "wp-config.php could not be written. Nothing was changed."
 msgstr ""
 
 #. translators: %s: reason.
-#: includes/class-salts.php:240
+#: includes/class-salts.php:241
 #, php-format
 msgid "Security keys in wp-config.php replaced (%s). Everyone was signed out."
 msgstr ""
 
-#: includes/class-salts.php:241
+#: includes/class-salts.php:242
 msgid "Security keys in wp-config.php replaced. Everyone was signed out."
 msgstr ""
 
@@ -3962,8 +4001,8 @@ msgid "Shows one neutral message on failed logins so attackers cannot tell wheth
 msgstr ""
 
 #: includes/class-settings.php:69
-#: includes/class-two-factor.php:554
-#: includes/class-two-factor.php:636
+#: includes/class-two-factor.php:559
+#: includes/class-two-factor.php:641
 msgid "Two-factor login"
 msgstr ""
 
@@ -4040,7 +4079,7 @@ msgid "Blocks or allows visitors by country, for the whole site or only the logi
 msgstr ""
 
 #: includes/class-settings.php:109
-#: includes/views/dashboard.php:503
+#: includes/views/dashboard.php:504
 msgid "Login CAPTCHA"
 msgstr ""
 
@@ -4130,99 +4169,107 @@ msgid "Saves a copy of a plugin or theme before it updates, of a file before it 
 msgstr ""
 
 #: includes/class-settings.php:157
-msgid "Approve new sign-ups"
+msgid "Block comment spam"
 msgstr ""
 
 #: includes/class-settings.php:158
-msgid "Accounts that visitors make for themselves cannot log in until an administrator approves them on the Users screen. You get an email for each one."
+msgid "Adds a hidden field and a signed time stamp to the comment form, refuses bots that fill it in or post within seconds, bans those that keep trying, and sends comments that skip the form to the spam folder. No CAPTCHA needed."
 msgstr ""
 
 #: includes/class-settings.php:161
-msgid "Disable application passwords"
+msgid "Approve new sign-ups"
 msgstr ""
 
 #: includes/class-settings.php:162
+msgid "Accounts that visitors make for themselves cannot log in until an administrator approves them on the Users screen. You get an email for each one."
+msgstr ""
+
+#: includes/class-settings.php:165
+msgid "Disable application passwords"
+msgstr ""
+
+#: includes/class-settings.php:166
 msgid "Turns off REST API application passwords. Leave off if an app or service signs in with them."
 msgstr ""
 
-#: includes/class-settings.php:307
+#: includes/class-settings.php:316
 msgid "An administrator logs in from a new IP address"
 msgstr ""
 
-#: includes/class-settings.php:308
+#: includes/class-settings.php:317
 msgid "A new administrator account appears, or a user is promoted to administrator"
 msgstr ""
 
-#: includes/class-settings.php:309
+#: includes/class-settings.php:318
 msgid "A plugin or theme is installed, activated or deleted"
 msgstr ""
 
-#: includes/class-settings.php:310
+#: includes/class-settings.php:319
 msgid "A scan finds modified core files or suspicious code"
 msgstr ""
 
-#: includes/class-settings.php:311
+#: includes/class-settings.php:320
 msgid "An IP address is locked out or banned (can be noisy)"
 msgstr ""
 
-#: includes/class-settings.php:312
+#: includes/class-settings.php:321
 msgid "A weekly security report"
 msgstr ""
 
-#: includes/class-settings.php:313
+#: includes/class-settings.php:322
 msgid "Installed software has a newly published vulnerability"
 msgstr ""
 
-#: includes/class-settings.php:314
+#: includes/class-settings.php:323
 msgid "A site connected to the hub goes down, or a certificate is about to expire"
 msgstr ""
 
-#: includes/class-settings.php:315
+#: includes/class-settings.php:324
 msgid "A SIEM detection opens an incident (high and critical by default)"
 msgstr ""
 
-#: includes/class-settings.php:316
+#: includes/class-settings.php:325
 msgid "A blocked visitor asks you for access"
 msgstr ""
 
-#: includes/class-settings.php:317
+#: includes/class-settings.php:326
 msgid "Under attack mode switches on during a flood"
 msgstr ""
 
-#: includes/class-settings.php:318
+#: includes/class-settings.php:327
 msgid "A new or suspicious script appears on your pages"
 msgstr ""
 
-#: includes/class-settings.php:319
+#: includes/class-settings.php:328
 msgid "A backup, log, key or other private file can be downloaded"
 msgstr ""
 
-#: includes/class-settings.php:358
+#: includes/class-settings.php:367
 msgid "The webhook address must start with https:// or http://. It was not saved."
 msgstr ""
 
-#: includes/class-settings.php:363
+#: includes/class-settings.php:372
 msgid "The syslog server must look like udp://logs.example.com:514 or tcp://10.0.0.5:6514, or be \"local\". It was not saved."
 msgstr ""
 
-#: includes/class-settings.php:429
+#: includes/class-settings.php:438
 msgid "None, use the direct connection (REMOTE_ADDR)"
 msgstr ""
 
-#: includes/class-settings.php:430
+#: includes/class-settings.php:439
 msgid "Cloudflare (CF-Connecting-IP)"
 msgstr ""
 
-#: includes/class-settings.php:431
+#: includes/class-settings.php:440
 msgid "Load balancer or proxy (X-Forwarded-For)"
 msgstr ""
 
-#: includes/class-settings.php:432
+#: includes/class-settings.php:441
 msgid "Nginx proxy (X-Real-IP)"
 msgstr ""
 
 #. translators: %s: list of protections.
-#: includes/class-settings.php:727
+#: includes/class-settings.php:739
 #, php-format
 msgid "Protection switched off: %s."
 msgstr ""
@@ -4285,7 +4332,7 @@ msgid "Blocked"
 msgstr ""
 
 #: includes/class-traffic.php:368
-#: includes/views/dashboard.php:110
+#: includes/views/dashboard.php:111
 msgid "Login"
 msgstr ""
 
@@ -4308,189 +4355,189 @@ msgstr ""
 msgid "%s skipped the code step on a trusted browser."
 msgstr ""
 
-#: includes/class-two-factor.php:299
+#: includes/class-two-factor.php:304
 msgid "This account uses two-factor login. Use an application password instead."
 msgstr ""
 
-#: includes/class-two-factor.php:342
+#: includes/class-two-factor.php:347
 msgid "That code is not right. Check your authenticator app and try again."
 msgstr ""
 
-#: includes/class-two-factor.php:359
+#: includes/class-two-factor.php:364
 msgid "Your login step expired or had too many wrong codes. Please log in again."
 msgstr ""
 
-#: includes/class-two-factor.php:408
+#: includes/class-two-factor.php:413
 msgid "A recovery code was used to log in."
 msgstr ""
 
 #. translators: 1: username, 2: number of days.
-#: includes/class-two-factor.php:514
+#: includes/class-two-factor.php:519
 #, php-format
 msgid "%1$s trusted this browser for %2$d days."
 msgstr ""
 
-#: includes/class-two-factor.php:557
+#: includes/class-two-factor.php:562
 msgid "Open your authenticator app and enter the 6-digit code for this site. You can also use one of your recovery codes."
 msgstr ""
 
-#: includes/class-two-factor.php:559
+#: includes/class-two-factor.php:564
 msgid "Authentication code"
 msgstr ""
 
 #. translators: %d: number of days.
-#: includes/class-two-factor.php:567
+#: includes/class-two-factor.php:572
 #, php-format
 msgid "Trust this browser for %d day"
 msgid_plural "Trust this browser for %d days"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/class-two-factor.php:572
+#: includes/class-two-factor.php:577
 msgid "Verify"
 msgstr ""
 
-#: includes/class-two-factor.php:575
+#: includes/class-two-factor.php:580
 msgid "Start over"
 msgstr ""
 
-#: includes/class-two-factor.php:658
+#: includes/class-two-factor.php:663
 msgid "This user has not turned on two-factor login. They can set it up from their own profile."
 msgstr ""
 
-#: includes/class-two-factor.php:662
-#: includes/class-two-factor.php:705
+#: includes/class-two-factor.php:667
+#: includes/class-two-factor.php:710
 #: includes/views/tab-firewall.php:177
 msgid "On"
 msgstr ""
 
-#: includes/class-two-factor.php:662
+#: includes/class-two-factor.php:667
 msgid "This user signs in with an authenticator app."
 msgstr ""
 
-#: includes/class-two-factor.php:664
+#: includes/class-two-factor.php:669
 msgid "Turn off two-factor for this user (for a lost phone). They can set it up again afterwards."
 msgstr ""
 
 #. translators: %d: number of browsers.
-#: includes/class-two-factor.php:682
+#: includes/class-two-factor.php:687
 #, php-format
 msgid "Forget the %d browser that skips the code step"
 msgid_plural "Forget the %d browsers that skip the code step"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/class-two-factor.php:685
+#: includes/class-two-factor.php:690
 msgid "Trusted browsers"
 msgstr ""
 
 #. translators: %d: number of unused recovery codes.
-#: includes/class-two-factor.php:709
+#: includes/class-two-factor.php:714
 #, php-format
 msgid "You sign in with your authenticator app. %d recovery code left."
 msgid_plural "You sign in with your authenticator app. %d recovery codes left."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/class-two-factor.php:715
+#: includes/class-two-factor.php:720
 msgid "Your authenticator key can no longer be read, usually because the site security keys in wp-config.php changed. Log in with a recovery code, turn two-factor off and set it up again."
 msgstr ""
 
-#: includes/class-two-factor.php:719
+#: includes/class-two-factor.php:724
 msgid "Recovery codes"
 msgstr ""
 
-#: includes/class-two-factor.php:720
+#: includes/class-two-factor.php:725
 msgid "Replace my recovery codes with a new set"
 msgstr ""
 
-#: includes/class-two-factor.php:724
+#: includes/class-two-factor.php:729
 msgid "Turn off"
 msgstr ""
 
-#: includes/class-two-factor.php:727
+#: includes/class-two-factor.php:732
 msgid "To turn two-factor off, enter a current code from your app or a recovery code, then update your profile."
 msgstr ""
 
-#: includes/class-two-factor.php:747
+#: includes/class-two-factor.php:752
 msgid "Add a second step to your login: after your password, you enter a code from an authenticator app such as Google Authenticator, Microsoft Authenticator, Authy or 1Password."
 msgstr ""
 
-#: includes/class-two-factor.php:749
+#: includes/class-two-factor.php:754
 msgid "QR code for your authenticator app"
 msgstr ""
 
-#: includes/class-two-factor.php:751
+#: includes/class-two-factor.php:756
 msgid "Scan the QR code with your authenticator app."
 msgstr ""
 
-#: includes/class-two-factor.php:752
+#: includes/class-two-factor.php:757
 msgid "Cannot scan? Enter this key by hand:"
 msgstr ""
 
-#: includes/class-two-factor.php:756
+#: includes/class-two-factor.php:761
 msgid "Enter the 6-digit code the app shows:"
 msgstr ""
 
-#: includes/class-two-factor.php:759
+#: includes/class-two-factor.php:764
 msgid "Click Update Profile. You will then see your recovery codes."
 msgstr ""
 
-#: includes/class-two-factor.php:773
+#: includes/class-two-factor.php:778
 msgid "Save these recovery codes now."
 msgstr ""
 
-#: includes/class-two-factor.php:774
+#: includes/class-two-factor.php:779
 msgid "Each one logs you in once if you lose your phone. They will not be shown again."
 msgstr ""
 
-#: includes/class-two-factor.php:798
+#: includes/class-two-factor.php:803
 msgid "Trusted browsers were forgotten."
 msgstr ""
 
 #. translators: %s: username.
-#: includes/class-two-factor.php:808
+#: includes/class-two-factor.php:813
 #, php-format
 msgid "Two-factor turned off for %s by an administrator."
 msgstr ""
 
-#: includes/class-two-factor.php:825
+#: includes/class-two-factor.php:830
 msgid "Two-factor was not turned on: the code did not match. Make sure the time on your phone is correct and try again."
 msgstr ""
 
-#: includes/class-two-factor.php:832
+#: includes/class-two-factor.php:837
 msgid "A user turned on two-factor login."
 msgstr ""
 
-#: includes/class-two-factor.php:840
+#: includes/class-two-factor.php:845
 msgid "A user turned off two-factor login."
 msgstr ""
 
-#: includes/class-two-factor.php:842
+#: includes/class-two-factor.php:847
 msgid "Two-factor is still on: the code did not match."
 msgstr ""
 
 #. translators: %d: number of days.
-#: includes/class-two-factor.php:896
+#: includes/class-two-factor.php:901
 #, php-format
 msgid "Chaos Shield: this site requires a second login step for your account. Add one within %d day, or you will only be able to reach your profile until you do."
 msgid_plural "Chaos Shield: this site requires a second login step for your account. Add one within %d days, or you will only be able to reach your profile until you do."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/class-two-factor.php:897
+#: includes/class-two-factor.php:902
 msgid "Chaos Shield: this site requires a second login step for your account. Set up an authenticator app below, or add a passkey, to use the rest of the dashboard."
 msgstr ""
 
-#: includes/class-two-factor.php:900
+#: includes/class-two-factor.php:905
 msgid "Set it up now"
 msgstr ""
 
-#: includes/class-two-factor.php:909
+#: includes/class-two-factor.php:914
 msgid "Chaos Shield: your administrator account has no second login step."
 msgstr ""
 
-#: includes/class-two-factor.php:911
+#: includes/class-two-factor.php:916
 msgid "Turn on two-factor login"
 msgstr ""
 
@@ -4983,85 +5030,89 @@ msgstr ""
 msgid "Two-factor"
 msgstr ""
 
-#: includes/views/dashboard.php:111
-#: includes/views/dashboard.php:139
-#: includes/views/dashboard.php:749
+#: includes/views/dashboard.php:110
+msgid "Spam"
+msgstr ""
+
+#: includes/views/dashboard.php:112
+#: includes/views/dashboard.php:140
+#: includes/views/dashboard.php:756
 #: includes/views/report-compliance.php:134
 #: includes/views/tab-siem.php:113
 msgid "User"
 msgstr ""
 
-#: includes/views/dashboard.php:112
+#: includes/views/dashboard.php:113
 msgid "Plugin"
 msgstr ""
 
-#: includes/views/dashboard.php:113
+#: includes/views/dashboard.php:114
 msgid "Theme"
 msgstr ""
 
-#: includes/views/dashboard.php:115
+#: includes/views/dashboard.php:116
 #: includes/views/tab-help.php:149
 msgid "Ban"
 msgstr ""
 
-#: includes/views/dashboard.php:116
+#: includes/views/dashboard.php:117
 msgid "Password"
 msgstr ""
 
-#: includes/views/dashboard.php:117
+#: includes/views/dashboard.php:118
 msgid "Vulnerability"
 msgstr ""
 
-#: includes/views/dashboard.php:118
+#: includes/views/dashboard.php:119
 msgid "Content"
 msgstr ""
 
-#: includes/views/dashboard.php:119
+#: includes/views/dashboard.php:120
 msgid "Site setting"
 msgstr ""
 
-#: includes/views/dashboard.php:120
+#: includes/views/dashboard.php:121
 msgid "Privacy"
 msgstr ""
 
-#: includes/views/dashboard.php:121
+#: includes/views/dashboard.php:122
 #: includes/views/tab-siem.php:223
 msgid "Incident"
 msgstr ""
 
-#: includes/views/dashboard.php:134
+#: includes/views/dashboard.php:135
 msgid "Nothing recorded yet. Logins, lockouts, scans and changes to users, plugins and settings will show up here."
 msgstr ""
 
-#: includes/views/dashboard.php:139
+#: includes/views/dashboard.php:140
 #: includes/views/report-compliance.php:184
 #: includes/views/tab-backups.php:51
 #: includes/views/tab-firewall.php:109
 msgid "When"
 msgstr ""
 
-#: includes/views/dashboard.php:139
-#: includes/views/dashboard.php:875
+#: includes/views/dashboard.php:140
+#: includes/views/dashboard.php:882
 msgid "Site"
 msgstr ""
 
-#: includes/views/dashboard.php:139
-#: includes/views/dashboard.php:867
+#: includes/views/dashboard.php:140
+#: includes/views/dashboard.php:874
 #: includes/views/tab-traffic.php:84
 msgid "Type"
 msgstr ""
 
-#: includes/views/dashboard.php:139
+#: includes/views/dashboard.php:140
 #: includes/views/report-compliance.php:184
 #: includes/views/tab-siem.php:150
 #: includes/views/tab-siem.php:453
 msgid "Event"
 msgstr ""
 
-#: includes/views/dashboard.php:139
-#: includes/views/dashboard.php:711
-#: includes/views/dashboard.php:749
-#: includes/views/dashboard.php:786
+#: includes/views/dashboard.php:140
+#: includes/views/dashboard.php:718
+#: includes/views/dashboard.php:756
+#: includes/views/dashboard.php:793
 #: includes/views/report-compliance.php:184
 #: includes/views/tab-edge.php:213
 #: includes/views/tab-siem.php:110
@@ -5070,609 +5121,613 @@ msgstr ""
 msgid "IP"
 msgstr ""
 
-#: includes/views/dashboard.php:201
+#: includes/views/dashboard.php:202
 msgid "Firewall blocks, 24h"
 msgstr ""
 
-#: includes/views/dashboard.php:205
+#: includes/views/dashboard.php:206
 msgid "Hardening on"
 msgstr ""
 
-#: includes/views/dashboard.php:209
+#: includes/views/dashboard.php:210
 msgid "Failed logins, 24h"
 msgstr ""
 
-#: includes/views/dashboard.php:213
+#: includes/views/dashboard.php:214
 msgid "IPs locked out now"
 msgstr ""
 
-#: includes/views/dashboard.php:219
+#: includes/views/dashboard.php:220
 msgid "Chaos Shield sections"
 msgstr ""
 
 #. translators: %d: number of incidents.
-#: includes/views/dashboard.php:235
+#: includes/views/dashboard.php:236
 #, php-format
 msgid "%d high or critical incident is open."
 msgid_plural "%d high or critical incidents are open."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/views/dashboard.php:238
+#: includes/views/dashboard.php:239
 msgid "Review incidents"
 msgstr ""
 
-#: includes/views/dashboard.php:243
+#: includes/views/dashboard.php:244
 msgid "What to fix"
 msgstr ""
 
-#: includes/views/dashboard.php:245
+#: includes/views/dashboard.php:246
 msgid "Every check passes. Nice work."
 msgstr ""
 
-#: includes/views/dashboard.php:259
+#: includes/views/dashboard.php:260
 msgid "Passing"
 msgstr ""
 
-#: includes/views/dashboard.php:270
+#: includes/views/dashboard.php:271
 msgid "Recent activity"
 msgstr ""
 
-#: includes/views/dashboard.php:286
+#: includes/views/dashboard.php:287
 msgid "Turn on every recommended protection in one click. Optional modules stay as they are."
 msgstr ""
 
-#: includes/views/dashboard.php:287
+#: includes/views/dashboard.php:288
 msgid "Apply recommended"
 msgstr ""
 
-#: includes/views/dashboard.php:300
+#: includes/views/dashboard.php:301
 msgid "Optional"
 msgstr ""
 
-#: includes/views/dashboard.php:313
+#: includes/views/dashboard.php:314
 msgid "Login limits"
 msgstr ""
 
-#: includes/views/dashboard.php:315
+#: includes/views/dashboard.php:316
 msgid "Failed attempts allowed"
 msgstr ""
 
-#: includes/views/dashboard.php:317
+#: includes/views/dashboard.php:318
 msgid "Within (minutes)"
 msgstr ""
 
-#: includes/views/dashboard.php:319
+#: includes/views/dashboard.php:320
 msgid "Lock out for (minutes)"
 msgstr ""
 
-#: includes/views/dashboard.php:325
+#: includes/views/dashboard.php:326
 #: includes/views/report-compliance.php:28
 msgid "Bans"
 msgstr ""
 
-#: includes/views/dashboard.php:326
+#: includes/views/dashboard.php:327
 msgid "A banned IP gets a 403 on every page. IPs on the allow list, IPs an administrator has logged in from, and verified Google and Bing crawlers are never banned. Ten firewall blocks in an hour also count as a ban."
 msgstr ""
 
-#: includes/views/dashboard.php:328
+#: includes/views/dashboard.php:329
 msgid "Ban after this many lockouts in 24 hours"
 msgstr ""
 
-#: includes/views/dashboard.php:330
+#: includes/views/dashboard.php:331
 msgid "Missing pages in 5 minutes before a 404 ban"
 msgstr ""
 
-#: includes/views/dashboard.php:332
+#: includes/views/dashboard.php:333
 msgid "Ban for (hours)"
 msgstr ""
 
-#: includes/views/dashboard.php:338
+#: includes/views/dashboard.php:339
 msgid "Rate limits (requests per minute per IP)"
 msgstr ""
 
-#: includes/views/dashboard.php:340
+#: includes/views/dashboard.php:341
 msgid "Login and XML-RPC"
 msgstr ""
 
-#: includes/views/dashboard.php:342
+#: includes/views/dashboard.php:343
 msgid "REST API and AJAX"
 msgstr ""
 
-#: includes/views/dashboard.php:344
+#: includes/views/dashboard.php:345
 #: includes/views/tab-siem.php:434
 #: includes/views/tab-siem.php:435
 msgid "Search"
 msgstr ""
 
-#: includes/views/dashboard.php:346
+#: includes/views/dashboard.php:347
 msgid "All pages"
 msgstr ""
 
-#: includes/views/dashboard.php:353
+#: includes/views/dashboard.php:354
 msgid "Administrators and the allow list are never limited. An IP that hits a limit 5 times in an hour is banned."
 msgstr ""
 
-#: includes/views/dashboard.php:354
+#: includes/views/dashboard.php:355
 msgid "Administrators and the allow list are never limited. An IP that hits a limit 5 times in an hour is banned. The all pages limit needs a persistent object cache such as Redis, so it is not active on this site."
 msgstr ""
 
-#: includes/views/dashboard.php:363
+#: includes/views/dashboard.php:364
 msgid "Minimum length"
 msgstr ""
 
-#: includes/views/dashboard.php:365
+#: includes/views/dashboard.php:366
 msgid "Kinds of characters (1 to 4)"
 msgstr ""
 
-#: includes/views/dashboard.php:367
-#: includes/views/dashboard.php:616
+#: includes/views/dashboard.php:368
+#: includes/views/dashboard.php:623
 msgid "Applies to"
-msgstr ""
-
-#: includes/views/dashboard.php:369
-#: includes/views/dashboard.php:438
-#: includes/views/dashboard.php:449
-msgid "Administrators"
 msgstr ""
 
 #: includes/views/dashboard.php:370
 #: includes/views/dashboard.php:439
 #: includes/views/dashboard.php:450
-msgid "Everyone who can write posts"
+msgid "Administrators"
 msgstr ""
 
 #: includes/views/dashboard.php:371
+#: includes/views/dashboard.php:440
 #: includes/views/dashboard.php:451
+msgid "Everyone who can write posts"
+msgstr ""
+
+#: includes/views/dashboard.php:372
+#: includes/views/dashboard.php:452
 msgid "All users"
 msgstr ""
 
-#: includes/views/dashboard.php:373
+#: includes/views/dashboard.php:374
 msgid "Expire after (days, 0 = never)"
 msgstr ""
 
-#: includes/views/dashboard.php:380
+#: includes/views/dashboard.php:381
 msgid "Rules apply when a password is set or reset, and a password cannot contain the username or email."
 msgstr ""
 
-#: includes/views/dashboard.php:381
+#: includes/views/dashboard.php:382
 msgid "Switch on Password policy above for these rules to apply. Current NIST guidance favours length over forced expiry, so leave expiry at 0 unless a policy you follow requires it."
 msgstr ""
 
-#: includes/views/dashboard.php:402
+#: includes/views/dashboard.php:403
 msgid "Sign out every other administrator and make them choose a new password?"
 msgstr ""
 
-#: includes/views/dashboard.php:402
+#: includes/views/dashboard.php:403
 msgid "Force a reset for all other administrators"
 msgstr ""
 
-#: includes/views/dashboard.php:418
+#: includes/views/dashboard.php:419
 msgid "Sign out everyone the policy covers, except you, and make them choose a new password?"
 msgstr ""
 
-#: includes/views/dashboard.php:418
+#: includes/views/dashboard.php:419
 msgid "Force a reset for everyone the policy covers"
 msgstr ""
 
 #. translators: %d: number of users.
-#: includes/views/dashboard.php:425
+#: includes/views/dashboard.php:426
 #, php-format
 msgid "%d user still has to choose a new password."
 msgid_plural "%d users still have to choose a new password."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/views/dashboard.php:426
+#: includes/views/dashboard.php:427
 msgid "You can also force a reset for one user from the Users screen."
 msgstr ""
 
-#: includes/views/dashboard.php:433
+#: includes/views/dashboard.php:434
 msgid "Accounts"
 msgstr ""
 
-#: includes/views/dashboard.php:435
+#: includes/views/dashboard.php:436
 msgid "Require two-factor or a passkey for"
 msgstr ""
 
-#: includes/views/dashboard.php:437
+#: includes/views/dashboard.php:438
 msgid "Nobody, it stays optional"
 msgstr ""
 
-#: includes/views/dashboard.php:441
+#: includes/views/dashboard.php:442
 msgid "Days to set it up"
 msgstr ""
 
-#: includes/views/dashboard.php:443
+#: includes/views/dashboard.php:444
 msgid "Trust browsers for (days, 0 = off)"
 msgstr ""
 
-#: includes/views/dashboard.php:445
+#: includes/views/dashboard.php:446
 msgid "Idle sign out (minutes, 0 = off)"
 msgstr ""
 
-#: includes/views/dashboard.php:447
+#: includes/views/dashboard.php:448
 msgid "Idle sign out applies to"
 msgstr ""
 
-#: includes/views/dashboard.php:454
+#: includes/views/dashboard.php:455
 msgid "When two-factor is required, each account gets the days above to add an authenticator app or a passkey. After that it can only reach its own profile until it does. Trusted browsers are forgotten when the password changes, and each user can forget them on their profile."
 msgstr ""
 
-#: includes/views/dashboard.php:459
+#: includes/views/dashboard.php:460
 msgid "Threat intelligence and traffic"
 msgstr ""
 
-#: includes/views/dashboard.php:460
+#: includes/views/dashboard.php:461
 msgid "Also block Tor exit nodes"
 msgstr ""
 
-#: includes/views/dashboard.php:461
+#: includes/views/dashboard.php:462
 msgid "Tor hides who a visitor is. Most attacks through it are automated, but some real people use it for privacy, so this is off by default."
 msgstr ""
 
-#: includes/views/dashboard.php:465
+#: includes/views/dashboard.php:466
 msgid "Switch on Threat intelligence blocklist above to use these lists."
 msgstr ""
 
 #. translators: 1: number of networks, 2: date.
-#: includes/views/dashboard.php:469
+#: includes/views/dashboard.php:470
 #, php-format
 msgid "%1$s networks blocked, lists updated %2$s."
 msgstr ""
 
-#: includes/views/dashboard.php:477
+#: includes/views/dashboard.php:478
 msgid "The lists download in the background within a minute."
 msgstr ""
 
-#: includes/views/dashboard.php:482
+#: includes/views/dashboard.php:483
 msgid "Live traffic records"
 msgstr ""
 
-#: includes/views/dashboard.php:484
+#: includes/views/dashboard.php:485
 msgid "Security events only: blocks, logins, missing pages"
 msgstr ""
 
-#: includes/views/dashboard.php:485
+#: includes/views/dashboard.php:486
 msgid "Every visit (more database writes)"
 msgstr ""
 
-#: includes/views/dashboard.php:491
+#: includes/views/dashboard.php:492
 msgid "Login page"
 msgstr ""
 
 #. translators: %s: login URL.
-#: includes/views/dashboard.php:495
+#: includes/views/dashboard.php:496
 #, php-format
 msgid "Your login page is %s"
 msgstr ""
 
-#: includes/views/dashboard.php:499
+#: includes/views/dashboard.php:500
 msgid "Custom login address (leave empty for wp-login.php)"
 msgstr ""
 
-#: includes/views/dashboard.php:502
+#: includes/views/dashboard.php:503
 msgid "With a custom address, wp-login.php and wp-admin answer 404 to anyone not logged in, so bots stop finding your login form. The new address is emailed to you. Forgot it? Add define( 'CSHIELD_DISABLE_LOGIN_SLUG', true ); to wp-config.php."
 msgstr ""
 
-#: includes/views/dashboard.php:508
+#: includes/views/dashboard.php:510
+msgid "Also show the check on:"
+msgstr ""
+
+#: includes/views/dashboard.php:515
 msgid "Connecting checks the keys with the service and switches Login CAPTCHA on. If the service cannot be reached during a login, the login is allowed and the outage is logged, so you are never locked out."
 msgstr ""
 
-#: includes/views/dashboard.php:512
-#: includes/views/dashboard.php:667
+#: includes/views/dashboard.php:519
+#: includes/views/dashboard.php:674
 #: includes/views/tab-alerts.php:118
 #: includes/views/tab-firewall.php:93
 #: includes/views/tab-help.php:201
 msgid "Save changes"
 msgstr ""
 
-#: includes/views/dashboard.php:521
+#: includes/views/dashboard.php:528
 msgid "Security keys"
 msgstr ""
 
 #. translators: %s: date.
-#: includes/views/dashboard.php:527
+#: includes/views/dashboard.php:534
 #, php-format
 msgid "The keys in wp-config.php sign every login cookie. Last replaced by Chaos Shield on %s."
 msgstr ""
 
-#: includes/views/dashboard.php:528
+#: includes/views/dashboard.php:535
 msgid "The keys in wp-config.php sign every login cookie. Replace them after a break-in, a lost laptop or a departing administrator: every session and stolen cookie stops working at once."
 msgstr ""
 
-#: includes/views/dashboard.php:536
+#: includes/views/dashboard.php:543
 #: includes/views/tab-siem.php:135
 msgid "Replace the security keys in wp-config.php? Everyone is signed out, you too, and must log in again."
 msgstr ""
 
-#: includes/views/dashboard.php:536
+#: includes/views/dashboard.php:543
 #: includes/views/tab-siem.php:135
 msgid "Replace security keys"
 msgstr ""
 
-#: includes/views/dashboard.php:538
+#: includes/views/dashboard.php:545
 msgid "Two-factor, the hub and connected services keep working: their stored keys are sealed again with the new ones."
 msgstr ""
 
-#: includes/views/dashboard.php:540
+#: includes/views/dashboard.php:547
 msgid "To replace them by hand, swap these lines into wp-config.php. Two-factor codes then stop working until each user sets them up again, so prefer fixing the file permissions and using the button."
 msgstr ""
 
 #. translators: %s: list of rejected entries.
-#: includes/views/dashboard.php:556
+#: includes/views/dashboard.php:563
 #, php-format
 msgid "These entries are not valid IP addresses or ranges and were skipped: %s"
 msgstr ""
 
 #. translators: %s: country code.
-#: includes/views/dashboard.php:564
+#: includes/views/dashboard.php:571
 #, php-format
 msgid "You are visiting from %s, so the country rule was adjusted to keep you from locking yourself out."
 msgstr ""
 
 #. translators: %s: list of entries.
-#: includes/views/dashboard.php:572
+#: includes/views/dashboard.php:579
 #, php-format
 msgid "These block list entries match your own IP, so they were left out to keep you from locking yourself out: %s"
 msgstr ""
 
-#: includes/views/dashboard.php:582
+#: includes/views/dashboard.php:589
 msgid "Allow list"
 msgstr ""
 
-#: includes/views/dashboard.php:583
+#: includes/views/dashboard.php:590
 msgid "These IPs are never locked out or blocked by the firewall. One IP or range per line, for example 203.0.113.7 or 203.0.113.0/24."
 msgstr ""
 
-#: includes/views/dashboard.php:587
+#: includes/views/dashboard.php:594
 msgid "Block list"
 msgstr ""
 
-#: includes/views/dashboard.php:588
+#: includes/views/dashboard.php:595
 msgid "These IPs get a 403 on every page of the site. Your own IP is never accepted here."
 msgstr ""
 
-#: includes/views/dashboard.php:592
+#: includes/views/dashboard.php:599
 msgid "Countries"
 msgstr ""
 
 #. translators: %s: country code.
-#: includes/views/dashboard.php:599
+#: includes/views/dashboard.php:606
 #, php-format
 msgid "Switch on Country blocking under Hardening for these rules to apply. Your request comes from %s."
 msgstr ""
 
-#: includes/views/dashboard.php:600
+#: includes/views/dashboard.php:607
 msgid "Switch on Country blocking under Hardening for these rules to apply. No country is detected for your request with the current source."
 msgstr ""
 
-#: includes/views/dashboard.php:605
+#: includes/views/dashboard.php:612
 msgid "Country comes from"
 msgstr ""
 
-#: includes/views/dashboard.php:611
+#: includes/views/dashboard.php:618
 #: includes/views/tab-firewall.php:156
 msgid "Rule"
 msgstr ""
 
-#: includes/views/dashboard.php:613
+#: includes/views/dashboard.php:620
 msgid "Block the listed countries"
 msgstr ""
 
-#: includes/views/dashboard.php:614
+#: includes/views/dashboard.php:621
 msgid "Allow only the listed countries"
 msgstr ""
 
-#: includes/views/dashboard.php:618
+#: includes/views/dashboard.php:625
 msgid "Login page and XML-RPC only"
 msgstr ""
 
-#: includes/views/dashboard.php:619
+#: includes/views/dashboard.php:626
 msgid "The whole site"
 msgstr ""
 
-#: includes/views/dashboard.php:621
+#: includes/views/dashboard.php:628
 msgid "Countries (two-letter codes)"
 msgstr ""
 
-#: includes/views/dashboard.php:624
+#: includes/views/dashboard.php:631
 msgid "Use ISO country codes, such as US, GB or DE. With Cloudflare, T1 means Tor. Logged-in users are not blocked from the site, and you cannot save a rule that blocks your own country."
 msgstr ""
 
 #. translators: %s: IP address.
-#: includes/views/dashboard.php:631
+#: includes/views/dashboard.php:638
 #, php-format
 msgid "Chaos Shield currently sees your IP as %s."
 msgstr ""
 
 #. translators: %s: IP address.
-#: includes/views/dashboard.php:631
+#: includes/views/dashboard.php:638
 msgid "unknown"
 msgstr ""
 
 #. translators: %s: header names.
-#: includes/views/dashboard.php:638
+#: includes/views/dashboard.php:645
 #, php-format
 msgid "This request passed through a proxy (%s was sent). If your site is behind Cloudflare or a load balancer, pick it below so lockouts target the real visitor and not the proxy."
 msgstr ""
 
-#: includes/views/dashboard.php:643
+#: includes/views/dashboard.php:650
 msgid "Your site sits behind"
 msgstr ""
 
-#: includes/views/dashboard.php:650
+#: includes/views/dashboard.php:657
 msgid "Trusted proxy IPs (optional)"
 msgstr ""
 
-#: includes/views/dashboard.php:654
+#: includes/views/dashboard.php:661
 msgid "The proxy header is only believed when the connection comes from a trusted proxy, so a visitor who reaches your server directly cannot fake their address. With no list, private network addresses are trusted, and so are Cloudflare's published ranges for the Cloudflare header. List your proxy IPs or ranges if your proxy uses public addresses."
 msgstr ""
 
 #. translators: %s: IP address.
-#: includes/views/dashboard.php:660
+#: includes/views/dashboard.php:667
 #, php-format
 msgid "Your own request came from %1$s with the proxy header, but that address is not trusted, so the header was ignored and lockouts see the proxy instead of visitors. If %2$s is your proxy, add it to the trusted list."
 msgstr ""
 
-#: includes/views/dashboard.php:697
+#: includes/views/dashboard.php:704
 msgid "Locked out IPs"
 msgstr ""
 
-#: includes/views/dashboard.php:703
+#: includes/views/dashboard.php:710
 msgid "Release all"
 msgstr ""
 
-#: includes/views/dashboard.php:708
+#: includes/views/dashboard.php:715
 msgid "No IP addresses are locked out."
 msgstr ""
 
-#: includes/views/dashboard.php:711
+#: includes/views/dashboard.php:718
 msgid "Locked until"
 msgstr ""
 
-#: includes/views/dashboard.php:722
+#: includes/views/dashboard.php:729
 msgid "Release"
 msgstr ""
 
-#: includes/views/dashboard.php:729
-#: includes/views/dashboard.php:805
+#: includes/views/dashboard.php:736
+#: includes/views/dashboard.php:812
 msgid "Block permanently"
 msgstr ""
 
-#: includes/views/dashboard.php:743
+#: includes/views/dashboard.php:750
 msgid "Signed-in administrators"
 msgstr ""
 
-#: includes/views/dashboard.php:746
+#: includes/views/dashboard.php:753
 msgid "No administrator sessions."
 msgstr ""
 
-#: includes/views/dashboard.php:749
+#: includes/views/dashboard.php:756
 msgid "Browser"
 msgstr ""
 
-#: includes/views/dashboard.php:749
+#: includes/views/dashboard.php:756
 msgid "Signed in"
 msgstr ""
 
-#: includes/views/dashboard.php:759
+#: includes/views/dashboard.php:766
 msgid "This session"
 msgstr ""
 
-#: includes/views/dashboard.php:766
+#: includes/views/dashboard.php:773
 msgid "Sign out"
 msgstr ""
 
-#: includes/views/dashboard.php:780
+#: includes/views/dashboard.php:787
 msgid "Banned IPs"
 msgstr ""
 
-#: includes/views/dashboard.php:783
+#: includes/views/dashboard.php:790
 msgid "No IP addresses are banned. Repeat attackers and 404 probing bots will show up here."
 msgstr ""
 
-#: includes/views/dashboard.php:786
+#: includes/views/dashboard.php:793
 #: includes/views/tab-backups.php:51
 #: includes/views/tab-scan.php:270
 msgid "Why"
 msgstr ""
 
-#: includes/views/dashboard.php:786
+#: includes/views/dashboard.php:793
 msgid "Banned until"
 msgstr ""
 
-#: includes/views/dashboard.php:798
+#: includes/views/dashboard.php:805
 msgid "Lift ban"
 msgstr ""
 
-#: includes/views/dashboard.php:840
+#: includes/views/dashboard.php:847
 msgid "Activity log"
 msgstr ""
 
 #. translators: %s: number of events.
-#: includes/views/dashboard.php:844
+#: includes/views/dashboard.php:851
 #, php-format
 msgid "%s event"
 msgid_plural "%s events"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/views/dashboard.php:849
+#: includes/views/dashboard.php:856
 msgid "Export CSV"
 msgstr ""
 
-#: includes/views/dashboard.php:853
+#: includes/views/dashboard.php:860
 msgid "Report period"
 msgstr ""
 
-#: includes/views/dashboard.php:856
+#: includes/views/dashboard.php:863
 msgid "Last 30 days"
 msgstr ""
 
-#: includes/views/dashboard.php:857
+#: includes/views/dashboard.php:864
 msgid "Last 90 days"
 msgstr ""
 
-#: includes/views/dashboard.php:858
+#: includes/views/dashboard.php:865
 msgid "Last 12 months"
 msgstr ""
 
-#: includes/views/dashboard.php:860
+#: includes/views/dashboard.php:867
 msgid "Compliance report"
 msgstr ""
 
-#: includes/views/dashboard.php:869
+#: includes/views/dashboard.php:876
 msgid "All events"
 msgstr ""
 
-#: includes/views/dashboard.php:877
+#: includes/views/dashboard.php:884
 msgid "All sites"
 msgstr ""
 
-#: includes/views/dashboard.php:883
+#: includes/views/dashboard.php:890
 msgid "Username"
 msgstr ""
 
-#: includes/views/dashboard.php:885
+#: includes/views/dashboard.php:892
 msgid "Contains"
 msgstr ""
 
-#: includes/views/dashboard.php:886
+#: includes/views/dashboard.php:893
 msgid "Text or IP"
 msgstr ""
 
-#: includes/views/dashboard.php:887
+#: includes/views/dashboard.php:894
 msgid "From"
 msgstr ""
 
-#: includes/views/dashboard.php:889
+#: includes/views/dashboard.php:896
 msgid "To"
 msgstr ""
 
-#: includes/views/dashboard.php:892
+#: includes/views/dashboard.php:899
 msgid "Filter"
 msgstr ""
 
-#: includes/views/dashboard.php:894
+#: includes/views/dashboard.php:901
 msgid "Clear"
 msgstr ""
 
-#: includes/views/dashboard.php:900
+#: includes/views/dashboard.php:907
 msgid "Activity pages"
 msgstr ""
 
-#: includes/views/dashboard.php:916
+#: includes/views/dashboard.php:923
 msgid "Newer"
 msgstr ""
 
 #. translators: 1: page number, 2: page count.
-#: includes/views/dashboard.php:921
+#: includes/views/dashboard.php:928
 #, php-format
 msgid "Page %1$d of %2$d"
 msgstr ""
 
-#: includes/views/dashboard.php:939
+#: includes/views/dashboard.php:946
 msgid "Older"
 msgstr ""
 

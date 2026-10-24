@@ -79,3 +79,6 @@ add_action(
 		echo (string) get_site_option( 'sst_inject', '' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Test markup.
 	}
 );
+
+// Every test comment comes from 127.0.0.1, so WordPress's flood check would refuse all but the first.
+add_filter( 'wp_is_comment_flood', '__return_false', 99 );
