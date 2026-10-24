@@ -429,6 +429,31 @@ $cshield_events_table = static function ( array $events, array $labels, $date_fo
 				</p>
 			</section>
 
+			<section class="cshield-card cshield-card--full cshield-accounts">
+				<h2><?php esc_html_e( 'Accounts', 'chaos-shield' ); ?></h2>
+				<div class="cshield-fields cshield-fields--four">
+					<label><span><?php esc_html_e( 'Require two-factor or a passkey for', 'chaos-shield' ); ?></span>
+						<select name="cshield[tf_required]">
+							<option value="off" <?php selected( Settings::get( 'tf_required' ), 'off' ); ?>><?php esc_html_e( 'Nobody, it stays optional', 'chaos-shield' ); ?></option>
+							<option value="admins" <?php selected( Settings::get( 'tf_required' ), 'admins' ); ?>><?php esc_html_e( 'Administrators', 'chaos-shield' ); ?></option>
+							<option value="staff" <?php selected( Settings::get( 'tf_required' ), 'staff' ); ?>><?php esc_html_e( 'Everyone who can write posts', 'chaos-shield' ); ?></option>
+						</select></label>
+					<label><span><?php esc_html_e( 'Days to set it up', 'chaos-shield' ); ?></span>
+						<input type="number" min="0" max="30" name="cshield[tf_grace_days]" value="<?php echo esc_attr( Settings::get( 'tf_grace_days' ) ); ?>"></label>
+					<label><span><?php esc_html_e( 'Trust browsers for (days, 0 = off)', 'chaos-shield' ); ?></span>
+						<input type="number" min="0" max="90" name="cshield[tf_trust_days]" value="<?php echo esc_attr( Settings::get( 'tf_trust_days' ) ); ?>"></label>
+					<label><span><?php esc_html_e( 'Idle sign out (minutes, 0 = off)', 'chaos-shield' ); ?></span>
+						<input type="number" min="0" max="1440" name="cshield[idle_minutes]" value="<?php echo esc_attr( Settings::get( 'idle_minutes' ) ); ?>"></label>
+					<label><span><?php esc_html_e( 'Idle sign out applies to', 'chaos-shield' ); ?></span>
+						<select name="cshield[idle_roles]">
+							<option value="admins" <?php selected( Settings::get( 'idle_roles' ), 'admins' ); ?>><?php esc_html_e( 'Administrators', 'chaos-shield' ); ?></option>
+							<option value="staff" <?php selected( Settings::get( 'idle_roles' ), 'staff' ); ?>><?php esc_html_e( 'Everyone who can write posts', 'chaos-shield' ); ?></option>
+							<option value="all" <?php selected( Settings::get( 'idle_roles' ), 'all' ); ?>><?php esc_html_e( 'All users', 'chaos-shield' ); ?></option>
+						</select></label>
+				</div>
+				<p class="cshield-small"><?php esc_html_e( 'When two-factor is required, each account gets the days above to add an authenticator app or a passkey. After that it can only reach its own profile until it does. Trusted browsers are forgotten when the password changes, and each user can forget them on their profile.', 'chaos-shield' ); ?></p>
+			</section>
+
 			<?php $cshield_tf = Threat_Feed::status(); ?>
 			<section class="cshield-card cshield-login-limits">
 				<h2><?php esc_html_e( 'Threat intelligence and traffic', 'chaos-shield' ); ?></h2>
@@ -487,6 +512,35 @@ $cshield_events_table = static function ( array $events, array $labels, $date_fo
 				<button type="submit" class="cshield-btn"><?php esc_html_e( 'Save changes', 'chaos-shield' ); ?></button>
 			</div>
 		</form>
+
+		<?php
+		$cshield_keys_ok  = Salts::can_rotate();
+		$cshield_keys_set = (int) Network::get_option( Salts::ROTATED, 0 );
+		?>
+		<section class="cshield-card cshield-card--full cshield-keys">
+			<h2><?php esc_html_e( 'Security keys', 'chaos-shield' ); ?></h2>
+			<p class="cshield-small">
+				<?php
+				echo esc_html(
+					$cshield_keys_set
+						/* translators: %s: date. */
+						? sprintf( __( 'The keys in wp-config.php sign every login cookie. Last replaced by Chaos Shield on %s.', 'chaos-shield' ), wp_date( $cshield_date_format, $cshield_keys_set ) )
+						: __( 'The keys in wp-config.php sign every login cookie. Replace them after a break-in, a lost laptop or a departing administrator: every session and stolen cookie stops working at once.', 'chaos-shield' )
+				);
+				?>
+			</p>
+			<?php if ( true === $cshield_keys_ok ) : ?>
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="cshield-inline-form">
+					<input type="hidden" name="action" value="cshield_salts">
+					<?php wp_nonce_field( 'cshield_salts' ); ?>
+					<button type="submit" class="cshield-btn cshield-btn--ghost" onclick="return confirm(<?php echo esc_attr( wp_json_encode( __( 'Replace the security keys in wp-config.php? Everyone is signed out, you too, and must log in again.', 'chaos-shield' ) ) ); ?>)"><?php esc_html_e( 'Replace security keys', 'chaos-shield' ); ?></button>
+				</form>
+				<p class="cshield-small"><?php esc_html_e( 'Two-factor, the hub and connected services keep working: their stored keys are sealed again with the new ones.', 'chaos-shield' ); ?></p>
+			<?php else : ?>
+				<p class="cshield-small"><?php echo esc_html( $cshield_keys_ok->get_error_message() . ' ' . __( 'To replace them by hand, swap these lines into wp-config.php. Two-factor codes then stop working until each user sets them up again, so prefer fixing the file permissions and using the button.', 'chaos-shield' ) ); ?></p>
+				<textarea class="large-text code" rows="8" readonly onclick="this.select()"><?php echo esc_textarea( Salts::block() ); ?></textarea>
+			<?php endif; ?>
+		</section>
 
 	<?php elseif ( 'access' === $tab ) : ?>
 		<?php

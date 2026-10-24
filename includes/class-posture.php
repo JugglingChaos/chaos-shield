@@ -61,6 +61,18 @@ final class Posture {
 			2
 		);
 
+		$public   = Accounts::public_logins();
+		$checks[] = self::check(
+			'public_logins',
+			__( 'Public names', 'chaos-shield' ),
+			$public ? self::WARN : self::PASS,
+			$public
+				/* translators: 1: number of accounts, 2: usernames. */
+				? sprintf( _n( '%1$d account that can write posts shows its username as its public name (%2$s), which gives attackers half of the login. Pick another "Display name publicly as" on its profile.', '%1$d accounts that can write posts show their username as their public name (%2$s), which gives attackers half of the login. Pick another "Display name publicly as" on each profile.', count( $public ), 'chaos-shield' ), count( $public ), implode( ', ', array_slice( $public, 0, 5 ) ) . ( count( $public ) > 5 ? ', …' : '' ) )
+				: __( 'No author publishes under their username.', 'chaos-shield' ),
+			1
+		);
+
 		$file_edit = defined( 'DISALLOW_FILE_EDIT' ) && DISALLOW_FILE_EDIT;
 		$checks[]  = self::check(
 			'file_edit',
@@ -111,7 +123,7 @@ final class Posture {
 		}
 
 		foreach ( Settings::modules() as $key => $module ) {
-			if ( in_array( $key, array( 'disable_file_edit', 'disable_app_passwords', 'two_factor', 'country_block', 'captcha' ), true ) ) {
+			if ( in_array( $key, array( 'disable_file_edit', 'disable_app_passwords', 'two_factor', 'country_block', 'captcha', 'approve_signups' ), true ) ) {
 				continue; // Covered by its own check, or optional.
 			}
 			$on       = Settings::enabled( $key );
@@ -234,7 +246,7 @@ final class Posture {
 		}
 		$cover = Two_Factor::admin_coverage();
 		if ( $cover['total'] && $cover['enabled'] === $cover['total'] ) {
-			return self::check( 'two_factor', $label, self::PASS, __( 'Every administrator signs in with an authenticator app.', 'chaos-shield' ), 3 );
+			return self::check( 'two_factor', $label, self::PASS, __( 'Every administrator has a second login step: an authenticator app or a passkey.', 'chaos-shield' ), 3 );
 		}
 		return self::check(
 			'two_factor',
@@ -242,7 +254,7 @@ final class Posture {
 			$cover['enabled'] ? self::WARN : self::FAIL,
 			sprintf(
 				/* translators: 1: admins with two-factor, 2: all admins. */
-				__( '%1$d of %2$d administrators use two-factor. Each admin can turn it on under Users > Profile.', 'chaos-shield' ),
+				__( '%1$d of %2$d administrators have two-factor or a passkey. Each admin can add one under Users > Profile, or you can require it under Hardening.', 'chaos-shield' ),
 				$cover['enabled'],
 				$cover['total']
 			),

@@ -61,18 +61,7 @@ final class Password_Policy {
 	 * @return bool
 	 */
 	public static function applies( $user, $role = '' ) {
-		$scope = (string) Settings::get( 'pw_roles' );
-		if ( 'all' === $scope ) {
-			return true;
-		}
-		$cap = 'admins' === $scope ? 'manage_options' : 'edit_posts';
-		if ( $role ) {
-			$object = get_role( $role );
-			if ( $object && $object->has_cap( $cap ) ) {
-				return true;
-			}
-		}
-		return $user instanceof \WP_User && $user->exists() && user_can( $user, $cap );
+		return Accounts::covers( $user, (string) Settings::get( 'pw_roles' ), $role );
 	}
 
 	/**

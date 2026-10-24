@@ -189,6 +189,9 @@ final class Backup {
 			'pw_min_length'        => array( 8, 64 ),
 			'pw_classes'           => array( 1, 4 ),
 			'pw_max_age'           => array( 0, 730 ),
+			'tf_grace_days'        => array( 0, 30 ),
+			'tf_trust_days'        => array( 0, 90 ),
+			'idle_minutes'         => array( 0, 1440 ),
 			'attack_threshold'     => array( 20, 10000 ),
 			'log_retention'        => array( 7, 730 ),
 			'forward_min_severity' => array( 1, 3 ),
@@ -200,6 +203,8 @@ final class Backup {
 		$choices  = array(
 			'scan_schedule'  => array( 'daily', 'weekly', 'off' ),
 			'pw_roles'       => array( 'admins', 'staff', 'all' ),
+			'tf_required'    => array( 'off', 'admins', 'staff' ),
+			'idle_roles'     => array( 'admins', 'staff', 'all' ),
 			'traffic_mode'   => array( 'security', 'all' ),
 			'fw_mode'        => array( 'block', 'learn' ),
 			'fw_sensitivity' => array_keys( Firewall::thresholds() ),

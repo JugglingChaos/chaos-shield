@@ -94,26 +94,28 @@ final class Totp {
 	/**
 	 * Encrypts a secret for storage with a key derived from the site salts.
 	 *
-	 * @param string $plain Secret.
+	 * @param string      $plain Secret.
+	 * @param string|null $key   Key from key_for(), when sealing for security keys not loaded yet.
 	 * @return string
 	 */
-	public static function seal( $plain ) {
+	public static function seal( $plain, $key = null ) {
 		if ( ! function_exists( 'openssl_encrypt' ) || ! in_array( 'aes-256-gcm', openssl_get_cipher_methods(), true ) ) {
 			return 'p1:' . $plain;
 		}
 		$iv  = random_bytes( 12 );
 		$tag = '';
-		$ct  = openssl_encrypt( $plain, 'aes-256-gcm', self::key(), OPENSSL_RAW_DATA, $iv, $tag );
+		$ct  = openssl_encrypt( $plain, 'aes-256-gcm', null === $key ? self::key() : $key, OPENSSL_RAW_DATA, $iv, $tag );
 		return 'e1:' . base64_encode( $iv . $tag . $ct ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Binary ciphertext storage.
 	}
 
 	/**
 	 * Decrypts a stored secret.
 	 *
-	 * @param string $sealed Stored value.
+	 * @param string      $sealed Stored value.
+	 * @param string|null $key    Key from key_for(), instead of the loaded security keys.
 	 * @return string|false False when the value cannot be read, for example after the salts changed.
 	 */
-	public static function open( $sealed ) {
+	public static function open( $sealed, $key = null ) {
 		$sealed = (string) $sealed;
 		if ( 0 === strpos( $sealed, 'p1:' ) ) {
 			return substr( $sealed, 3 );
@@ -125,7 +127,7 @@ final class Totp {
 		if ( false === $raw || strlen( $raw ) < 29 ) {
 			return false;
 		}
-		$plain = openssl_decrypt( substr( $raw, 28 ), 'aes-256-gcm', self::key(), OPENSSL_RAW_DATA, substr( $raw, 0, 12 ), substr( $raw, 12, 16 ) );
+		$plain = openssl_decrypt( substr( $raw, 28 ), 'aes-256-gcm', null === $key ? self::key() : $key, OPENSSL_RAW_DATA, substr( $raw, 0, 12 ), substr( $raw, 12, 16 ) );
 		return false === $plain ? false : $plain;
 	}
 
@@ -135,7 +137,17 @@ final class Totp {
 	 * @return string
 	 */
 	private static function key() {
-		return hash_hmac( 'sha256', 'chaos-shield-2fa', wp_salt( 'secure_auth' ), true );
+		return self::key_for( wp_salt( 'secure_auth' ) );
+	}
+
+	/**
+	 * Encryption key for a given secure_auth salt.
+	 *
+	 * @param string $salt SECURE_AUTH_KEY followed by SECURE_AUTH_SALT, as wp_salt() joins them.
+	 * @return string
+	 */
+	public static function key_for( $salt ) {
+		return hash_hmac( 'sha256', 'chaos-shield-2fa', (string) $salt, true );
 	}
 
 	/**

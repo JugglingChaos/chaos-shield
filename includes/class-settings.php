@@ -153,6 +153,10 @@ final class Settings {
 				'label'       => __( 'Restore points', 'chaos-shield' ),
 				'description' => __( 'Saves a copy of a plugin or theme before it updates, of a file before it is repaired and of these settings before they change, so you can put them back from the Backups tab. Kept for 30 days.', 'chaos-shield' ),
 			),
+			'approve_signups'       => array(
+				'label'       => __( 'Approve new sign-ups', 'chaos-shield' ),
+				'description' => __( 'Accounts that visitors make for themselves cannot log in until an administrator approves them on the Users screen. You get an email for each one.', 'chaos-shield' ),
+			),
 			'disable_app_passwords' => array(
 				'label'       => __( 'Disable application passwords', 'chaos-shield' ),
 				'description' => __( 'Turns off REST API application passwords. Leave off if an app or service signs in with them.', 'chaos-shield' ),
@@ -202,6 +206,7 @@ final class Settings {
 			'geo_db'                => true,
 			'siem'                  => true,
 			'restore_points'        => true,
+			'approve_signups'       => false,
 			'disable_app_passwords' => false,
 		);
 		$defaults['login_max_attempts']   = 5;
@@ -254,6 +259,11 @@ final class Settings {
 		$defaults['pw_classes']           = 3;
 		$defaults['pw_roles']             = 'staff';
 		$defaults['pw_max_age']           = 0;
+		$defaults['tf_required']          = 'off';
+		$defaults['tf_grace_days']        = 7;
+		$defaults['tf_trust_days']        = 0;
+		$defaults['idle_minutes']         = 0;
+		$defaults['idle_roles']           = 'staff';
 		$defaults['threat_tor']           = false;
 		$defaults['traffic_mode']         = 'security';
 		$defaults['siem_rules_off']       = array();
@@ -449,6 +459,13 @@ final class Settings {
 		$clean['pw_max_age']         = self::bounded_int( $input, 'pw_max_age', 0, 730 );
 		$roles                       = isset( $input['pw_roles'] ) ? (string) $input['pw_roles'] : 'staff';
 		$clean['pw_roles']           = in_array( $roles, array( 'admins', 'staff', 'all' ), true ) ? $roles : 'staff';
+		$required                    = isset( $input['tf_required'] ) ? (string) $input['tf_required'] : 'off';
+		$clean['tf_required']        = in_array( $required, array( 'off', 'admins', 'staff' ), true ) ? $required : 'off';
+		$clean['tf_grace_days']      = self::bounded_int( $input, 'tf_grace_days', 0, 30 );
+		$clean['tf_trust_days']      = self::bounded_int( $input, 'tf_trust_days', 0, 90 );
+		$clean['idle_minutes']       = self::bounded_int( $input, 'idle_minutes', 0, 1440 );
+		$idle                        = isset( $input['idle_roles'] ) ? (string) $input['idle_roles'] : 'staff';
+		$clean['idle_roles']         = in_array( $idle, array( 'admins', 'staff', 'all' ), true ) ? $idle : 'staff';
 		$clean['threat_tor']         = ! empty( $input['threat_tor'] );
 		$mode                        = isset( $input['traffic_mode'] ) ? (string) $input['traffic_mode'] : 'security';
 		$clean['traffic_mode']       = 'all' === $mode ? 'all' : 'security';

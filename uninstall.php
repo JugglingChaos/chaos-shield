@@ -99,7 +99,7 @@ if ( is_file( $cshield_root_ht ) && is_writable( $cshield_root_ht ) ) { // phpcs
 	}
 }
 
-foreach ( array( '_cshield_known_ips', '_cshield_2fa_secret', '_cshield_2fa_pending', '_cshield_2fa_recovery', '_cshield_2fa_last_step', '_cshield_2fa_login', '_cshield_pw_breached', '_cshield_pw_checked', '_cshield_passkeys', '_cshield_pw_changed', '_cshield_force_reset' ) as $cshield_meta_key ) {
+foreach ( array( '_cshield_known_ips', '_cshield_2fa_secret', '_cshield_2fa_pending', '_cshield_2fa_recovery', '_cshield_2fa_last_step', '_cshield_2fa_login', '_cshield_pw_breached', '_cshield_pw_checked', '_cshield_passkeys', '_cshield_pw_changed', '_cshield_force_reset', '_cshield_2fa_due', '_cshield_2fa_trusted', '_cshield_pending' ) as $cshield_meta_key ) {
 	delete_metadata( 'user', 0, $cshield_meta_key, '', true );
 }
 
