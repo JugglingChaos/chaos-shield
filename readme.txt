@@ -4,7 +4,7 @@ Tags: security, firewall, two-factor, audit log, malware scanner
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.15.0
+Stable tag: 1.16.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -24,7 +24,8 @@ Disable XML-RPC, the file editor and application passwords, hide the WordPress v
 * Two-factor with any authenticator app, with recovery codes, trusted browsers and an admin reset. Require it, or a passkey, for administrators or all staff, with a grace period.
 * Idle sign out, approval of new sign-ups, a warning for authors who publish under their username, and one-click replacement of the wp-config.php security keys.
 * Breached passwords are refused, checked with Have I Been Pwned so only five characters of a hash leave your site.
-* A secret login address, an optional Cloudflare Turnstile or hCaptcha check, and a list of signed-in administrator sessions you can end remotely.
+* Comment spam blocking with a hidden field and a time check, no CAPTCHA needed. Bots that keep trying are banned.
+* A secret login address, an optional Cloudflare Turnstile or hCaptcha check (also on comments, WooCommerce, Contact Form 7 and WPForms), and a list of signed-in administrator sessions you can end remotely.
 * A password policy with optional expiry, and forced resets for one user, many, or all administrators.
 
 **Firewall, bans and rate limits**
@@ -172,7 +173,7 @@ Chaos Shield contacts these services. None of them is contacted for a feature th
 * **Spamhaus** (www.spamhaus.org): once a day the threat blocklist downloads the public DROP list. Nothing about your site is sent. [Terms](https://www.spamhaus.org/legal/) and [privacy policy](https://www.spamhaus.org/legal/privacy-policy/).
 * **Tor Project** (check.torproject.org): when you choose to block Tor, the list of Tor exit addresses is downloaded once a day. Nothing about your site is sent. [Privacy policy](https://www.torproject.org/about/privacy/).
 * **GitHub** (github.com, api.github.com): once a week the built-in country lookup downloads the public domain ip-location-db country lists from github.com. The copy of Chaos Shield from GitHub (not the WordPress.org one) also asks api.github.com for its latest release at most every six hours. Only your site's address is sent, in the user agent. [Terms](https://docs.github.com/en/site-policy/github-terms/github-terms-of-service) and [privacy policy](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement).
-* **Cloudflare Turnstile** (challenges.cloudflare.com): with Turnstile as the login CAPTCHA, its script loads on the login page and the token from each login is checked with Cloudflare, together with the visitor's IP. [Terms](https://www.cloudflare.com/website-terms/) and [privacy policy](https://www.cloudflare.com/privacypolicy/).
+* **Cloudflare Turnstile** (challenges.cloudflare.com): with Turnstile as the login CAPTCHA, its script loads on the login page (and on any comment, WooCommerce, Contact Form 7 or WPForms form you turn the check on for) and the token from each login is checked with Cloudflare, together with the visitor's IP. [Terms](https://www.cloudflare.com/website-terms/) and [privacy policy](https://www.cloudflare.com/privacypolicy/).
 * **hCaptcha** (js.hcaptcha.com, api.hcaptcha.com): with hCaptcha as the login CAPTCHA, the same as Turnstile. [Terms](https://www.hcaptcha.com/terms) and [privacy policy](https://www.hcaptcha.com/privacy).
 * **Cloudflare API** (api.cloudflare.com): only when you connect Cloudflare. Banned IPs, under attack mode changes, cache purges and the Always Use HTTPS switch are sent with your API token. [Terms](https://www.cloudflare.com/website-terms/) and [privacy policy](https://www.cloudflare.com/privacypolicy/).
 * **Slack, Discord, Microsoft Teams and Google Chat** (hooks.slack.com, discord.com, your Teams or Power Automate webhook, chat.googleapis.com): only when you connect one. The text of each alert is sent to the channel you chose. [Slack](https://slack.com/trust/privacy/privacy-policy), [Discord](https://discord.com/privacy), [Microsoft](https://privacy.microsoft.com/privacystatement), [Google](https://policies.google.com/privacy).
@@ -181,6 +182,12 @@ Chaos Shield contacts these services. None of them is contacted for a feature th
 * **Sites you connect to the hub**: the hub only contacts the sites you add to it.
 
 == Changelog ==
+
+= 1.16.0 =
+Forms and spam.
+* Comment spam blocking without a CAPTCHA: a hidden field and a signed time stamp stop bots, comments sent without the form go to spam, and a bot refused three times in a day is banned.
+* The login CAPTCHA can also guard comments, WooCommerce login, sign-up and lost password, Contact Form 7 and WPForms.
+* Login limits, two-factor and passkeys also cover the WooCommerce My Account login. bbPress and Elementor login forms post to the WordPress login, so they are covered too.
 
 = 1.15.0 =
 Accounts: everything All-In-One Security offers for logins, free.

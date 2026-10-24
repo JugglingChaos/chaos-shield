@@ -153,6 +153,10 @@ final class Settings {
 				'label'       => __( 'Restore points', 'chaos-shield' ),
 				'description' => __( 'Saves a copy of a plugin or theme before it updates, of a file before it is repaired and of these settings before they change, so you can put them back from the Backups tab. Kept for 30 days.', 'chaos-shield' ),
 			),
+			'comment_spam'          => array(
+				'label'       => __( 'Block comment spam', 'chaos-shield' ),
+				'description' => __( 'Adds a hidden field and a signed time stamp to the comment form, refuses bots that fill it in or post within seconds, bans those that keep trying, and sends comments that skip the form to the spam folder. No CAPTCHA needed.', 'chaos-shield' ),
+			),
 			'approve_signups'       => array(
 				'label'       => __( 'Approve new sign-ups', 'chaos-shield' ),
 				'description' => __( 'Accounts that visitors make for themselves cannot log in until an administrator approves them on the Users screen. You get an email for each one.', 'chaos-shield' ),
@@ -206,6 +210,7 @@ final class Settings {
 			'geo_db'                => true,
 			'siem'                  => true,
 			'restore_points'        => true,
+			'comment_spam'          => true,
 			'approve_signups'       => false,
 			'disable_app_passwords' => false,
 		);
@@ -219,6 +224,10 @@ final class Settings {
 		$defaults['turnstile_site_key']   = '';
 		$defaults['captcha_provider']     = 'turnstile';
 		$defaults['hcaptcha_site_key']    = '';
+		$defaults['captcha_comments']     = false;
+		$defaults['captcha_woo']          = false;
+		$defaults['captcha_cf7']          = false;
+		$defaults['captcha_wpforms']      = false;
 		$defaults['chat_service']         = '';
 		$defaults['help_bubble']          = false;
 		$defaults['help_contact']         = true;
@@ -467,8 +476,11 @@ final class Settings {
 		$idle                        = isset( $input['idle_roles'] ) ? (string) $input['idle_roles'] : 'staff';
 		$clean['idle_roles']         = in_array( $idle, array( 'admins', 'staff', 'all' ), true ) ? $idle : 'staff';
 		$clean['threat_tor']         = ! empty( $input['threat_tor'] );
-		$mode                        = isset( $input['traffic_mode'] ) ? (string) $input['traffic_mode'] : 'security';
-		$clean['traffic_mode']       = 'all' === $mode ? 'all' : 'security';
+		foreach ( array_keys( Captcha::form_options() ) as $key ) {
+			$clean[ $key ] = ! empty( $input[ $key ] );
+		}
+		$mode                  = isset( $input['traffic_mode'] ) ? (string) $input['traffic_mode'] : 'security';
+		$clean['traffic_mode'] = 'all' === $mode ? 'all' : 'security';
 		return self::store( $clean );
 	}
 
