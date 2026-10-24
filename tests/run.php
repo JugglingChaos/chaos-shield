@@ -25,6 +25,8 @@ use ChaosShield\Exposure;
 use ChaosShield\Https;
 use ChaosShield\Page_Check;
 use ChaosShield\Scripts;
+use ChaosShield\Server;
+use ChaosShield\Posture;
 use ChaosShield\Captcha;
 use ChaosShield\Comments;
 use ChaosShield\Hub;
@@ -2178,6 +2180,159 @@ group(
 			check( 'a bot that keeps trying is banned', Bans::until( $bot ) > time() );
 		} finally {
 			wp_delete_post( $post, true );
+		}
+	}
+);
+
+group(
+	'Server hardening',
+	function () {
+		$set    = function ( array $changes ) {
+			Network::update_option( Settings::OPTION, array_merge( Settings::all(), $changes ) );
+			Settings::forget();
+		};
+		$before = Settings::all();
+		try {
+			// User agents.
+			check( 'a listed word matches anywhere in the user agent, in any case', Server::agent_listed( 'Mozilla/5.0 (compatible; EvilScraper/2.1)', array( 'evilscraper' ) ) && ! Server::agent_listed( 'Mozilla/5.0 Firefox/131.0', array( 'evilscraper' ) ) );
+			$parsed = Server::parse_agents( "EvilScraper\nFirefox\nab\nEvilScraper", 'Mozilla/5.0 (X11; Linux x86_64) Firefox/131.0' );
+			check( 'the user agent list drops short entries, repeats and the saver\'s own browser', array( 'EvilScraper' ) === $parsed['valid'] && array( 'Firefox' ) === $parsed['self'] );
+			$set( array( 'ua_blocklist' => array( 'EvilScraper' ) ) );
+			check( 'a listed user agent gets a 403', 403 === http( 'GET', '/', ip(), array( 'headers' => array( 'User-Agent' => 'Mozilla/5.0 (compatible; EvilScraper/2.1)' ) ) )['status'] );
+			check( 'other browsers still get the page', 200 === http( 'GET', '/', ip() )['status'] );
+			$set( array( 'ua_blocklist' => array() ) );
+
+			$blank = function () {
+				return http(
+					'POST',
+					'/',
+					ip(),
+					array(
+						'headers' => array( 'User-Agent' => '' ),
+						'body'    => array( 'x' => '1' ),
+					)
+				)['status'];
+			};
+			check( 'a post with no user agent goes through while the switch is off', 403 !== $blank() );
+			$set( array( 'block_blank_ua' => true ) );
+			check( 'a post with no user agent is refused when the switch is on', 403 === $blank() );
+			check( 'a normal post still goes through', 403 !== http( 'POST', '/', ip(), array( 'body' => array( 'x' => '1' ) ) )['status'] );
+			$set( array( 'block_blank_ua' => false ) );
+
+			// REST API.
+			check( 'the REST API is open to visitors by default', 200 === http( 'GET', '/?rest_route=/wp/v2/posts', ip() )['status'] );
+			$set(
+				array(
+					'rest_private' => true,
+					'rest_allow'   => Server::parse_routes( "wp/v2/types\nbad|route" ),
+				)
+			);
+			check( 'the REST allow list keeps clean routes only', array( '/wp/v2/types' ) === Settings::get( 'rest_allow' ) );
+			check( 'with the REST API closed, visitors get a 401', 401 === http( 'GET', '/?rest_route=/wp/v2/posts', ip() )['status'] );
+			check( 'an allowed route stays open', 200 === http( 'GET', '/?rest_route=/wp/v2/types', ip() )['status'] );
+			check( 'embeds stay open', 401 !== http( 'GET', '/?rest_route=/oembed/1.0/embed&url=' . rawurlencode( home_url( '/' ) ), ip() )['status'] );
+			$gate = new Server();
+			wp_set_current_user( user()->ID );
+			check( 'logged-in users can still use it', null === $gate->rest_gate( null, rest_get_server(), new \WP_REST_Request( 'GET', '/wp/v2/posts' ) ) );
+			wp_set_current_user( 0 );
+			check( 'a route that only starts with the same letters is not opened', is_wp_error( $gate->rest_gate( null, rest_get_server(), new \WP_REST_Request( 'GET', '/wp/v2/typesx' ) ) ) );
+			$set( array( 'rest_private' => false ) );
+
+			// Feeds.
+			check( 'feeds work by default', 200 === http( 'GET', '/?feed=rss2', ip() )['status'] );
+			$set( array( 'disable_feeds' => true ) );
+			$feed = http( 'GET', '/?feed=rss2', ip() );
+			check( 'with feeds off, a feed answers 410 Gone', 410 === $feed['status'] );
+			check( 'and the feed links leave the page', false === strpos( http( 'GET', '/', ip() )['body'], 'application/rss+xml' ) );
+			$set( array( 'disable_feeds' => false ) );
+
+			// Hotlinks and the sensitive files block.
+			check( 'the hotlink allow list keeps domains only', array( 'partner.example.com', 'cdn.example.org' ) === Server::parse_hosts( "https://www.partner.example.com/x\ncdn.example.org, nope, http://" ) );
+			$set( array( 'hotlink_allow' => array( 'partner.example.com' ) ) );
+			$rules = implode( "\n", Server::hotlink_rules() );
+			$own   = preg_quote( preg_replace( '/^www\./', '', (string) wp_parse_url( home_url(), PHP_URL_HOST ) ), '#' );
+			check( 'the hotlink rule lets this site, allowed sites and search engines through', false !== strpos( $rules, $own ) && false !== strpos( $rules, 'partner\.example\.com' ) && false !== strpos( $rules, 'google' ) && false !== strpos( $rules, '[F,NC]' ) );
+			check( 'the nginx version names the same sites', false !== strpos( Server::hotlink_nginx(), 'partner.example.com' ) );
+			check( 'the sensitive files block also covers readme files and directory listings', false !== strpos( implode( "\n", Exposure::rules() ), 'readme' ) && in_array( 'Options -Indexes', Exposure::rules(), true ) );
+
+			$file = ABSPATH . '.htaccess';
+			$had  = is_file( $file ) ? file_get_contents( $file ) : null;
+			try {
+				check( 'the hotlink block is written to .htaccess', true === Server::write_block( Server::HOTLINK_MARKER, Server::hotlink_rules() ) && Server::hotlink_rules() === Server::block_lines( Server::HOTLINK_MARKER ) );
+				check( 'and taken out again without leaving markers', true === Server::write_block( Server::HOTLINK_MARKER, array() ) && false === strpos( (string) file_get_contents( $file ), Server::HOTLINK_MARKER ) );
+				file_put_contents( $file, '# BEGIN ' . Exposure::MARKER . "\nOptions -Indexes\n# END " . Exposure::MARKER . "\n" );
+				Network::delete_option( Server::RULES_SEEN );
+				$owner = user()->ID;
+				if ( is_multisite() ) {
+					grant_super_admin( $owner );
+				}
+				wp_set_current_user( $owner );
+				Server::refresh_rules();
+				wp_set_current_user( 0 );
+				check( 'an older sensitive files block is brought up to date', Exposure::rules() === Server::block_lines( Exposure::MARKER ) );
+			} finally {
+				if ( null === $had ) {
+					@unlink( $file );
+				} else {
+					file_put_contents( $file, $had );
+				}
+			}
+
+			// File permissions.
+			$index = ABSPATH . 'index.php';
+			$mode  = fileperms( $index ) & 0777;
+			try {
+				chmod( $index, 0666 );
+				$rows = wp_list_pluck( Server::permissions(), 'status', 'label' );
+				check( 'a world-writable file fails the permission check', Posture::FAIL === $rows['index.php'] );
+				$fix = Server::fix_permissions();
+				clearstatcache();
+				check( 'one click takes the extra permissions away', 0644 === ( fileperms( $index ) & 0777 ) && in_array( 'index.php 0666 → 0644', $fix['fixed'], true ) );
+				check( 'the site still loads afterwards', 200 === http( 'GET', '/', ip() )['status'] );
+			} finally {
+				chmod( $index, $mode );
+			}
+
+			// Table prefix.
+			global $wpdb;
+			$ready = Server::prefix_ready();
+			if ( is_wp_error( $ready ) ) {
+				check( 'the prefix change explains why it cannot run here', '' !== $ready->get_error_message() );
+				return;
+			}
+			check( 'a prefix that is not well formed is refused', is_wp_error( Server::change_prefix( 'Bad-Prefix' ) ) );
+			check( 'the random suggestion is well formed', 1 === preg_match( '/^wp[a-z0-9]{5}_$/', Server::suggest_prefix() ) );
+			$old    = $wpdb->prefix;
+			$config = Salts::config_path();
+			$saved  = file_get_contents( $config );
+			$admin  = user()->ID;
+			$new    = 'cst' . strtolower( wp_generate_password( 4, false ) ) . '_';
+			$tables = function ( $prefix ) use ( $wpdb ) {
+				return $wpdb->get_col( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $prefix ) . '%' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- Test.
+			};
+			$count  = count( $tables( $old ) );
+			try {
+				$done = Server::change_prefix( $new );
+				check( 'the prefix change runs', true === $done, is_wp_error( $done ) ? $done->get_error_message() : '' );
+				check( 'every table moved to the new prefix', count( $tables( $new ) ) === $count && ! $tables( $old ) );
+				check( 'wp-config.php names the new prefix', false !== strpos( (string) file_get_contents( $config ), "\$table_prefix = '" . $new . "';" ) );
+				clean_user_cache( $admin );
+				check( 'roles and capabilities moved with it', user_can( $admin, 'manage_options' ) && '' !== get_user_meta( $admin, $new . 'capabilities', true ) );
+				sleep( 3 );
+				check( 'the site loads with the new prefix', 200 === http( 'GET', '/', ip() )['status'] );
+			} finally {
+				if ( $wpdb->prefix !== $old ) {
+					$back = Server::change_prefix( $old );
+					check( 'the prefix can be changed back', true === $back, is_wp_error( $back ) ? $back->get_error_message() : '' );
+				}
+				if ( $wpdb->prefix !== $old ) {
+					file_put_contents( $config, $saved );
+				}
+				sleep( 3 );
+			}
+		} finally {
+			Network::update_option( Settings::OPTION, $before );
+			Settings::forget();
 		}
 	}
 );

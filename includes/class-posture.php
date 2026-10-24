@@ -101,8 +101,31 @@ final class Posture {
 			'db_prefix',
 			__( 'Database prefix', 'chaos-shield' ),
 			$default_prefix ? self::WARN : self::PASS,
-			$default_prefix ? __( 'The default wp_ table prefix makes automated SQL injection slightly easier. Worth changing on new installs.', 'chaos-shield' ) : __( 'A custom table prefix is in use.', 'chaos-shield' ),
+			$default_prefix ? __( 'The default wp_ table prefix makes automated SQL injection slightly easier. Change it under Hardening, after a database backup.', 'chaos-shield' ) : __( 'A custom table prefix is in use.', 'chaos-shield' ),
 			1
+		);
+
+		$loose    = array_filter(
+			Server::permissions(),
+			static function ( $row ) {
+				return self::PASS !== $row['status'];
+			}
+		);
+		$open     = array_filter(
+			$loose,
+			static function ( $row ) {
+				return self::FAIL === $row['status'];
+			}
+		);
+		$checks[] = self::check(
+			'file_permissions',
+			__( 'File permissions', 'chaos-shield' ),
+			$open ? self::FAIL : ( $loose ? self::WARN : self::PASS ),
+			$loose
+				/* translators: %s: list of files and folders. */
+				? sprintf( __( 'Looser than needed: %s. Tighten them in one click under Hardening.', 'chaos-shield' ), implode( ', ', wp_list_pluck( $loose, 'label' ) ) )
+				: __( 'wp-config.php, .htaccess and the main folders are not writable by others.', 'chaos-shield' ),
+			$open ? 3 : 1
 		);
 
 		$checks[] = self::two_factor_check();
@@ -123,7 +146,7 @@ final class Posture {
 		}
 
 		foreach ( Settings::modules() as $key => $module ) {
-			if ( in_array( $key, array( 'disable_file_edit', 'disable_app_passwords', 'two_factor', 'country_block', 'captcha', 'approve_signups' ), true ) ) {
+			if ( in_array( $key, array( 'disable_file_edit', 'disable_app_passwords', 'two_factor', 'country_block', 'captcha', 'approve_signups', 'block_blank_ua', 'rest_private', 'disable_feeds', 'block_hotlinks' ), true ) ) {
 				continue; // Covered by its own check, or optional.
 			}
 			$on       = Settings::enabled( $key );

@@ -228,6 +228,9 @@ final class Backup {
 			$clean[ $key ] = Request::parse_list( implode( "\n", $clean[ $key ] ) )['valid'];
 		}
 		$clean['country_list']    = Geo::parse( implode( ',', $clean['country_list'] ) );
+		$clean['ua_blocklist']    = Server::parse_agents( implode( "\n", $clean['ua_blocklist'] ), Request::server( 'HTTP_USER_AGENT' ) )['valid'];
+		$clean['rest_allow']      = Server::parse_routes( implode( "\n", $clean['rest_allow'] ) );
+		$clean['hotlink_allow']   = Server::parse_hosts( implode( "\n", $clean['hotlink_allow'] ) );
 		$clean['alert_email']     = is_email( $clean['alert_email'] ) ? $clean['alert_email'] : '';
 		$webhook                  = (string) $clean['forward_webhook'];
 		$clean['forward_webhook'] = in_array( wp_parse_url( $webhook, PHP_URL_SCHEME ), array( 'http', 'https' ), true ) && wp_parse_url( $webhook, PHP_URL_HOST ) ? esc_url_raw( $webhook ) : '';

@@ -3,7 +3,7 @@
  * Plugin Name:       Chaos Shield
  * Plugin URI:        https://github.com/JugglingChaos/chaos-shield
  * Description:       Lightweight security hub for WordPress: hardening, passkeys and two-factor login, a request firewall with rate limits, malware and file integrity scanning, audit trail, a built-in SIEM, restore points, compliance reports, alerts, multisite support and a multi-site hub.
- * Version:           1.16.0
+ * Version:           1.17.0
  * Requires at least: 6.4
  * Requires PHP:      7.4
  * Network:           true
@@ -19,7 +19,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'CSHIELD_VERSION', '1.16.0' );
+define( 'CSHIELD_VERSION', '1.17.0' );
 define( 'CSHIELD_FILE', __FILE__ );
 define( 'CSHIELD_DIR', plugin_dir_path( __FILE__ ) );
 define( 'CSHIELD_URL', plugin_dir_url( __FILE__ ) );
@@ -51,6 +51,7 @@ require_once CSHIELD_DIR . 'includes/class-password-policy.php';
 require_once CSHIELD_DIR . 'includes/class-accounts.php';
 require_once CSHIELD_DIR . 'includes/class-salts.php';
 require_once CSHIELD_DIR . 'includes/class-comments.php';
+require_once CSHIELD_DIR . 'includes/class-server.php';
 require_once CSHIELD_DIR . 'includes/class-audit.php';
 require_once CSHIELD_DIR . 'includes/class-forwarder.php';
 require_once CSHIELD_DIR . 'includes/class-export.php';

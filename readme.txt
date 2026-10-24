@@ -4,7 +4,7 @@ Tags: security, firewall, two-factor, audit log, malware scanner
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.16.0
+Stable tag: 1.17.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -17,6 +17,8 @@ Chaos Shield gives you one dashboard for WordPress security, without slowing you
 **Hardening, one switch each**
 
 Disable XML-RPC, the file editor and application passwords, hide the WordPress version, block username enumeration, send security headers, limit login attempts and use generic login errors.
+
+On the server side: fix loose file permissions in one click, block image hotlinking and unwanted user agents, close the REST API and RSS feeds to visitors, and move off the default wp_ table prefix.
 
 **Login protection**
 
@@ -182,6 +184,16 @@ Chaos Shield contacts these services. None of them is contacted for a feature th
 * **Sites you connect to the hub**: the hub only contacts the sites you add to it.
 
 == Changelog ==
+
+= 1.17.0 =
+Server hardening.
+* File permission check for wp-config.php, .htaccess and the main folders, with a one-click fix that only takes permissions away and puts them back if the site would stop working.
+* The sensitive files block now also hides readme.html, license.txt, plugin readme files and wp-config-sample.php. Sites that already use it are updated.
+* Image hotlink blocking in .htaccess, with search engines and your own list of sites allowed.
+* A user agent block list on the Access tab, and a switch that refuses form posts with no user agent.
+* A switch that closes the REST API to visitors who are not logged in, with an allow list. Embeds, WooCommerce checkout, Contact Form 7, WPForms and Jetpack stay open.
+* A switch that turns RSS feeds off.
+* Guided change of the wp_ table prefix: every table is renamed in one step and wp-config.php is updated, or everything is put back.
 
 = 1.16.0 =
 Forms and spam.

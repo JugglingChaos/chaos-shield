@@ -161,6 +161,22 @@ final class Settings {
 				'label'       => __( 'Approve new sign-ups', 'chaos-shield' ),
 				'description' => __( 'Accounts that visitors make for themselves cannot log in until an administrator approves them on the Users screen. You get an email for each one.', 'chaos-shield' ),
 			),
+			'block_blank_ua'        => array(
+				'label'       => __( 'Block posts without a user agent', 'chaos-shield' ),
+				'description' => __( 'Refuses form posts from visitors whose browser sends no user agent, which only scripts do. Block named bots and tools under Access.', 'chaos-shield' ),
+			),
+			'rest_private'          => array(
+				'label'       => __( 'Close the REST API to visitors', 'chaos-shield' ),
+				'description' => __( 'Only logged-in users can use the REST API, apart from the routes you allow below. Embeds, WooCommerce checkout, Contact Form 7, WPForms and Jetpack stay open.', 'chaos-shield' ),
+			),
+			'disable_feeds'         => array(
+				'label'       => __( 'Turn off RSS feeds', 'chaos-shield' ),
+				'description' => __( 'Feed addresses answer 410 Gone and the feed links leave your pages, so scrapers cannot copy posts from them. Leave on if you run a podcast or a newsletter from the feed.', 'chaos-shield' ),
+			),
+			'block_hotlinks'        => array(
+				'label'       => __( 'Block image hotlinking', 'chaos-shield' ),
+				'description' => __( 'Stops other sites from showing your images and using your bandwidth. Search engines and the sites you allow below can still show them. Needs Apache or LiteSpeed.', 'chaos-shield' ),
+			),
 			'disable_app_passwords' => array(
 				'label'       => __( 'Disable application passwords', 'chaos-shield' ),
 				'description' => __( 'Turns off REST API application passwords. Leave off if an app or service signs in with them.', 'chaos-shield' ),
@@ -212,6 +228,10 @@ final class Settings {
 			'restore_points'        => true,
 			'comment_spam'          => true,
 			'approve_signups'       => false,
+			'block_blank_ua'        => false,
+			'rest_private'          => false,
+			'disable_feeds'         => false,
+			'block_hotlinks'        => false,
 			'disable_app_passwords' => false,
 		);
 		$defaults['login_max_attempts']   = 5;
@@ -251,6 +271,9 @@ final class Settings {
 		$defaults['country_list']         = array();
 		$defaults['ip_allowlist']         = array();
 		$defaults['ip_blocklist']         = array();
+		$defaults['ua_blocklist']         = array();
+		$defaults['rest_allow']           = array();
+		$defaults['hotlink_allow']        = array();
 		$defaults['proxy_header']         = '';
 		$defaults['fw_mode']              = 'block';
 		$defaults['fw_learn_until']       = 0;
@@ -479,8 +502,10 @@ final class Settings {
 		foreach ( array_keys( Captcha::form_options() ) as $key ) {
 			$clean[ $key ] = ! empty( $input[ $key ] );
 		}
-		$mode                  = isset( $input['traffic_mode'] ) ? (string) $input['traffic_mode'] : 'security';
-		$clean['traffic_mode'] = 'all' === $mode ? 'all' : 'security';
+		$clean['rest_allow']    = Server::parse_routes( isset( $input['rest_allow'] ) ? (string) $input['rest_allow'] : '' );
+		$clean['hotlink_allow'] = Server::parse_hosts( isset( $input['hotlink_allow'] ) ? (string) $input['hotlink_allow'] : '' );
+		$mode                   = isset( $input['traffic_mode'] ) ? (string) $input['traffic_mode'] : 'security';
+		$clean['traffic_mode']  = 'all' === $mode ? 'all' : 'security';
 		return self::store( $clean );
 	}
 
@@ -660,6 +685,10 @@ final class Settings {
 			}
 			$clean['ip_blocklist'] = array_values( $clean['ip_blocklist'] );
 		}
+
+		$agents                = Server::parse_agents( isset( $input['ua_blocklist'] ) ? (string) $input['ua_blocklist'] : '', Request::server( 'HTTP_USER_AGENT' ) );
+		$clean['ua_blocklist'] = $agents['valid'];
+		$rejected['agent']     = $agents['self'];
 
 		self::store( $clean );
 

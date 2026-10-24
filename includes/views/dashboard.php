@@ -48,6 +48,8 @@ $cshield_notices = array(
 	'settings_imported' => __( 'Settings imported. Your previous settings are saved as a restore point.', 'chaos-shield' ),
 	'saved'             => __( 'Settings saved.', 'chaos-shield' ),
 	'recommended'       => __( 'Recommended hardening is now on.', 'chaos-shield' ),
+	'perms_fixed'       => __( 'File permissions tightened. The details are in the activity log.', 'chaos-shield' ),
+	'prefix_changed'    => __( 'Table prefix changed. The site now reads its tables under the new prefix.', 'chaos-shield' ),
 	'released'          => __( 'Lockouts and bans released.', 'chaos-shield' ),
 	'report_sent'       => __( 'Weekly report sent. Check your inbox.', 'chaos-shield' ),
 	'login_moved'       => __( 'Login address changed. It was also emailed to you: bookmark it before you log out.', 'chaos-shield' ),
@@ -515,10 +517,93 @@ $cshield_events_table = static function ( array $events, array $labels, $date_fo
 				<p class="cshield-small"><?php esc_html_e( 'Connecting checks the keys with the service and switches Login CAPTCHA on. If the service cannot be reached during a login, the login is allowed and the outage is logged, so you are never locked out.', 'chaos-shield' ); ?></p>
 			</section>
 
+			<section class="cshield-card cshield-card--full cshield-server-rules">
+				<h2><?php esc_html_e( 'REST API and images', 'chaos-shield' ); ?></h2>
+				<div class="cshield-fields cshield-fields--two">
+					<label><span><?php esc_html_e( 'REST routes visitors can still use, one per line', 'chaos-shield' ); ?></span>
+						<textarea name="cshield[rest_allow]" rows="4" class="cshield-textarea" spellcheck="false" placeholder="/my-plugin/v1/"><?php echo esc_textarea( implode( "\n", (array) Settings::get( 'rest_allow' ) ) ); ?></textarea></label>
+					<label><span><?php esc_html_e( 'Sites that may show your images, one per line', 'chaos-shield' ); ?></span>
+						<textarea name="cshield[hotlink_allow]" rows="4" class="cshield-textarea" spellcheck="false" placeholder="partner.example.com"><?php echo esc_textarea( implode( "\n", (array) Settings::get( 'hotlink_allow' ) ) ); ?></textarea></label>
+				</div>
+				<p class="cshield-small">
+					<?php
+					/* translators: %s: list of routes. */
+					echo esc_html( sprintf( __( 'With the REST API closed, these stay open anyway: %s. Logged-in users can always use it.', 'chaos-shield' ), implode( ', ', array_slice( Server::rest_open(), 0, 5 ) ) ) );
+					?>
+				</p>
+				<?php if ( ! Exposure::apache() ) : ?>
+					<p class="cshield-small"><?php esc_html_e( 'This server does not read .htaccess files, so hotlink blocking needs this rule in its nginx configuration:', 'chaos-shield' ); ?></p>
+					<pre class="cshield-snippet"><?php echo esc_html( Server::hotlink_nginx() ); ?></pre>
+				<?php endif; ?>
+			</section>
+
 			<div class="cshield-actions">
 				<button type="submit" class="cshield-btn"><?php esc_html_e( 'Save changes', 'chaos-shield' ); ?></button>
 			</div>
 		</form>
+
+		<?php
+		$cshield_perms      = Server::permissions();
+		$cshield_perms_bad  = array_filter(
+			$cshield_perms,
+			static function ( $row ) {
+				return Posture::PASS !== $row['status'];
+			}
+		);
+		$cshield_prefix_ok  = Server::prefix_ready();
+		$cshield_prefix_def = 'wp_' === $GLOBALS['wpdb']->prefix;
+		?>
+		<section class="cshield-card cshield-card--full" id="cshield-server">
+			<h2><?php esc_html_e( 'Server files', 'chaos-shield' ); ?></h2>
+			<table class="cshield-table">
+				<thead><tr><th><?php esc_html_e( 'File or folder', 'chaos-shield' ); ?></th><th><?php esc_html_e( 'Now', 'chaos-shield' ); ?></th><th><?php esc_html_e( 'Recommended', 'chaos-shield' ); ?></th><th><?php esc_html_e( 'Status', 'chaos-shield' ); ?></th></tr></thead>
+				<tbody>
+					<?php foreach ( $cshield_perms as $cshield_row ) : ?>
+						<tr>
+							<td><code><?php echo esc_html( $cshield_row['label'] ); ?></code></td>
+							<td><code><?php echo esc_html( Server::octal( $cshield_row['mode'] ) ); ?></code></td>
+							<td><code><?php echo esc_html( Server::octal( $cshield_row['want'] ) ); ?></code></td>
+							<td class="cshield-check--<?php echo esc_attr( $cshield_row['status'] ); ?>"><span class="cshield-badge"><?php echo esc_html( $cshield_status[ $cshield_row['status'] ] ); ?></span></td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+			<?php if ( $cshield_perms_bad ) : ?>
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="cshield-inline-form">
+					<input type="hidden" name="action" value="cshield_server">
+					<input type="hidden" name="op" value="permissions">
+					<?php wp_nonce_field( 'cshield_server' ); ?>
+					<button type="submit" class="cshield-btn"><?php esc_html_e( 'Fix permissions', 'chaos-shield' ); ?></button>
+				</form>
+				<p class="cshield-small"><?php esc_html_e( 'The fix only takes permissions away. After each change the site must still read the file, and write it if it could before; if not, the old permissions are put back.', 'chaos-shield' ); ?></p>
+			<?php endif; ?>
+
+			<h3 class="cshield-subhead"><?php esc_html_e( 'Database table prefix', 'chaos-shield' ); ?></h3>
+			<p class="cshield-small">
+				<?php
+				/* translators: %s: table prefix. */
+				echo esc_html( sprintf( __( 'Your tables start with %s.', 'chaos-shield' ), $GLOBALS['wpdb']->prefix ) . ' ' . ( $cshield_prefix_def ? __( 'That is the default every attack script guesses first. A new prefix makes blind SQL injection harder.', 'chaos-shield' ) : __( 'That is not the default, so there is nothing to do.', 'chaos-shield' ) ) );
+				?>
+			</p>
+			<?php if ( $cshield_prefix_def && true === $cshield_prefix_ok ) : ?>
+				<ol class="cshield-small">
+					<li><?php esc_html_e( 'Make a database backup with your host or a backup plugin, and keep it until the site works with the new prefix.', 'chaos-shield' ); ?></li>
+					<li><?php esc_html_e( 'Pick a prefix below, or keep the random one.', 'chaos-shield' ); ?></li>
+					<li><?php esc_html_e( 'Chaos Shield renames every table in one step, updates the user roles and permissions stored under the old name, and then writes the new prefix to wp-config.php. If that write fails, everything is put back.', 'chaos-shield' ); ?></li>
+				</ol>
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="cshield-inline-form">
+					<input type="hidden" name="action" value="cshield_server">
+					<input type="hidden" name="op" value="prefix">
+					<?php wp_nonce_field( 'cshield_server' ); ?>
+					<label><span class="screen-reader-text"><?php esc_html_e( 'New prefix', 'chaos-shield' ); ?></span>
+						<input type="text" name="prefix" value="<?php echo esc_attr( Server::suggest_prefix() ); ?>" pattern="[a-z][a-z0-9]{1,14}_" spellcheck="false"></label>
+					<label class="cshield-check-line"><input type="checkbox" name="backup" value="1" required> <?php esc_html_e( 'I have a fresh database backup', 'chaos-shield' ); ?></label>
+					<button type="submit" class="cshield-btn cshield-btn--ghost"><?php esc_html_e( 'Change prefix', 'chaos-shield' ); ?></button>
+				</form>
+			<?php elseif ( $cshield_prefix_def ) : ?>
+				<p class="cshield-small"><?php echo esc_html( $cshield_prefix_ok->get_error_message() . ' ' . __( 'To change it by hand: back up the database, rename every wp_ table, rename the wp_user_roles option and every wp_ user meta key, then set $table_prefix in wp-config.php.', 'chaos-shield' ) ); ?></p>
+			<?php endif; ?>
+		</section>
 
 		<?php
 		$cshield_keys_ok  = Salts::can_rotate();
@@ -572,6 +657,14 @@ $cshield_events_table = static function ( array $events, array $labels, $date_fo
 				?>
 			</div>
 		<?php endif; ?>
+		<?php if ( ! empty( $cshield_rejected['agent'] ) ) : ?>
+			<div class="cshield-notice cshield-notice--warn" role="alert">
+				<?php
+				/* translators: %s: list of entries. */
+				echo esc_html( sprintf( __( 'These user agent entries match your own browser, so they were left out to keep you from locking yourself out: %s', 'chaos-shield' ), implode( ', ', $cshield_rejected['agent'] ) ) );
+				?>
+			</div>
+		<?php endif; ?>
 		<?php if ( ! empty( $cshield_rejected['self'] ) ) : ?>
 			<div class="cshield-notice cshield-notice--warn" role="alert">
 				<?php
@@ -594,6 +687,11 @@ $cshield_events_table = static function ( array $events, array $labels, $date_fo
 					<h2><?php esc_html_e( 'Block list', 'chaos-shield' ); ?></h2>
 					<p><?php esc_html_e( 'These IPs get a 403 on every page of the site. Your own IP is never accepted here.', 'chaos-shield' ); ?></p>
 					<textarea name="cshield[ip_blocklist]" rows="6" class="cshield-textarea" spellcheck="false"><?php echo esc_textarea( implode( "\n", (array) Settings::get( 'ip_blocklist' ) ) ); ?></textarea>
+				</section>
+				<section class="cshield-card cshield-card--full">
+					<h2><?php esc_html_e( 'Blocked user agents', 'chaos-shield' ); ?></h2>
+					<p><?php esc_html_e( 'Requests whose user agent contains one of these words get a 403, for example a scraper or an SEO crawler you do not want. One per line, any case. Administrators and allowed IPs are never blocked.', 'chaos-shield' ); ?></p>
+					<textarea name="cshield[ua_blocklist]" rows="4" class="cshield-textarea" spellcheck="false" placeholder="MJ12bot&#10;DotBot"><?php echo esc_textarea( implode( "\n", (array) Settings::get( 'ua_blocklist' ) ) ); ?></textarea>
 				</section>
 				<section class="cshield-card cshield-card--full">
 					<h2><?php esc_html_e( 'Countries', 'chaos-shield' ); ?></h2>

@@ -212,21 +212,9 @@ final class Salts {
 			}
 		}
 
-		// Write a copy next to the file, then swap it in, so the site never loads half a file.
-		// A hidden .php name means a copy left behind by a crash is run, never shown, if requested.
-		$temp = dirname( $path ) . '/.cshield-keys-' . wp_generate_password( 12, false ) . '.php';
-		$mode = fileperms( $path ) & 0777;
-		if ( false === file_put_contents( $temp, $new ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents, PluginCheck.CodeAnalysis.WriteFile.ABSPATHDetected -- Writes wp-config.php on the owner's request.
-			wp_delete_file( $temp );
-			return new \WP_Error( 'cshield_salts_write', __( 'wp-config.php could not be written. Nothing was changed.', 'chaos-shield' ) );
-		}
-		chmod( $temp, $mode ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod -- Keeps the original permissions.
-		if ( ! rename( $temp, $path ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- Atomic swap of wp-config.php.
-			wp_delete_file( $temp );
-			return new \WP_Error( 'cshield_salts_write', __( 'wp-config.php could not be written. Nothing was changed.', 'chaos-shield' ) );
-		}
-		if ( function_exists( 'opcache_invalidate' ) ) {
-			opcache_invalidate( $path, true );
+		$written = self::write_config( $path, $new );
+		if ( is_wp_error( $written ) ) {
+			return $written;
 		}
 
 		$key = Totp::key_for( $keys['SECURE_AUTH_KEY'] . $keys['SECURE_AUTH_SALT'] );
@@ -246,6 +234,32 @@ final class Salts {
 				'action'   => 'settings.salts_rotated',
 			)
 		);
+		return true;
+	}
+
+	/**
+	 * Replaces wp-config.php in one step, so the site never loads half a file.
+	 *
+	 * @param string $path Path of wp-config.php.
+	 * @param string $body New contents.
+	 * @return true|\WP_Error
+	 */
+	public static function write_config( $path, $body ) {
+		// A hidden .php name means a copy left behind by a crash is run, never shown, if requested.
+		$temp = dirname( $path ) . '/.cshield-keys-' . wp_generate_password( 12, false ) . '.php';
+		$mode = fileperms( $path ) & 0777;
+		if ( false === file_put_contents( $temp, $body ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents, PluginCheck.CodeAnalysis.WriteFile.ABSPATHDetected -- Writes wp-config.php on the owner's request.
+			wp_delete_file( $temp );
+			return new \WP_Error( 'cshield_salts_write', __( 'wp-config.php could not be written. Nothing was changed.', 'chaos-shield' ) );
+		}
+		chmod( $temp, $mode ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod -- Keeps the original permissions.
+		if ( ! rename( $temp, $path ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- Atomic swap of wp-config.php.
+			wp_delete_file( $temp );
+			return new \WP_Error( 'cshield_salts_write', __( 'wp-config.php could not be written. Nothing was changed.', 'chaos-shield' ) );
+		}
+		if ( function_exists( 'opcache_invalidate' ) ) {
+			opcache_invalidate( $path, true );
+		}
 		return true;
 	}
 
