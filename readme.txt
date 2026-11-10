@@ -4,7 +4,7 @@ Tags: security, firewall, two-factor, audit log, malware scanner
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.15.0
+Stable tag: 1.16.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -181,6 +181,9 @@ Chaos Shield contacts these services. None of them is contacted for a feature th
 * **Sites you connect to the hub**: the hub only contacts the sites you add to it.
 
 == Changelog ==
+
+= 1.16.0 =
+Passkeys for members without a password: people who joined with Google, another sign-in provider or an email link can add a passkey within 10 minutes of signing in, with no password asked. Accounts that can edit posts still confirm with their password. The cshield_passkey_fresh_signin filter changes who qualifies.
 
 = 1.15.0 =
 Accounts: everything All-In-One Security offers for logins, free.
