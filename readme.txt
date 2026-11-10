@@ -4,7 +4,7 @@ Tags: security, firewall, two-factor, audit log, malware scanner
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.16.0
+Stable tag: 1.18.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -18,13 +18,16 @@ Chaos Shield gives you one dashboard for WordPress security, without slowing you
 
 Disable XML-RPC, the file editor and application passwords, hide the WordPress version, block username enumeration, send security headers, limit login attempts and use generic login errors.
 
+Blocklist and domain expiry checks warn you before a hacked page or a lapsed domain costs you visitors. On the server side: fix loose file permissions in one click, block image hotlinking and unwanted user agents, close the REST API and RSS feeds to visitors, and move off the default wp_ table prefix.
+
 **Login protection**
 
 * Passkeys: sign in with a fingerprint, face or device PIN. Passkeys cannot be phished, and count as two-factor.
 * Two-factor with any authenticator app, with recovery codes, trusted browsers and an admin reset. Require it, or a passkey, for administrators or all staff, with a grace period.
 * Idle sign out, approval of new sign-ups, a warning for authors who publish under their username, and one-click replacement of the wp-config.php security keys.
 * Breached passwords are refused, checked with Have I Been Pwned so only five characters of a hash leave your site.
-* A secret login address, an optional Cloudflare Turnstile or hCaptcha check, and a list of signed-in administrator sessions you can end remotely.
+* Comment spam blocking with a hidden field and a time check, no CAPTCHA needed. Bots that keep trying are banned.
+* A secret login address, an optional Cloudflare Turnstile or hCaptcha check (also on comments, WooCommerce, Contact Form 7 and WPForms), and a list of signed-in administrator sessions you can end remotely.
 * A password policy with optional expiry, and forced resets for one user, many, or all administrators.
 
 **Firewall, bans and rate limits**
@@ -170,9 +173,12 @@ Chaos Shield contacts these services. None of them is contacted for a feature th
 * **WPVulnerability** (www.wpvulnerability.net): once a day the vulnerability check sends the slug and version of each installed plugin and theme and your WordPress version. [Terms and privacy](https://www.wpvulnerability.com/privacy/).
 * **Have I Been Pwned, Pwned Passwords** (api.pwnedpasswords.com): when someone sets a password, the breached password check sends the first five characters of its SHA-1 hash, never the password. [Terms](https://haveibeenpwned.com/TermsOfUse) and [privacy policy](https://haveibeenpwned.com/Privacy).
 * **Spamhaus** (www.spamhaus.org): once a day the threat blocklist downloads the public DROP list. Nothing about your site is sent. [Terms](https://www.spamhaus.org/legal/) and [privacy policy](https://www.spamhaus.org/legal/privacy-policy/).
+* **Spamhaus, SURBL, URIBL and SpamCop blocklists** (dbl.spamhaus.org, zen.spamhaus.org, multi.surbl.org, multi.uribl.com, bl.spamcop.net): once a day the blocklist check looks up your site's domain and server address through your server's DNS resolver. [Spamhaus privacy](https://www.spamhaus.org/legal/privacy-policy/), [SURBL](https://surbl.org/), [URIBL](https://uribl.com/about.shtml), [SpamCop](https://www.spamcop.net/fom-serve/cache/168.html).
+* **RDAP** (rdap.org and your domain registry's RDAP server): once a day the domain check asks for the public registration record of your domain. Only the domain name is sent. [About rdap.org](https://about.rdap.org/).
+* **Google Safe Browsing** (safebrowsing.googleapis.com): only when you add an API key. Once a day your site's address is sent to ask whether Google flags it. [Terms](https://developers.google.com/safe-browsing/terms) and [privacy policy](https://policies.google.com/privacy).
 * **Tor Project** (check.torproject.org): when you choose to block Tor, the list of Tor exit addresses is downloaded once a day. Nothing about your site is sent. [Privacy policy](https://www.torproject.org/about/privacy/).
 * **GitHub** (github.com, api.github.com): once a week the built-in country lookup downloads the public domain ip-location-db country lists from github.com. The copy of Chaos Shield from GitHub (not the WordPress.org one) also asks api.github.com for its latest release at most every six hours. Only your site's address is sent, in the user agent. [Terms](https://docs.github.com/en/site-policy/github-terms/github-terms-of-service) and [privacy policy](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement).
-* **Cloudflare Turnstile** (challenges.cloudflare.com): with Turnstile as the login CAPTCHA, its script loads on the login page and the token from each login is checked with Cloudflare, together with the visitor's IP. [Terms](https://www.cloudflare.com/website-terms/) and [privacy policy](https://www.cloudflare.com/privacypolicy/).
+* **Cloudflare Turnstile** (challenges.cloudflare.com): with Turnstile as the login CAPTCHA, its script loads on the login page (and on any comment, WooCommerce, Contact Form 7 or WPForms form you turn the check on for) and the token from each login is checked with Cloudflare, together with the visitor's IP. [Terms](https://www.cloudflare.com/website-terms/) and [privacy policy](https://www.cloudflare.com/privacypolicy/).
 * **hCaptcha** (js.hcaptcha.com, api.hcaptcha.com): with hCaptcha as the login CAPTCHA, the same as Turnstile. [Terms](https://www.hcaptcha.com/terms) and [privacy policy](https://www.hcaptcha.com/privacy).
 * **Cloudflare API** (api.cloudflare.com): only when you connect Cloudflare. Banned IPs, under attack mode changes, cache purges and the Always Use HTTPS switch are sent with your API token. [Terms](https://www.cloudflare.com/website-terms/) and [privacy policy](https://www.cloudflare.com/privacypolicy/).
 * **Slack, Discord, Microsoft Teams and Google Chat** (hooks.slack.com, discord.com, your Teams or Power Automate webhook, chat.googleapis.com): only when you connect one. The text of each alert is sent to the channel you chose. [Slack](https://slack.com/trust/privacy/privacy-policy), [Discord](https://discord.com/privacy), [Microsoft](https://privacy.microsoft.com/privacystatement), [Google](https://policies.google.com/privacy).
@@ -182,8 +188,27 @@ Chaos Shield contacts these services. None of them is contacted for a feature th
 
 == Changelog ==
 
+= 1.18.0 =
+Reputation.
+* Blocklist checks every day: Spamhaus, SURBL, URIBL and SpamCop for your domain and server, plus Google Safe Browsing with a free key. You get an alert and a log entry the day a listing appears.
+* Domain expiry check on the Edge tab, from the registry's public record, with alerts 30, 14, 7, 3 and 1 days before it lapses.
+* Country rules for single pages: block or allow countries on one page and everything below it, such as /shop or /contact.
+
+= 1.17.0 =
+Server hardening.
+* File permission check for wp-config.php, .htaccess and the main folders, with a one-click fix that only takes permissions away and puts them back if the site would stop working.
+* The sensitive files block now also hides readme.html, license.txt, plugin readme files and wp-config-sample.php. Sites that already use it are updated.
+* Image hotlink blocking in .htaccess, with search engines and your own list of sites allowed.
+* A user agent block list on the Access tab, and a switch that refuses form posts with no user agent.
+* A switch that closes the REST API to visitors who are not logged in, with an allow list. Embeds, WooCommerce checkout, Contact Form 7, WPForms and Jetpack stay open.
+* A switch that turns RSS feeds off.
+* Guided change of the wp_ table prefix: every table is renamed in one step and wp-config.php is updated, or everything is put back.
+
 = 1.16.0 =
-Passkeys for members without a password: people who joined with Google, another sign-in provider or an email link can add a passkey within 10 minutes of signing in, with no password asked. Accounts that can edit posts still confirm with their password. The cshield_passkey_fresh_signin filter changes who qualifies.
+Forms and spam.
+* Comment spam blocking without a CAPTCHA: a hidden field and a signed time stamp stop bots, comments sent without the form go to spam, and a bot refused three times in a day is banned.
+* The login CAPTCHA can also guard comments, WooCommerce login, sign-up and lost password, Contact Form 7 and WPForms.
+* Login limits, two-factor and passkeys also cover the WooCommerce My Account login. bbPress and Elementor login forms post to the WordPress login, so they are covered too.
 
 = 1.15.0 =
 Accounts: everything All-In-One Security offers for logins, free.

@@ -163,6 +163,40 @@ final class Captcha {
 		add_filter( 'authenticate', array( $this, 'check_login' ), 30 );
 		add_action( 'lostpassword_post', array( $this, 'check_lostpassword' ), 5 );
 		add_filter( 'registration_errors', array( $this, 'check_registration' ) );
+
+		if ( Settings::enabled( 'captcha_comments' ) ) {
+			add_filter( 'comment_form_submit_field', array( $this, 'comment_widget' ) );
+			add_filter( 'preprocess_comment', array( $this, 'check_comment' ), 2 );
+		}
+		if ( Settings::enabled( 'captcha_woo' ) ) {
+			add_action( 'woocommerce_login_form', array( $this, 'widget' ) );
+			add_action( 'woocommerce_register_form', array( $this, 'widget' ) );
+			add_action( 'woocommerce_lostpassword_form', array( $this, 'widget' ) );
+			add_filter( 'woocommerce_process_login_errors', array( $this, 'check_errors' ) );
+			add_filter( 'woocommerce_process_registration_errors', array( $this, 'check_errors' ) );
+		}
+		if ( Settings::enabled( 'captcha_cf7' ) ) {
+			add_filter( 'wpcf7_form_elements', array( $this, 'cf7_widget' ) );
+			add_filter( 'wpcf7_spam', array( $this, 'cf7_check' ), 20 );
+		}
+		if ( Settings::enabled( 'captcha_wpforms' ) ) {
+			add_action( 'wpforms_display_submit_before', array( $this, 'widget' ) );
+			add_action( 'wpforms_process_before', array( $this, 'wpforms_check' ), 10, 2 );
+		}
+	}
+
+	/**
+	 * Which outside forms the CAPTCHA can cover: setting => label.
+	 *
+	 * @return array
+	 */
+	public static function form_options() {
+		return array(
+			'captcha_comments' => __( 'Comments from visitors who are not logged in', 'chaos-shield' ),
+			'captcha_woo'      => __( 'WooCommerce login, sign-up and lost password forms', 'chaos-shield' ),
+			'captcha_cf7'      => __( 'Contact Form 7 forms', 'chaos-shield' ),
+			'captcha_wpforms'  => __( 'WPForms forms', 'chaos-shield' ),
+		);
 	}
 
 	/**
@@ -177,12 +211,118 @@ final class Captcha {
 	 * Prints the challenge.
 	 */
 	public function widget() {
+		echo $this->markup(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in markup().
+	}
+
+	/**
+	 * The challenge, with its script queued when the form is not on the login screen.
+	 *
+	 * Forms in themes and other plugins share the login screen's widget, so they
+	 * also share the light theme: the provider draws it in its own frame.
+	 *
+	 * @return string
+	 */
+	private function markup() {
+		if ( ! did_action( 'login_enqueue_scripts' ) ) {
+			$this->script();
+			if ( ! wp_script_is( 'cshield-captcha-reset' ) ) {
+				// Forms sent without a page load need a fresh challenge for the next try.
+				wp_register_script( 'cshield-captcha-reset', '', array(), CSHIELD_VERSION, true );
+				wp_enqueue_script( 'cshield-captcha-reset' );
+				wp_add_inline_script( 'cshield-captcha-reset', "(function(){function r(){try{window.turnstile&&turnstile.reset();window.hcaptcha&&hcaptcha.reset();}catch(e){}}document.addEventListener('wpcf7submit',r);if(window.jQuery){jQuery(document).on('wpformsAjaxSubmitFailed wpformsAjaxSubmitSuccess',r);}})();" );
+			}
+		}
 		$d = self::details();
-		printf(
+		return sprintf(
 			'<div class="%s" data-sitekey="%s" data-theme="light" style="margin:0 0 16px"></div>',
 			esc_attr( $d['class'] ),
 			esc_attr( Settings::get( $d['key'] ) )
 		);
+	}
+
+	/**
+	 * Adds the challenge above the comment button for visitors who are not logged in.
+	 *
+	 * @param string $field Submit field markup.
+	 * @return string
+	 */
+	public function comment_widget( $field ) {
+		return is_user_logged_in() ? $field : $this->markup() . $field;
+	}
+
+	/**
+	 * Checks the challenge on a comment from a visitor who is not logged in.
+	 *
+	 * @param array $data Comment data.
+	 * @return array
+	 */
+	public function check_comment( $data ) {
+		$type = isset( $data['comment_type'] ) ? (string) $data['comment_type'] : '';
+		if ( is_user_logged_in() || ! did_action( 'pre_comment_on_post' ) || ! in_array( $type, array( '', 'comment' ), true ) ) {
+			return $data;
+		}
+		$error = $this->verify();
+		if ( $error ) {
+			wp_die(
+				wp_kses_post( $error->get_error_message() ),
+				esc_html__( 'Comment not sent', 'chaos-shield' ),
+				array(
+					'response'  => 403,
+					'back_link' => true,
+				)
+			);
+		}
+		return $data;
+	}
+
+	/**
+	 * Checks the challenge on WooCommerce's login and sign-up forms.
+	 *
+	 * @param \WP_Error $errors Errors so far.
+	 * @return \WP_Error
+	 */
+	public function check_errors( $errors ) {
+		$error = $this->verify();
+		if ( $error && $errors instanceof \WP_Error ) {
+			$errors->add( $error->get_error_code(), $error->get_error_message() );
+		}
+		return $errors;
+	}
+
+	/**
+	 * Adds the challenge before a Contact Form 7 send button.
+	 *
+	 * @param string $html Form elements.
+	 * @return string
+	 */
+	public function cf7_widget( $html ) {
+		$widget = $this->markup();
+		$count  = 0;
+		$html   = preg_replace( '/<(input|button)[^>]*\bwpcf7-submit\b/', $widget . '$0', (string) $html, 1, $count );
+		return $count ? $html : $html . $widget;
+	}
+
+	/**
+	 * Counts a Contact Form 7 message without a passed challenge as spam, so it is not sent.
+	 *
+	 * @param bool $spam Spam so far.
+	 * @return bool
+	 */
+	public function cf7_check( $spam ) {
+		return $spam || null !== $this->verify();
+	}
+
+	/**
+	 * Stops a WPForms entry without a passed challenge.
+	 *
+	 * @param array $entry     Entry.
+	 * @param array $form_data Form settings.
+	 */
+	public function wpforms_check( $entry, $form_data ) {
+		$error = $this->verify();
+		if ( $error && function_exists( 'wpforms' ) && isset( $form_data['id'] ) ) {
+			wpforms()->process->errors[ $form_data['id'] ]['header'] = wp_strip_all_tags( $error->get_error_message() );
+		}
 	}
 
 	/**
@@ -207,7 +347,9 @@ final class Captcha {
 	 * @param \WP_Error $errors Errors.
 	 */
 	public function check_lostpassword( $errors ) {
-		if ( ! did_action( 'login_init' ) ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- WooCommerce checks its own nonce; this only reads which form was sent.
+		$woo = Settings::enabled( 'captcha_woo' ) && isset( $_POST['wc_reset_password'] );
+		if ( ! did_action( 'login_init' ) && ! $woo ) {
 			return;
 		}
 		$error = $this->verify();

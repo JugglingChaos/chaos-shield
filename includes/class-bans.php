@@ -103,6 +103,13 @@ final class Bans {
 			}
 			return;
 		}
+		if ( 'spam' === $kind ) {
+			if ( self::count( $ip, 'spam', DAY_IN_SECONDS ) >= Comments::BAN_HITS ) {
+				/* translators: %d: number of refused comments. */
+				self::ban( $ip, sprintf( __( 'Sent %d bot comments within 24 hours', 'chaos-shield' ), Comments::BAN_HITS ) );
+			}
+			return;
+		}
 		if ( 'ratelimit' === $kind ) {
 			// Plain English: rate limits are hit before translations may be loaded.
 			if ( self::count( $ip, 'ratelimit', HOUR_IN_SECONDS ) >= 5 ) {

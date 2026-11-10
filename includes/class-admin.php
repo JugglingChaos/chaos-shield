@@ -465,6 +465,10 @@ final class Admin {
 		$input = isset( $_POST['cshield'] ) && is_array( $_POST['cshield'] ) ? wp_unslash( $_POST['cshield'] ) : array();
 		$tor   = (bool) Settings::get( 'threat_tor' );
 		Settings::save_hardening( $input );
+		$hotlinks = Server::sync_hotlinks();
+		if ( is_wp_error( $hotlinks ) ) {
+			Network::set_transient( 'cshield_hardening_error_' . get_current_user_id(), $hotlinks->get_error_message(), MINUTE_IN_SECONDS );
+		}
 		if ( Settings::enabled( 'threat_feed' ) && ( (bool) Settings::get( 'threat_tor' ) !== $tor || ! Network::get_option( Threat_Feed::OPTION ) ) ) {
 			// Download the changed lists in the background.
 			Network::clear_scheduled( Threat_Feed::HOOK );

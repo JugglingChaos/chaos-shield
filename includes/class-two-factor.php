@@ -268,9 +268,14 @@ final class Two_Factor {
 		wp_clear_auth_cookie();
 		wp_set_current_user( 0 );
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Login redirect target, validated below.
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Login redirect target, validated below.
 		$redirect = isset( $_REQUEST['redirect_to'] ) ? esc_url_raw( wp_unslash( $_REQUEST['redirect_to'] ) ) : '';
-		$token    = wp_generate_password( 40, false );
+		if ( '' === $redirect && isset( $_REQUEST['redirect'] ) ) {
+			// WooCommerce's account page names the field differently.
+			$redirect = esc_url_raw( wp_unslash( $_REQUEST['redirect'] ) );
+		}
+		// phpcs:enable
+		$token = wp_generate_password( 40, false );
 
 		update_user_meta(
 			$user->ID,
