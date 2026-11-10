@@ -23,6 +23,7 @@ final class Passkeys {
 	const MAX_PER_USR = 20;
 	const ALG_ES256   = -7;
 	const ALG_RS256   = -257;
+	const FRESH       = 600;
 
 	/**
 	 * Registers hooks.
@@ -73,6 +74,38 @@ final class Passkeys {
 	public static function for_user( $user_id ) {
 		$keys = get_user_meta( (int) $user_id, self::META, true );
 		return is_array( $keys ) ? $keys : array();
+	}
+
+	/**
+	 * Whether adding a passkey must be confirmed with the current password.
+	 *
+	 * Members who joined with Google or an email link never chose a password. For them, a
+	 * sign-in from the last 10 minutes is the proof instead, the way many sites ask you to
+	 * sign in again before a sensitive change. Accounts that can edit posts always need the password.
+	 *
+	 * @param \WP_User $user User.
+	 * @return bool
+	 */
+	public static function needs_password( $user ) {
+		if ( ! self::passwordless( $user ) ) {
+			return true;
+		}
+		$token   = wp_get_session_token();
+		$session = $token ? \WP_Session_Tokens::get_instance( $user->ID )->get( $token ) : null;
+		$fresh   = is_array( $session ) && ! empty( $session['login'] ) && (int) $session['login'] >= time() - self::FRESH;
+		return ! $fresh;
+	}
+
+	/**
+	 * Accounts allowed to confirm with a fresh sign-in: members who cannot edit posts.
+	 * Filter with cshield_passkey_fresh_signin to narrow or widen this.
+	 *
+	 * @param \WP_User $user User.
+	 * @return bool
+	 */
+	public static function passwordless( $user ) {
+		$allowed = $user instanceof \WP_User && $user->exists() && ! user_can( $user, 'edit_posts' ) && ! is_super_admin( $user->ID );
+		return (bool) apply_filters( 'cshield_passkey_fresh_signin', $allowed, $user );
 	}
 
 	/**
@@ -149,7 +182,12 @@ final class Passkeys {
 			wp_send_json_error( array( 'message' => __( 'Too many wrong passwords. Try again in 15 minutes.', 'chaos-shield' ) ), 429 );
 		}
 		$password = isset( $_POST['password'] ) ? (string) wp_unslash( $_POST['password'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Passwords are compared, never stored or printed.
-		if ( '' === $password || ! wp_check_password( $password, $user->user_pass, $user->ID ) ) {
+		if ( '' === $password && ! self::needs_password( $user ) ) {
+			$password = null;
+		} elseif ( '' === $password && self::passwordless( $user ) ) {
+			wp_send_json_error( array( 'message' => __( 'For your safety, sign out and sign back in, then add your passkey within 10 minutes.', 'chaos-shield' ) ), 403 );
+		}
+		if ( null !== $password && ( '' === $password || ! wp_check_password( $password, $user->user_pass, $user->ID ) ) ) {
 			Network::set_transient( $tries_key, $tries + 1, 15 * MINUTE_IN_SECONDS );
 			Events::add(
 				'login',
@@ -714,10 +752,15 @@ final class Passkeys {
 					<p class="cshield-pk__add">
 						<label for="cshield-pk-name" class="screen-reader-text"><?php esc_html_e( 'Passkey name', 'chaos-shield' ); ?></label>
 						<input type="text" id="cshield-pk-name" class="regular-text" maxlength="60" placeholder="<?php esc_attr_e( 'Name, such as Work laptop', 'chaos-shield' ); ?>">
-						<label for="cshield-pk-password" class="screen-reader-text"><?php esc_html_e( 'Current password', 'chaos-shield' ); ?></label>
-						<input type="password" id="cshield-pk-password" class="regular-text" autocomplete="current-password" placeholder="<?php esc_attr_e( 'Current password', 'chaos-shield' ); ?>">
+						<?php if ( self::needs_password( $user ) ) : ?>
+							<label for="cshield-pk-password" class="screen-reader-text"><?php esc_html_e( 'Current password', 'chaos-shield' ); ?></label>
+							<input type="password" id="cshield-pk-password" class="regular-text" autocomplete="current-password" placeholder="<?php esc_attr_e( 'Current password', 'chaos-shield' ); ?>">
+						<?php endif; ?>
 						<button type="button" class="button cshield-pk__create"><?php esc_html_e( 'Add a passkey', 'chaos-shield' ); ?></button>
 					</p>
+					<?php if ( self::passwordless( $user ) && self::needs_password( $user ) ) : ?>
+						<p class="description"><?php esc_html_e( 'No password? Sign out and sign back in, then add your passkey within 10 minutes.', 'chaos-shield' ); ?></p>
+					<?php endif; ?>
 				<?php endif; ?>
 			<?php endif; ?>
 			<p class="cshield-pk__msg" role="status" aria-live="polite"></p>
