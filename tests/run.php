@@ -25,6 +25,10 @@ use ChaosShield\Exposure;
 use ChaosShield\Https;
 use ChaosShield\Page_Check;
 use ChaosShield\Scripts;
+use ChaosShield\Server;
+use ChaosShield\Reputation;
+use ChaosShield\Geo;
+use ChaosShield\Posture;
 use ChaosShield\Captcha;
 use ChaosShield\Comments;
 use ChaosShield\Hub;
@@ -2178,6 +2182,302 @@ group(
 			check( 'a bot that keeps trying is banned', Bans::until( $bot ) > time() );
 		} finally {
 			wp_delete_post( $post, true );
+		}
+	}
+);
+
+group(
+	'Server hardening',
+	function () {
+		$set    = function ( array $changes ) {
+			Network::update_option( Settings::OPTION, array_merge( Settings::all(), $changes ) );
+			Settings::forget();
+		};
+		$before = Settings::all();
+		try {
+			// User agents.
+			check( 'a listed word matches anywhere in the user agent, in any case', Server::agent_listed( 'Mozilla/5.0 (compatible; EvilScraper/2.1)', array( 'evilscraper' ) ) && ! Server::agent_listed( 'Mozilla/5.0 Firefox/131.0', array( 'evilscraper' ) ) );
+			$parsed = Server::parse_agents( "EvilScraper\nFirefox\nab\nEvilScraper", 'Mozilla/5.0 (X11; Linux x86_64) Firefox/131.0' );
+			check( 'the user agent list drops short entries, repeats and the saver\'s own browser', array( 'EvilScraper' ) === $parsed['valid'] && array( 'Firefox' ) === $parsed['self'] );
+			$set( array( 'ua_blocklist' => array( 'EvilScraper' ) ) );
+			check( 'a listed user agent gets a 403', 403 === http( 'GET', '/', ip(), array( 'headers' => array( 'User-Agent' => 'Mozilla/5.0 (compatible; EvilScraper/2.1)' ) ) )['status'] );
+			check( 'other browsers still get the page', 200 === http( 'GET', '/', ip() )['status'] );
+			$set( array( 'ua_blocklist' => array() ) );
+
+			$blank = function () {
+				return http(
+					'POST',
+					'/',
+					ip(),
+					array(
+						'headers' => array( 'User-Agent' => '' ),
+						'body'    => array( 'x' => '1' ),
+					)
+				)['status'];
+			};
+			check( 'a post with no user agent goes through while the switch is off', 403 !== $blank() );
+			$set( array( 'block_blank_ua' => true ) );
+			check( 'a post with no user agent is refused when the switch is on', 403 === $blank() );
+			check( 'a normal post still goes through', 403 !== http( 'POST', '/', ip(), array( 'body' => array( 'x' => '1' ) ) )['status'] );
+			$set( array( 'block_blank_ua' => false ) );
+
+			// REST API.
+			check( 'the REST API is open to visitors by default', 200 === http( 'GET', '/?rest_route=/wp/v2/posts', ip() )['status'] );
+			$set(
+				array(
+					'rest_private' => true,
+					'rest_allow'   => Server::parse_routes( "wp/v2/types\nbad|route" ),
+				)
+			);
+			check( 'the REST allow list keeps clean routes only', array( '/wp/v2/types' ) === Settings::get( 'rest_allow' ) );
+			check( 'with the REST API closed, visitors get a 401', 401 === http( 'GET', '/?rest_route=/wp/v2/posts', ip() )['status'] );
+			check( 'an allowed route stays open', 200 === http( 'GET', '/?rest_route=/wp/v2/types', ip() )['status'] );
+			check( 'embeds stay open', 401 !== http( 'GET', '/?rest_route=/oembed/1.0/embed&url=' . rawurlencode( home_url( '/' ) ), ip() )['status'] );
+			$gate = new Server();
+			wp_set_current_user( user()->ID );
+			check( 'logged-in users can still use it', null === $gate->rest_gate( null, rest_get_server(), new \WP_REST_Request( 'GET', '/wp/v2/posts' ) ) );
+			wp_set_current_user( 0 );
+			check( 'a route that only starts with the same letters is not opened', is_wp_error( $gate->rest_gate( null, rest_get_server(), new \WP_REST_Request( 'GET', '/wp/v2/typesx' ) ) ) );
+			$set( array( 'rest_private' => false ) );
+
+			// Feeds.
+			check( 'feeds work by default', 200 === http( 'GET', '/?feed=rss2', ip() )['status'] );
+			$set( array( 'disable_feeds' => true ) );
+			$feed = http( 'GET', '/?feed=rss2', ip() );
+			check( 'with feeds off, a feed answers 410 Gone', 410 === $feed['status'] );
+			check( 'and the feed links leave the page', false === strpos( http( 'GET', '/', ip() )['body'], 'application/rss+xml' ) );
+			$set( array( 'disable_feeds' => false ) );
+
+			// Hotlinks and the sensitive files block.
+			check( 'the hotlink allow list keeps domains only', array( 'partner.example.com', 'cdn.example.org' ) === Server::parse_hosts( "https://www.partner.example.com/x\ncdn.example.org, nope, http://" ) );
+			$set( array( 'hotlink_allow' => array( 'partner.example.com' ) ) );
+			$rules = implode( "\n", Server::hotlink_rules() );
+			$own   = preg_quote( preg_replace( '/^www\./', '', (string) wp_parse_url( home_url(), PHP_URL_HOST ) ), '#' );
+			check( 'the hotlink rule lets this site, allowed sites and search engines through', false !== strpos( $rules, $own ) && false !== strpos( $rules, 'partner\.example\.com' ) && false !== strpos( $rules, 'google' ) && false !== strpos( $rules, '[F,NC]' ) );
+			check( 'the nginx version names the same sites', false !== strpos( Server::hotlink_nginx(), 'partner.example.com' ) );
+			check( 'the sensitive files block also covers readme files and directory listings', false !== strpos( implode( "\n", Exposure::rules() ), 'readme' ) && in_array( 'Options -Indexes', Exposure::rules(), true ) );
+
+			$file = ABSPATH . '.htaccess';
+			$had  = is_file( $file ) ? file_get_contents( $file ) : null;
+			try {
+				check( 'the hotlink block is written to .htaccess', true === Server::write_block( Server::HOTLINK_MARKER, Server::hotlink_rules() ) && Server::hotlink_rules() === Server::block_lines( Server::HOTLINK_MARKER ) );
+				check( 'and taken out again without leaving markers', true === Server::write_block( Server::HOTLINK_MARKER, array() ) && false === strpos( (string) file_get_contents( $file ), Server::HOTLINK_MARKER ) );
+				file_put_contents( $file, '# BEGIN ' . Exposure::MARKER . "\nOptions -Indexes\n# END " . Exposure::MARKER . "\n" );
+				Network::delete_option( Server::RULES_SEEN );
+				$owner = user()->ID;
+				if ( is_multisite() ) {
+					grant_super_admin( $owner );
+				}
+				wp_set_current_user( $owner );
+				Server::refresh_rules();
+				wp_set_current_user( 0 );
+				check( 'an older sensitive files block is brought up to date', Exposure::rules() === Server::block_lines( Exposure::MARKER ) );
+			} finally {
+				if ( null === $had ) {
+					@unlink( $file );
+				} else {
+					file_put_contents( $file, $had );
+				}
+			}
+
+			// File permissions.
+			$index = ABSPATH . 'index.php';
+			$mode  = fileperms( $index ) & 0777;
+			try {
+				chmod( $index, 0666 );
+				$rows = wp_list_pluck( Server::permissions(), 'status', 'label' );
+				check( 'a world-writable file fails the permission check', Posture::FAIL === $rows['index.php'] );
+				$fix = Server::fix_permissions();
+				clearstatcache();
+				check( 'one click takes the extra permissions away', 0644 === ( fileperms( $index ) & 0777 ) && in_array( 'index.php 0666 → 0644', $fix['fixed'], true ) );
+				check( 'the site still loads afterwards', 200 === http( 'GET', '/', ip() )['status'] );
+			} finally {
+				chmod( $index, $mode );
+			}
+
+			// Table prefix.
+			global $wpdb;
+			$ready = Server::prefix_ready();
+			if ( is_wp_error( $ready ) ) {
+				check( 'the prefix change explains why it cannot run here', '' !== $ready->get_error_message() );
+				return;
+			}
+			check( 'a prefix that is not well formed is refused', is_wp_error( Server::change_prefix( 'Bad-Prefix' ) ) );
+			check( 'the random suggestion is well formed', 1 === preg_match( '/^wp[a-z0-9]{5}_$/', Server::suggest_prefix() ) );
+			$old    = $wpdb->prefix;
+			$config = Salts::config_path();
+			$saved  = file_get_contents( $config );
+			$admin  = user()->ID;
+			$new    = 'cst' . strtolower( wp_generate_password( 4, false ) ) . '_';
+			$tables = function ( $prefix ) use ( $wpdb ) {
+				return $wpdb->get_col( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $prefix ) . '%' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- Test.
+			};
+			$count  = count( $tables( $old ) );
+			try {
+				$done = Server::change_prefix( $new );
+				check( 'the prefix change runs', true === $done, is_wp_error( $done ) ? $done->get_error_message() : '' );
+				check( 'every table moved to the new prefix', count( $tables( $new ) ) === $count && ! $tables( $old ) );
+				check( 'wp-config.php names the new prefix', false !== strpos( (string) file_get_contents( $config ), "\$table_prefix = '" . $new . "';" ) );
+				clean_user_cache( $admin );
+				check( 'roles and capabilities moved with it', user_can( $admin, 'manage_options' ) && '' !== get_user_meta( $admin, $new . 'capabilities', true ) );
+				sleep( 3 );
+				check( 'the site loads with the new prefix', 200 === http( 'GET', '/', ip() )['status'] );
+			} finally {
+				if ( $wpdb->prefix !== $old ) {
+					$back = Server::change_prefix( $old );
+					check( 'the prefix can be changed back', true === $back, is_wp_error( $back ) ? $back->get_error_message() : '' );
+				}
+				if ( $wpdb->prefix !== $old ) {
+					file_put_contents( $config, $saved );
+				}
+				sleep( 3 );
+			}
+		} finally {
+			Network::update_option( Settings::OPTION, $before );
+			Settings::forget();
+		}
+	}
+);
+
+group(
+	'Reputation',
+	function () {
+		global $wpdb;
+		$before = Settings::all();
+		$mock   = get_site_option( 'sst_http_mock' );
+		$dns    = array(
+			'shop-example.com'                   => array( '45.33.10.20' ),
+			'shop-example.com.dbl.spamhaus.org'  => array( '127.0.1.2' ),
+			'20.10.33.45.zen.spamhaus.org'       => array( '127.255.255.254' ),
+			'shop-example.com.multi.uribl.com'   => array( '127.0.0.1' ),
+			'20.10.33.45.bl.spamcop.net'         => array(),
+			'clean-example.org'                  => array( '45.33.10.21' ),
+			'clean-example.org.dbl.spamhaus.org' => array(),
+			'21.10.33.45.zen.spamhaus.org'       => array(),
+		);
+		$lookup = static function ( $ips, $name ) use ( &$dns ) {
+			$name = rtrim( $name, '.' );
+			return isset( $dns[ $name ] ) ? $dns[ $name ] : array();
+		};
+		$home   = static function () {
+			return 'https://www.shop-example.com';
+		};
+		$expire = gmdate( 'Y-m-d\TH:i:s\Z', time() + 10 * DAY_IN_SECONDS + HOUR_IN_SECONDS );
+		$rdap   = array(
+			'code' => 200,
+			'body' => wp_json_encode(
+				array(
+					'events'   => array(
+						array(
+							'eventAction' => 'registration',
+							'eventDate'   => '2015-01-01T00:00:00Z',
+						),
+						array(
+							'eventAction' => 'expiration',
+							'eventDate'   => $expire,
+						),
+					),
+					'entities' => array(
+						array(
+							'roles'      => array( 'registrar' ),
+							'vcardArray' => array( 'vcard', array( array( 'version', array(), 'text', '4.0' ), array( 'fn', array(), 'text', 'Example Registrar, Inc.' ) ) ),
+						),
+					),
+				)
+			),
+		);
+		update_site_option(
+			'sst_http_mock',
+			array_merge(
+				is_array( $mock ) ? $mock : array(),
+				array(
+					'rdap.org'                    => array(
+						'routes' => array(
+							'GET /domain/shop-example.com' => $rdap,
+							'GET /domain/clean-example.org' => array(
+								'code' => 200,
+								'body' => '{"events":[]}',
+							),
+						),
+					),
+					'safebrowsing.googleapis.com' => array( 'body' => '{"matches":[{"threatType":"SOCIAL_ENGINEERING"}]}' ),
+				)
+			)
+		);
+		add_filter( 'cshield_dns_lookup', $lookup, 10, 2 );
+		add_filter( 'pre_option_home', $home );
+		$listed = function () use ( $wpdb ) {
+			return (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM ' . Events::table() . ' WHERE action = %s', 'reputation.listed' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared -- Test.
+		};
+		try {
+			check( 'local and made-up names are not sent to lists or registries', ! Reputation::public_host( 'localhost' ) && ! Reputation::public_host( 'site.test' ) && ! Reputation::public_host( '10.0.0.1' ) && Reputation::public_host( 'shop-example.com' ) );
+			$lists = Reputation::lists();
+			check( 'an IP is asked about in reverse order', 'listed' === Reputation::ask( $lists['spamhaus_dbl'], 'shop-example.com' ) && 'refused' === Reputation::ask( $lists['spamhaus_zen'], '45.33.10.20' ) && 'clean' === Reputation::ask( $lists['spamcop'], '45.33.10.20' ) );
+
+			Network::update_option( Reputation::KEY, Totp::seal( 'AIzaTestKey1234567890abcd' ), false );
+			Network::delete_option( Reputation::OPTION );
+			$count = $listed();
+			$state = Reputation::check();
+			check( 'the site is checked under its own domain and server address', 'shop-example.com' === $state['domain'] && '45.33.10.20' === $state['ip'] );
+			check( 'a domain listing is found', 'listed' === $state['lists']['spamhaus_dbl']['status'] );
+			check( 'a list that will not answer this server is not counted as a listing', 'refused' === $state['lists']['spamhaus_zen']['status'] && 'refused' === $state['lists']['uribl']['status'] );
+			check( 'Google Safe Browsing is asked when a key is saved', 'listed' === $state['lists']['safe_browsing']['status'] );
+			check( 'the domain expiry date and registrar are read from RDAP', abs( $state['expiry']['expires'] - strtotime( $expire ) ) < 2 && 'Example Registrar, Inc.' === $state['expiry']['registrar'] );
+			check( 'a new listing is logged once', $count + 1 === $listed() );
+			Reputation::check();
+			check( 'the same listing the next day is not logged again', $count + 1 === $listed() );
+			$checks = wp_list_pluck( \ChaosShield\Posture::checks(), 'status', 'id' );
+			check( 'the overview fails on a listing and warns on a domain about to lapse', Posture::FAIL === $checks['blocklists'] && Posture::WARN === $checks['domain_expiry'] );
+
+			$sub = Reputation::expiry( 'blog.shop-example.com' );
+			check( 'a subdomain finds the domain it belongs to', 'shop-example.com' === $sub['domain'] && $sub['expires'] > time() );
+			$none = Reputation::expiry( 'clean-example.org' );
+			check( 'a registry without an expiry date says so', 0 === $none['expires'] && '' !== $none['error'] );
+
+			Network::delete_option( Reputation::KEY );
+			$home = static function () {
+				return 'https://clean-example.org';
+			};
+			remove_all_filters( 'pre_option_home' );
+			add_filter( 'pre_option_home', $home );
+			$state = Reputation::check();
+			check( 'a clean site passes every list, and Safe Browsing is skipped without a key', ! isset( $state['lists']['safe_browsing'] ) && 'clean' === $state['lists']['spamhaus_dbl']['status'] && 'clean' === $state['lists']['spamhaus_zen']['status'] );
+		} finally {
+			remove_filter( 'cshield_dns_lookup', $lookup, 10 );
+			remove_all_filters( 'pre_option_home' );
+			Network::delete_option( Reputation::KEY );
+			Network::delete_option( Reputation::OPTION );
+			update_site_option( 'sst_http_mock', $mock );
+		}
+
+		// Country rules for single pages.
+		$rules = Geo::parse_page_rules( "/Members/ allow us, ca\n/contact block CN\nnot a rule\n/x block" );
+		check( 'page rules are cleaned and bad lines are reported', array( '/members allow US,CA', '/contact block CN' ) === $rules['valid'] && array( 'not a rule', '/x block' ) === $rules['invalid'] );
+		$set = function ( array $changes ) {
+			Network::update_option( Settings::OPTION, array_merge( Settings::all(), $changes ) );
+			Settings::forget();
+		};
+		$set( array( 'country_pages' => $rules['valid'] ) );
+		check( 'a rule covers its page and the pages below it', '/members allow US,CA' === implode( ' ', array( Geo::page_rule( '/members/cart' )['path'], Geo::page_rule( '/members/cart' )['mode'], implode( ',', Geo::page_rule( '/members/cart' )['countries'] ) ) ) && null === Geo::page_rule( '/membership' ) && null === Geo::page_rule( '/' ) );
+		$set(
+			array(
+				'country_block'  => true,
+				'country_source' => 'server',
+				'country_list'   => array(),
+				'country_pages'  => $rules['valid'],
+			)
+		);
+		$cc = function ( $path, $code ) {
+			return http( 'GET', $path, ip(), array( 'headers' => array( 'X-Country-Code' => $code ) ) )['status'];
+		};
+		try {
+			check( 'an allowed country reaches the page', 403 !== $cc( '/members/cart/', 'US' ) );
+			check( 'another country is kept off the page', 403 === $cc( '/members/cart/', 'DE' ) );
+			check( 'the rest of the site stays open to it', 403 !== $cc( '/about-us/', 'DE' ) );
+			check( 'a block rule keeps its country off its page only', 403 === $cc( '/contact/', 'CN' ) && 403 !== $cc( '/members/', 'CA' ) && 403 !== $cc( '/contact/', 'US' ) );
+		} finally {
+			Network::update_option( Settings::OPTION, $before );
+			Settings::forget();
 		}
 	}
 );

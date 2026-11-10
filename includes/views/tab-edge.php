@@ -355,6 +355,105 @@ $cshield_box   = static function ( $key, $label, $hint = '' ) {
 	<?php $cshield_close(); ?>
 </section>
 
+<?php
+$cshield_rep      = Reputation::state();
+$cshield_rep_exp  = $cshield_rep['expiry'];
+$cshield_rep_days = ! empty( $cshield_rep_exp['expires'] ) ? Uptime::days_left( (int) $cshield_rep_exp['expires'] ) : null;
+$cshield_rep_says = array(
+	'clean'   => __( 'Not listed', 'chaos-shield' ),
+	'listed'  => __( 'Listed', 'chaos-shield' ),
+	'refused' => __( 'Would not answer this server', 'chaos-shield' ),
+	'error'   => __( 'Could not be checked', 'chaos-shield' ),
+	'skip'    => __( 'Not checked: no public address', 'chaos-shield' ),
+);
+?>
+<section class="cshield-card cshield-card--full" id="cshield-reputation">
+	<div class="cshield-card__head">
+		<div>
+			<h2><?php esc_html_e( 'Reputation', 'chaos-shield' ); ?></h2>
+			<p><?php esc_html_e( 'A hacked site often ends up on spam and malware blocklists before anyone notices, and a lapsed domain takes the site and its email down. Both are checked every day.', 'chaos-shield' ); ?></p>
+		</div>
+	</div>
+	<?php if ( ! $cshield_rep['checked'] ) : ?>
+		<p class="cshield-empty"><?php esc_html_e( 'Not checked yet. Choose Check now at the top.', 'chaos-shield' ); ?></p>
+	<?php else : ?>
+		<ul class="cshield-checks">
+			<?php if ( $cshield_rep_exp ) : ?>
+				<li class="cshield-check cshield-check--<?php echo null === $cshield_rep_days ? 'warn' : ( $cshield_rep_days < 0 ? 'fail' : ( $cshield_rep_days <= Reputation::EXPIRY_WARN ? 'warn' : 'pass' ) ); ?>">
+					<span class="cshield-badge"><?php echo esc_html( null === $cshield_rep_days ? '?' : number_format_i18n( max( 0, $cshield_rep_days ) ) ); ?></span>
+					<div class="cshield-finding">
+						<strong>
+							<?php
+							/* translators: %s: domain. */
+							echo esc_html( sprintf( __( 'Domain %s', 'chaos-shield' ), $cshield_rep_exp['domain'] ) );
+							?>
+						</strong>
+						<p>
+							<?php
+							if ( null === $cshield_rep_days ) {
+								echo esc_html( $cshield_rep_exp['error'] );
+							} else {
+								echo esc_html(
+									sprintf(
+										/* translators: 1: date, 2: registrar. */
+										__( 'Registered until %1$s with %2$s.', 'chaos-shield' ),
+										wp_date( get_option( 'date_format' ), (int) $cshield_rep_exp['expires'] ),
+										'' !== $cshield_rep_exp['registrar'] ? $cshield_rep_exp['registrar'] : __( 'an unknown registrar', 'chaos-shield' )
+									) . ( $cshield_rep_days <= Reputation::EXPIRY_WARN ? ' ' . __( 'Renew it soon, and switch on automatic renewal if your registrar offers it.', 'chaos-shield' ) : '' )
+								);
+							}
+							?>
+						</p>
+					</div>
+				</li>
+			<?php endif; ?>
+			<?php foreach ( $cshield_rep['lists'] as $cshield_row ) : ?>
+				<li class="cshield-check cshield-check--<?php echo 'listed' === $cshield_row['status'] ? 'fail' : ( 'clean' === $cshield_row['status'] ? 'pass' : 'warn' ); ?>">
+					<span class="cshield-badge"><?php echo 'listed' === $cshield_row['status'] ? '!' : ( 'clean' === $cshield_row['status'] ? '✓' : '?' ); ?></span>
+					<div class="cshield-finding">
+						<strong><?php echo esc_html( $cshield_row['label'] ); ?></strong>
+						<p>
+							<?php echo esc_html( isset( $cshield_rep_says[ $cshield_row['status'] ] ) ? $cshield_rep_says[ $cshield_row['status'] ] : $cshield_row['status'] ); ?>
+							<?php if ( 'listed' === $cshield_row['status'] ) : ?>
+								<?php esc_html_e( 'Scan for malware and clean up first, then ask for a review:', 'chaos-shield' ); ?>
+								<a href="<?php echo esc_url( $cshield_row['url'] ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'removal page', 'chaos-shield' ); ?></a>
+							<?php endif; ?>
+						</p>
+					</div>
+				</li>
+			<?php endforeach; ?>
+		</ul>
+		<p class="cshield-small">
+			<?php
+			echo esc_html(
+				'' !== $cshield_rep['ip']
+					/* translators: 1: domain, 2: IP address, 3: date and time. */
+					? sprintf( __( 'Checked %1$s and its server %2$s on %3$s.', 'chaos-shield' ), $cshield_rep['domain'], $cshield_rep['ip'], wp_date( $cshield_when, (int) $cshield_rep['checked'] ) )
+					/* translators: 1: domain, 2: date and time. */
+					: sprintf( __( 'Checked %1$s on %2$s.', 'chaos-shield' ), $cshield_rep['domain'], wp_date( $cshield_when, (int) $cshield_rep['checked'] ) )
+			);
+			?>
+		</p>
+	<?php endif; ?>
+	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="cshield-inline-form">
+		<input type="hidden" name="action" value="cshield_reputation">
+		<input type="hidden" name="op" value="key">
+		<?php wp_nonce_field( 'cshield_reputation' ); ?>
+		<label><span><?php esc_html_e( 'Google Safe Browsing API key (optional, free)', 'chaos-shield' ); ?></span>
+			<input type="password" name="gsb_key" value="" autocomplete="off" spellcheck="false" placeholder="<?php echo esc_attr( Network::get_option( Reputation::KEY, '' ) ? __( 'Saved', 'chaos-shield' ) : 'AIza…' ); ?>"></label>
+		<?php if ( Network::get_option( Reputation::KEY, '' ) ) : ?>
+			<label class="cshield-check-line"><input type="checkbox" name="forget" value="1"> <?php esc_html_e( 'Remove the key', 'chaos-shield' ); ?></label>
+		<?php endif; ?>
+		<button type="submit" class="cshield-btn cshield-btn--ghost"><?php esc_html_e( 'Save and check', 'chaos-shield' ); ?></button>
+	</form>
+	<p class="cshield-small"><?php esc_html_e( 'With a key, Google is also asked whether it flags the site as dangerous, the warning Chrome and Google Search show. Create one in the Google Cloud console with the Safe Browsing API switched on.', 'chaos-shield' ); ?></p>
+	<?php $cshield_open( array( 'reputation_check' ) ); ?>
+		<ul class="cshield-optlist">
+			<?php $cshield_box( 'reputation_check', __( 'Check blocklists and the domain every day', 'chaos-shield' ) ); ?>
+		</ul>
+	<?php $cshield_close(); ?>
+</section>
+
 <section class="cshield-card cshield-card--full" id="cshield-scripts">
 	<div class="cshield-card__head">
 		<div>

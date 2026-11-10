@@ -89,12 +89,12 @@ if ( is_file( $cshield_htaccess ) && is_writable( $cshield_htaccess ) ) { // php
 	}
 }
 
-// Take out the block on backups, logs and hidden files from the root .htaccess.
+// Take out the blocks on sensitive files and image hotlinks from the root .htaccess.
 $cshield_root_ht = ABSPATH . '.htaccess';
 if ( is_file( $cshield_root_ht ) && is_writable( $cshield_root_ht ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable -- Local file.
 	$cshield_body = (string) file_get_contents( $cshield_root_ht ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file.
-	if ( false !== strpos( $cshield_body, '# BEGIN Chaos Shield sensitive files' ) ) {
-		$cshield_body = (string) preg_replace( '/\n?# BEGIN Chaos Shield sensitive files.*?# END Chaos Shield sensitive files\n?/s', "\n", $cshield_body );
+	if ( false !== strpos( $cshield_body, '# BEGIN Chaos Shield ' ) ) {
+		$cshield_body = (string) preg_replace( '/\n?# BEGIN (Chaos Shield (?:sensitive files|hotlinks)).*?# END \1\n?/s', "\n", $cshield_body );
 		file_put_contents( $cshield_root_ht, ltrim( $cshield_body ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents, PluginCheck.CodeAnalysis.WriteFile.ABSPATHDetected -- Takes this plugin's own rules back out of the site's .htaccess.
 	}
 }

@@ -404,7 +404,7 @@ final class Exposure {
 	public static function rules() {
 		return array(
 			'<IfModule mod_authz_core.c>',
-			'<FilesMatch "(^\.(?!well-known)|\.(sql|sql\.gz|bak|old|orig|save|swp|log|env)$|^(wp-config\.php.+|error_log|debug\.log|phpinfo\.php|info\.php|adminer.*\.php)$)">',
+			'<FilesMatch "(^\.(?!well-known)|\.(sql|sql\.gz|bak|old|orig|save|swp|log|env)$|^(wp-config\.php.+|wp-config-sample\.php|error_log|debug\.log|phpinfo\.php|info\.php|adminer.*\.php|readme\.(html|txt)|license\.txt)$)">',
 			'Require all denied',
 			'</FilesMatch>',
 			'<If "%{REQUEST_URI} =~ m#^/[^/]+\.(zip|tar|tgz|gz|7z|rar|wpress)$#">',
@@ -422,7 +422,7 @@ final class Exposure {
 	 * @return string
 	 */
 	public static function nginx() {
-		return "location ~ /\\.(?!well-known) { deny all; }\nlocation ~* \\.(sql|bak|old|orig|save|swp|log|env)\$ { deny all; }\nlocation ~* ^/(wp-config\\.php.+|error_log|debug\\.log|phpinfo\\.php|info\\.php)\$ { deny all; }\nlocation ~* ^/[^/]+\\.(zip|tar|tgz|gz|7z|rar|wpress)\$ { deny all; }\nautoindex off;";
+		return "location ~ /\\.(?!well-known) { deny all; }\nlocation ~* \\.(sql|bak|old|orig|save|swp|log|env)\$ { deny all; }\nlocation ~* ^/(wp-config\\.php.+|wp-config-sample\\.php|error_log|debug\\.log|phpinfo\\.php|info\\.php|readme\\.html|license\\.txt)\$ { deny all; }\nlocation ~* /(error_log|debug\\.log|readme\\.txt)\$ { deny all; }\nlocation ~* ^/[^/]+\\.(zip|tar|tgz|gz|7z|rar|wpress)\$ { deny all; }\nautoindex off;";
 	}
 
 	/**
@@ -476,7 +476,7 @@ final class Exposure {
 	 *
 	 * @return bool
 	 */
-	private static function broken() {
+	public static function broken() {
 		$res = Page_Check::fetch( home_url( '/' ), array( 'redirection' => 3 ) );
 		return ! is_wp_error( $res ) && 500 === (int) wp_remote_retrieve_response_code( $res );
 	}

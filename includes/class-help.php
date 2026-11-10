@@ -154,6 +154,15 @@ final class Help {
 				),
 				'length' => __( 'The lists are refreshed every day, so this can change on its own.', 'chaos-shield' ),
 			),
+			'agent'     => array(
+				'title'  => __( 'Your browser or tool is blocked', 'chaos-shield' ),
+				'text'   => __( 'The site does not accept requests from this browser, app or bot, or from software that does not say what it is.', 'chaos-shield' ),
+				'tips'   => array(
+					__( 'Open the page in an ordinary up-to-date browser.', 'chaos-shield' ),
+					__( 'If you need access with this tool, ask the site owner below.', 'chaos-shield' ),
+				),
+				'length' => __( 'This stays as long as the site blocks this user agent.', 'chaos-shield' ),
+			),
 			'rate'      => array(
 				'title'  => __( 'Slow down a little', 'chaos-shield' ),
 				'text'   => __( 'Your browser sent a lot of requests in a short time, so the site asked it to wait.', 'chaos-shield' ),
@@ -516,6 +525,7 @@ final class Help {
 			'blocklist' => __( 'IP on your block list', 'chaos-shield' ),
 			'country'   => __( 'Country not allowed', 'chaos-shield' ),
 			'threat'    => __( 'IP on a threat list', 'chaos-shield' ),
+			'agent'     => __( 'User agent blocked', 'chaos-shield' ),
 			'rate'      => __( 'Too many requests', 'chaos-shield' ),
 			'login'     => __( 'Login help', 'chaos-shield' ),
 			'site'      => __( 'Question from the site', 'chaos-shield' ),

@@ -129,6 +129,10 @@ final class Settings {
 				'label'       => __( 'Exposed files and keys check', 'chaos-shield' ),
 				'description' => __( 'Checks every day that backups, database dumps, logs, .env and .git cannot be downloaded, and that no secret keys show in your pages.', 'chaos-shield' ),
 			),
+			'reputation_check'      => array(
+				'label'       => __( 'Blocklist and domain checks', 'chaos-shield' ),
+				'description' => __( 'Checks every day that spam blocklists, and Google Safe Browsing if you add a key, do not list your site, and warns a month before your domain expires. See the results on the Edge tab.', 'chaos-shield' ),
+			),
 			'vuln_check'            => array(
 				'label'       => __( 'Vulnerability alerts', 'chaos-shield' ),
 				'description' => __( 'Checks WordPress, your plugins and your themes every day against the free WPVulnerability database, and flags plugins that were closed or abandoned. No account or key needed.', 'chaos-shield' ),
@@ -160,6 +164,22 @@ final class Settings {
 			'approve_signups'       => array(
 				'label'       => __( 'Approve new sign-ups', 'chaos-shield' ),
 				'description' => __( 'Accounts that visitors make for themselves cannot log in until an administrator approves them on the Users screen. You get an email for each one.', 'chaos-shield' ),
+			),
+			'block_blank_ua'        => array(
+				'label'       => __( 'Block posts without a user agent', 'chaos-shield' ),
+				'description' => __( 'Refuses form posts from visitors whose browser sends no user agent, which only scripts do. Block named bots and tools under Access.', 'chaos-shield' ),
+			),
+			'rest_private'          => array(
+				'label'       => __( 'Close the REST API to visitors', 'chaos-shield' ),
+				'description' => __( 'Only logged-in users can use the REST API, apart from the routes you allow below. Embeds, WooCommerce checkout, Contact Form 7, WPForms and Jetpack stay open.', 'chaos-shield' ),
+			),
+			'disable_feeds'         => array(
+				'label'       => __( 'Turn off RSS feeds', 'chaos-shield' ),
+				'description' => __( 'Feed addresses answer 410 Gone and the feed links leave your pages, so scrapers cannot copy posts from them. Leave on if you run a podcast or a newsletter from the feed.', 'chaos-shield' ),
+			),
+			'block_hotlinks'        => array(
+				'label'       => __( 'Block image hotlinking', 'chaos-shield' ),
+				'description' => __( 'Stops other sites from showing your images and using your bandwidth. Search engines and the sites you allow below can still show them. Needs Apache or LiteSpeed.', 'chaos-shield' ),
 			),
 			'disable_app_passwords' => array(
 				'label'       => __( 'Disable application passwords', 'chaos-shield' ),
@@ -200,6 +220,7 @@ final class Settings {
 			'country_block'         => false,
 			'captcha'               => false,
 			'vuln_check'            => true,
+			'reputation_check'      => true,
 			'file_watch'            => true,
 			'visitor_help'          => true,
 			'attack_auto'           => true,
@@ -212,6 +233,10 @@ final class Settings {
 			'restore_points'        => true,
 			'comment_spam'          => true,
 			'approve_signups'       => false,
+			'block_blank_ua'        => false,
+			'rest_private'          => false,
+			'disable_feeds'         => false,
+			'block_hotlinks'        => false,
 			'disable_app_passwords' => false,
 		);
 		$defaults['login_max_attempts']   = 5;
@@ -249,8 +274,12 @@ final class Settings {
 		$defaults['country_mode']         = 'block';
 		$defaults['country_scope']        = 'login';
 		$defaults['country_list']         = array();
+		$defaults['country_pages']        = array();
 		$defaults['ip_allowlist']         = array();
 		$defaults['ip_blocklist']         = array();
+		$defaults['ua_blocklist']         = array();
+		$defaults['rest_allow']           = array();
+		$defaults['hotlink_allow']        = array();
 		$defaults['proxy_header']         = '';
 		$defaults['fw_mode']              = 'block';
 		$defaults['fw_learn_until']       = 0;
@@ -303,6 +332,7 @@ final class Settings {
 			'alert_attack'         => true,
 			'alert_scripts'        => true,
 			'alert_exposure'       => true,
+			'alert_reputation'     => true,
 		);
 	}
 
@@ -326,6 +356,7 @@ final class Settings {
 			'alert_attack'         => __( 'Under attack mode switches on during a flood', 'chaos-shield' ),
 			'alert_scripts'        => __( 'A new or suspicious script appears on your pages', 'chaos-shield' ),
 			'alert_exposure'       => __( 'A backup, log, key or other private file can be downloaded', 'chaos-shield' ),
+			'alert_reputation'     => __( 'The site lands on a blocklist, or its domain is about to expire', 'chaos-shield' ),
 		);
 	}
 
@@ -479,8 +510,10 @@ final class Settings {
 		foreach ( array_keys( Captcha::form_options() ) as $key ) {
 			$clean[ $key ] = ! empty( $input[ $key ] );
 		}
-		$mode                  = isset( $input['traffic_mode'] ) ? (string) $input['traffic_mode'] : 'security';
-		$clean['traffic_mode'] = 'all' === $mode ? 'all' : 'security';
+		$clean['rest_allow']    = Server::parse_routes( isset( $input['rest_allow'] ) ? (string) $input['rest_allow'] : '' );
+		$clean['hotlink_allow'] = Server::parse_hosts( isset( $input['hotlink_allow'] ) ? (string) $input['hotlink_allow'] : '' );
+		$mode                   = isset( $input['traffic_mode'] ) ? (string) $input['traffic_mode'] : 'security';
+		$clean['traffic_mode']  = 'all' === $mode ? 'all' : 'security';
 		return self::store( $clean );
 	}
 
@@ -538,7 +571,7 @@ final class Settings {
 	 */
 	public static function save_edge( array $input, array $fields ) {
 		$clean = self::all();
-		$bools = array( 'attack_auto', 'script_watch', 'exposure_check', 'https_upgrade', 'force_https', 'cf_sync_bans', 'cf_attack_sync', 'ban_feed' );
+		$bools = array( 'attack_auto', 'script_watch', 'exposure_check', 'reputation_check', 'https_upgrade', 'force_https', 'cf_sync_bans', 'cf_attack_sync', 'ban_feed' );
 		foreach ( array_intersect( $fields, $bools ) as $key ) {
 			$clean[ $key ] = ! empty( $input[ $key ] );
 		}
@@ -640,6 +673,9 @@ final class Settings {
 		$clean['country_mode']   = isset( $input['country_mode'] ) && 'allow' === $input['country_mode'] ? 'allow' : 'block';
 		$clean['country_scope']  = isset( $input['country_scope'] ) && 'site' === $input['country_scope'] ? 'site' : 'login';
 		$clean['country_list']   = Geo::parse( isset( $input['country_list'] ) ? (string) $input['country_list'] : '' );
+		$pages                   = Geo::parse_page_rules( isset( $input['country_pages'] ) ? (string) $input['country_pages'] : '' );
+		$clean['country_pages']  = $pages['valid'];
+		$rejected['pages']       = $pages['invalid'];
 
 		$header                = isset( $input['proxy_header'] ) ? (string) $input['proxy_header'] : '';
 		$clean['proxy_header'] = array_key_exists( $header, self::proxy_headers() ) ? $header : '';
@@ -660,6 +696,10 @@ final class Settings {
 			}
 			$clean['ip_blocklist'] = array_values( $clean['ip_blocklist'] );
 		}
+
+		$agents                = Server::parse_agents( isset( $input['ua_blocklist'] ) ? (string) $input['ua_blocklist'] : '', Request::server( 'HTTP_USER_AGENT' ) );
+		$clean['ua_blocklist'] = $agents['valid'];
+		$rejected['agent']     = $agents['self'];
 
 		self::store( $clean );
 
