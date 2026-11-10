@@ -64,6 +64,7 @@ final class Plugin {
 		( new Geo_Db() )->register();
 		( new Hardening() )->register();
 		( new Server() )->register();
+		( new Reputation() )->register();
 		( new Login_Guard() )->register();
 		( new Two_Factor() )->register();
 		( new Passkeys() )->register();

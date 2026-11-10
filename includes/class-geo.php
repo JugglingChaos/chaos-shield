@@ -18,7 +18,7 @@ final class Geo {
 	 * Registers hooks.
 	 */
 	public function register() {
-		if ( Settings::enabled( 'country_block' ) && Settings::get( 'country_source' ) && Settings::get( 'country_list' ) ) {
+		if ( Settings::enabled( 'country_block' ) && Settings::get( 'country_source' ) && ( Settings::get( 'country_list' ) || Settings::get( 'country_pages' ) ) ) {
 			add_action( 'plugins_loaded', array( $this, 'check' ), 2 );
 		}
 	}
@@ -107,6 +107,87 @@ final class Geo {
 	}
 
 	/**
+	 * Cleans the per-page country rules typed on the Access tab.
+	 *
+	 * @param string $text One rule per line: a path, block or allow, then country codes.
+	 * @return array valid (rules as "path mode CC,CC"), invalid (lines that were skipped).
+	 */
+	public static function parse_page_rules( $text ) {
+		$out = array(
+			'valid'   => array(),
+			'invalid' => array(),
+		);
+		foreach ( preg_split( '/[\r\n]+/', (string) $text ) as $line ) {
+			$line = trim( sanitize_text_field( $line ) );
+			if ( '' === $line ) {
+				continue;
+			}
+			$rule = self::page_rule_parts( $line );
+			if ( ! $rule ) {
+				$out['invalid'][] = $line;
+				continue;
+			}
+			$out['valid'][] = $rule['path'] . ' ' . $rule['mode'] . ' ' . implode( ',', $rule['countries'] );
+		}
+		$out['valid'] = array_slice( array_values( array_unique( $out['valid'] ) ), 0, 50 );
+		return $out;
+	}
+
+	/**
+	 * One page rule, split into its parts.
+	 *
+	 * @param string $line Rule, such as "/shop allow US, CA".
+	 * @return array|null path, mode, countries.
+	 */
+	public static function page_rule_parts( $line ) {
+		if ( ! preg_match( '#^(/[^\s]*)\s+(block|allow)\s+(.+)$#i', trim( (string) $line ), $m ) ) {
+			return null;
+		}
+		$countries = self::parse( $m[3] );
+		$path      = '/' . trim( strtolower( $m[1] ), '/' );
+		if ( ! $countries || ! preg_match( '#^/[a-z0-9._~%/-]*$#', $path ) ) {
+			return null;
+		}
+		return array(
+			'path'      => '/' === $path ? '/' : $path,
+			'mode'      => strtolower( $m[2] ),
+			'countries' => $countries,
+		);
+	}
+
+	/**
+	 * Path of the current request below the site address, such as /shop/cart.
+	 *
+	 * @return string
+	 */
+	public static function request_path() {
+		$path = strtolower( (string) wp_parse_url( Request::server( 'REQUEST_URI' ), PHP_URL_PATH ) );
+		$base = rtrim( strtolower( (string) wp_parse_url( home_url( '/' ), PHP_URL_PATH ) ), '/' );
+		if ( '' !== $base && 0 === strpos( $path, $base . '/' ) ) {
+			$path = substr( $path, strlen( $base ) );
+		}
+		return '/' . trim( $path, '/' );
+	}
+
+	/**
+	 * The first page rule that covers a path.
+	 *
+	 * A rule covers its own page and everything below it.
+	 *
+	 * @param string $path Path, as request_path() gives it.
+	 * @return array|null path, mode, countries.
+	 */
+	public static function page_rule( $path ) {
+		foreach ( (array) Settings::get( 'country_pages' ) as $line ) {
+			$rule = self::page_rule_parts( (string) $line );
+			if ( $rule && ( '/' === $rule['path'] || $path === $rule['path'] || 0 === strpos( $path, $rule['path'] . '/' ) ) ) {
+				return $rule;
+			}
+		}
+		return null;
+	}
+
+	/**
 	 * Stops the request when the visitor's country is not allowed here.
 	 */
 	public function check() {
@@ -115,15 +196,27 @@ final class Geo {
 			return;
 		}
 		$login = 'wp-login.php' === $pagenow || ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST ) || Passkeys::is_login_request();
-		if ( 'login' === Settings::get( 'country_scope' ) && ! $login ) {
-			return;
+		// Someone already signed in, such as an admin travelling, keeps using the site.
+		$member = ! $login && is_user_logged_in();
+		if ( Settings::get( 'country_list' ) && ( $login || 'site' === Settings::get( 'country_scope' ) ) && ! $member ) {
+			$this->judge( 'allow' === Settings::get( 'country_mode' ), (array) Settings::get( 'country_list' ) );
 		}
-		if ( ! $login && is_user_logged_in() ) {
-			// Someone already signed in, such as an admin travelling, keeps using the site.
-			return;
+		if ( ! $member && Settings::get( 'country_pages' ) ) {
+			$rule = self::page_rule( self::request_path() );
+			if ( $rule ) {
+				$this->judge( 'allow' === $rule['mode'], $rule['countries'] );
+			}
 		}
+	}
+
+	/**
+	 * Refuses the visitor when one rule keeps their country out.
+	 *
+	 * @param bool     $allow Whether the list names the countries let in.
+	 * @param string[] $codes Country codes.
+	 */
+	private function judge( $allow, array $codes ) {
 		$country = self::country();
-		$allow   = 'allow' === Settings::get( 'country_mode' );
 		if ( '' === $country ) {
 			// In allow mode a visitor whose country could have been known but was not
 			// (no Cloudflare header because they went around it, say) is kept out.
@@ -132,7 +225,7 @@ final class Geo {
 			}
 			$country = '??';
 		}
-		$listed  = in_array( $country, (array) Settings::get( 'country_list' ), true );
+		$listed  = in_array( $country, $codes, true );
 		$blocked = $allow ? ! $listed : $listed;
 		if ( ! $blocked ) {
 			return;

@@ -129,6 +129,9 @@ final class Posture {
 		);
 
 		$checks[] = self::two_factor_check();
+		foreach ( self::reputation_checks() as $rep ) {
+			$checks[] = $rep;
+		}
 		$checks[] = self::scan_check();
 		$checks[] = self::vuln_check();
 
@@ -160,6 +163,53 @@ final class Posture {
 		}
 
 		return $checks;
+	}
+
+	/**
+	 * Blocklist and domain expiry results from the last daily check.
+	 *
+	 * @return array[]
+	 */
+	private static function reputation_checks() {
+		$state = Reputation::state();
+		if ( ! Settings::enabled( 'reputation_check' ) || ! $state['checked'] ) {
+			return array();
+		}
+		$out    = array();
+		$listed = array();
+		foreach ( $state['lists'] as $row ) {
+			if ( 'listed' === $row['status'] ) {
+				$listed[] = $row['label'];
+			}
+		}
+		$out[] = self::check(
+			'blocklists',
+			__( 'Blocklists', 'chaos-shield' ),
+			$listed ? self::FAIL : self::PASS,
+			$listed
+				/* translators: %s: list of blocklists. */
+				? sprintf( __( 'The site is listed on %s. Scan for malware, clean up, then ask each list for a review from the Edge tab.', 'chaos-shield' ), implode( ', ', $listed ) )
+				: __( 'No blocklist that was asked lists the site.', 'chaos-shield' ),
+			3
+		);
+		$expires = isset( $state['expiry']['expires'] ) ? (int) $state['expiry']['expires'] : 0;
+		if ( $expires ) {
+			$days  = Uptime::days_left( $expires );
+			$out[] = self::check(
+				'domain_expiry',
+				__( 'Domain registration', 'chaos-shield' ),
+				$days < 0 ? self::FAIL : ( $days <= Reputation::EXPIRY_WARN ? self::WARN : self::PASS ),
+				sprintf(
+					/* translators: 1: domain, 2: date, 3: days. */
+					_n( '%1$s is registered until %2$s, %3$d day from now.', '%1$s is registered until %2$s, %3$d days from now.', max( 0, $days ), 'chaos-shield' ),
+					$state['expiry']['domain'],
+					wp_date( get_option( 'date_format' ), $expires ),
+					max( 0, $days )
+				) . ( $days <= Reputation::EXPIRY_WARN ? ' ' . __( 'Renew it with your registrar.', 'chaos-shield' ) : '' ),
+				2
+			);
+		}
+		return $out;
 	}
 
 	/**

@@ -4,7 +4,7 @@ Tags: security, firewall, two-factor, audit log, malware scanner
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.17.0
+Stable tag: 1.18.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -18,7 +18,7 @@ Chaos Shield gives you one dashboard for WordPress security, without slowing you
 
 Disable XML-RPC, the file editor and application passwords, hide the WordPress version, block username enumeration, send security headers, limit login attempts and use generic login errors.
 
-On the server side: fix loose file permissions in one click, block image hotlinking and unwanted user agents, close the REST API and RSS feeds to visitors, and move off the default wp_ table prefix.
+Blocklist and domain expiry checks warn you before a hacked page or a lapsed domain costs you visitors. On the server side: fix loose file permissions in one click, block image hotlinking and unwanted user agents, close the REST API and RSS feeds to visitors, and move off the default wp_ table prefix.
 
 **Login protection**
 
@@ -173,6 +173,9 @@ Chaos Shield contacts these services. None of them is contacted for a feature th
 * **WPVulnerability** (www.wpvulnerability.net): once a day the vulnerability check sends the slug and version of each installed plugin and theme and your WordPress version. [Terms and privacy](https://www.wpvulnerability.com/privacy/).
 * **Have I Been Pwned, Pwned Passwords** (api.pwnedpasswords.com): when someone sets a password, the breached password check sends the first five characters of its SHA-1 hash, never the password. [Terms](https://haveibeenpwned.com/TermsOfUse) and [privacy policy](https://haveibeenpwned.com/Privacy).
 * **Spamhaus** (www.spamhaus.org): once a day the threat blocklist downloads the public DROP list. Nothing about your site is sent. [Terms](https://www.spamhaus.org/legal/) and [privacy policy](https://www.spamhaus.org/legal/privacy-policy/).
+* **Spamhaus, SURBL, URIBL and SpamCop blocklists** (dbl.spamhaus.org, zen.spamhaus.org, multi.surbl.org, multi.uribl.com, bl.spamcop.net): once a day the blocklist check looks up your site's domain and server address through your server's DNS resolver. [Spamhaus privacy](https://www.spamhaus.org/legal/privacy-policy/), [SURBL](https://surbl.org/), [URIBL](https://uribl.com/about.shtml), [SpamCop](https://www.spamcop.net/fom-serve/cache/168.html).
+* **RDAP** (rdap.org and your domain registry's RDAP server): once a day the domain check asks for the public registration record of your domain. Only the domain name is sent. [About rdap.org](https://about.rdap.org/).
+* **Google Safe Browsing** (safebrowsing.googleapis.com): only when you add an API key. Once a day your site's address is sent to ask whether Google flags it. [Terms](https://developers.google.com/safe-browsing/terms) and [privacy policy](https://policies.google.com/privacy).
 * **Tor Project** (check.torproject.org): when you choose to block Tor, the list of Tor exit addresses is downloaded once a day. Nothing about your site is sent. [Privacy policy](https://www.torproject.org/about/privacy/).
 * **GitHub** (github.com, api.github.com): once a week the built-in country lookup downloads the public domain ip-location-db country lists from github.com. The copy of Chaos Shield from GitHub (not the WordPress.org one) also asks api.github.com for its latest release at most every six hours. Only your site's address is sent, in the user agent. [Terms](https://docs.github.com/en/site-policy/github-terms/github-terms-of-service) and [privacy policy](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement).
 * **Cloudflare Turnstile** (challenges.cloudflare.com): with Turnstile as the login CAPTCHA, its script loads on the login page (and on any comment, WooCommerce, Contact Form 7 or WPForms form you turn the check on for) and the token from each login is checked with Cloudflare, together with the visitor's IP. [Terms](https://www.cloudflare.com/website-terms/) and [privacy policy](https://www.cloudflare.com/privacypolicy/).
@@ -184,6 +187,12 @@ Chaos Shield contacts these services. None of them is contacted for a feature th
 * **Sites you connect to the hub**: the hub only contacts the sites you add to it.
 
 == Changelog ==
+
+= 1.18.0 =
+Reputation.
+* Blocklist checks every day: Spamhaus, SURBL, URIBL and SpamCop for your domain and server, plus Google Safe Browsing with a free key. You get an alert and a log entry the day a listing appears.
+* Domain expiry check on the Edge tab, from the registry's public record, with alerts 30, 14, 7, 3 and 1 days before it lapses.
+* Country rules for single pages: block or allow countries on one page and everything below it, such as /shop or /contact.
 
 = 1.17.0 =
 Server hardening.

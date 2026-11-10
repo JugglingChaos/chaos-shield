@@ -129,6 +129,10 @@ final class Settings {
 				'label'       => __( 'Exposed files and keys check', 'chaos-shield' ),
 				'description' => __( 'Checks every day that backups, database dumps, logs, .env and .git cannot be downloaded, and that no secret keys show in your pages.', 'chaos-shield' ),
 			),
+			'reputation_check'      => array(
+				'label'       => __( 'Blocklist and domain checks', 'chaos-shield' ),
+				'description' => __( 'Checks every day that spam blocklists, and Google Safe Browsing if you add a key, do not list your site, and warns a month before your domain expires. See the results on the Edge tab.', 'chaos-shield' ),
+			),
 			'vuln_check'            => array(
 				'label'       => __( 'Vulnerability alerts', 'chaos-shield' ),
 				'description' => __( 'Checks WordPress, your plugins and your themes every day against the free WPVulnerability database, and flags plugins that were closed or abandoned. No account or key needed.', 'chaos-shield' ),
@@ -216,6 +220,7 @@ final class Settings {
 			'country_block'         => false,
 			'captcha'               => false,
 			'vuln_check'            => true,
+			'reputation_check'      => true,
 			'file_watch'            => true,
 			'visitor_help'          => true,
 			'attack_auto'           => true,
@@ -269,6 +274,7 @@ final class Settings {
 		$defaults['country_mode']         = 'block';
 		$defaults['country_scope']        = 'login';
 		$defaults['country_list']         = array();
+		$defaults['country_pages']        = array();
 		$defaults['ip_allowlist']         = array();
 		$defaults['ip_blocklist']         = array();
 		$defaults['ua_blocklist']         = array();
@@ -326,6 +332,7 @@ final class Settings {
 			'alert_attack'         => true,
 			'alert_scripts'        => true,
 			'alert_exposure'       => true,
+			'alert_reputation'     => true,
 		);
 	}
 
@@ -349,6 +356,7 @@ final class Settings {
 			'alert_attack'         => __( 'Under attack mode switches on during a flood', 'chaos-shield' ),
 			'alert_scripts'        => __( 'A new or suspicious script appears on your pages', 'chaos-shield' ),
 			'alert_exposure'       => __( 'A backup, log, key or other private file can be downloaded', 'chaos-shield' ),
+			'alert_reputation'     => __( 'The site lands on a blocklist, or its domain is about to expire', 'chaos-shield' ),
 		);
 	}
 
@@ -563,7 +571,7 @@ final class Settings {
 	 */
 	public static function save_edge( array $input, array $fields ) {
 		$clean = self::all();
-		$bools = array( 'attack_auto', 'script_watch', 'exposure_check', 'https_upgrade', 'force_https', 'cf_sync_bans', 'cf_attack_sync', 'ban_feed' );
+		$bools = array( 'attack_auto', 'script_watch', 'exposure_check', 'reputation_check', 'https_upgrade', 'force_https', 'cf_sync_bans', 'cf_attack_sync', 'ban_feed' );
 		foreach ( array_intersect( $fields, $bools ) as $key ) {
 			$clean[ $key ] = ! empty( $input[ $key ] );
 		}
@@ -665,6 +673,9 @@ final class Settings {
 		$clean['country_mode']   = isset( $input['country_mode'] ) && 'allow' === $input['country_mode'] ? 'allow' : 'block';
 		$clean['country_scope']  = isset( $input['country_scope'] ) && 'site' === $input['country_scope'] ? 'site' : 'login';
 		$clean['country_list']   = Geo::parse( isset( $input['country_list'] ) ? (string) $input['country_list'] : '' );
+		$pages                   = Geo::parse_page_rules( isset( $input['country_pages'] ) ? (string) $input['country_pages'] : '' );
+		$clean['country_pages']  = $pages['valid'];
+		$rejected['pages']       = $pages['invalid'];
 
 		$header                = isset( $input['proxy_header'] ) ? (string) $input['proxy_header'] : '';
 		$clean['proxy_header'] = array_key_exists( $header, self::proxy_headers() ) ? $header : '';

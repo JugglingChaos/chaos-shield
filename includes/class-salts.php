@@ -109,7 +109,7 @@ final class Salts {
 	 */
 	private static function sealed() {
 		$items = array();
-		foreach ( array( Cloudflare::TOKEN, Api::SEALED, Connections::CHAT_URL ) as $option ) {
+		foreach ( array( Cloudflare::TOKEN, Api::SEALED, Connections::CHAT_URL, Reputation::KEY ) as $option ) {
 			$items[] = self::option_item( $option );
 		}
 		foreach ( Captcha::providers() as $provider ) {

@@ -26,6 +26,8 @@ use ChaosShield\Https;
 use ChaosShield\Page_Check;
 use ChaosShield\Scripts;
 use ChaosShield\Server;
+use ChaosShield\Reputation;
+use ChaosShield\Geo;
 use ChaosShield\Posture;
 use ChaosShield\Captcha;
 use ChaosShield\Comments;
@@ -2330,6 +2332,149 @@ group(
 				}
 				sleep( 3 );
 			}
+		} finally {
+			Network::update_option( Settings::OPTION, $before );
+			Settings::forget();
+		}
+	}
+);
+
+group(
+	'Reputation',
+	function () {
+		global $wpdb;
+		$before = Settings::all();
+		$mock   = get_site_option( 'sst_http_mock' );
+		$dns    = array(
+			'shop-example.com'                   => array( '45.33.10.20' ),
+			'shop-example.com.dbl.spamhaus.org'  => array( '127.0.1.2' ),
+			'20.10.33.45.zen.spamhaus.org'       => array( '127.255.255.254' ),
+			'shop-example.com.multi.uribl.com'   => array( '127.0.0.1' ),
+			'20.10.33.45.bl.spamcop.net'         => array(),
+			'clean-example.org'                  => array( '45.33.10.21' ),
+			'clean-example.org.dbl.spamhaus.org' => array(),
+			'21.10.33.45.zen.spamhaus.org'       => array(),
+		);
+		$lookup = static function ( $ips, $name ) use ( &$dns ) {
+			$name = rtrim( $name, '.' );
+			return isset( $dns[ $name ] ) ? $dns[ $name ] : array();
+		};
+		$home   = static function () {
+			return 'https://www.shop-example.com';
+		};
+		$expire = gmdate( 'Y-m-d\TH:i:s\Z', time() + 10 * DAY_IN_SECONDS + HOUR_IN_SECONDS );
+		$rdap   = array(
+			'code' => 200,
+			'body' => wp_json_encode(
+				array(
+					'events'   => array(
+						array(
+							'eventAction' => 'registration',
+							'eventDate'   => '2015-01-01T00:00:00Z',
+						),
+						array(
+							'eventAction' => 'expiration',
+							'eventDate'   => $expire,
+						),
+					),
+					'entities' => array(
+						array(
+							'roles'      => array( 'registrar' ),
+							'vcardArray' => array( 'vcard', array( array( 'version', array(), 'text', '4.0' ), array( 'fn', array(), 'text', 'Example Registrar, Inc.' ) ) ),
+						),
+					),
+				)
+			),
+		);
+		update_site_option(
+			'sst_http_mock',
+			array_merge(
+				is_array( $mock ) ? $mock : array(),
+				array(
+					'rdap.org'                    => array(
+						'routes' => array(
+							'GET /domain/shop-example.com' => $rdap,
+							'GET /domain/clean-example.org' => array(
+								'code' => 200,
+								'body' => '{"events":[]}',
+							),
+						),
+					),
+					'safebrowsing.googleapis.com' => array( 'body' => '{"matches":[{"threatType":"SOCIAL_ENGINEERING"}]}' ),
+				)
+			)
+		);
+		add_filter( 'cshield_dns_lookup', $lookup, 10, 2 );
+		add_filter( 'pre_option_home', $home );
+		$listed = function () use ( $wpdb ) {
+			return (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM ' . Events::table() . ' WHERE action = %s', 'reputation.listed' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared -- Test.
+		};
+		try {
+			check( 'local and made-up names are not sent to lists or registries', ! Reputation::public_host( 'localhost' ) && ! Reputation::public_host( 'site.test' ) && ! Reputation::public_host( '10.0.0.1' ) && Reputation::public_host( 'shop-example.com' ) );
+			$lists = Reputation::lists();
+			check( 'an IP is asked about in reverse order', 'listed' === Reputation::ask( $lists['spamhaus_dbl'], 'shop-example.com' ) && 'refused' === Reputation::ask( $lists['spamhaus_zen'], '45.33.10.20' ) && 'clean' === Reputation::ask( $lists['spamcop'], '45.33.10.20' ) );
+
+			Network::update_option( Reputation::KEY, Totp::seal( 'AIzaTestKey1234567890abcd' ), false );
+			Network::delete_option( Reputation::OPTION );
+			$count = $listed();
+			$state = Reputation::check();
+			check( 'the site is checked under its own domain and server address', 'shop-example.com' === $state['domain'] && '45.33.10.20' === $state['ip'] );
+			check( 'a domain listing is found', 'listed' === $state['lists']['spamhaus_dbl']['status'] );
+			check( 'a list that will not answer this server is not counted as a listing', 'refused' === $state['lists']['spamhaus_zen']['status'] && 'refused' === $state['lists']['uribl']['status'] );
+			check( 'Google Safe Browsing is asked when a key is saved', 'listed' === $state['lists']['safe_browsing']['status'] );
+			check( 'the domain expiry date and registrar are read from RDAP', abs( $state['expiry']['expires'] - strtotime( $expire ) ) < 2 && 'Example Registrar, Inc.' === $state['expiry']['registrar'] );
+			check( 'a new listing is logged once', $count + 1 === $listed() );
+			Reputation::check();
+			check( 'the same listing the next day is not logged again', $count + 1 === $listed() );
+			$checks = wp_list_pluck( \ChaosShield\Posture::checks(), 'status', 'id' );
+			check( 'the overview fails on a listing and warns on a domain about to lapse', Posture::FAIL === $checks['blocklists'] && Posture::WARN === $checks['domain_expiry'] );
+
+			$sub = Reputation::expiry( 'blog.shop-example.com' );
+			check( 'a subdomain finds the domain it belongs to', 'shop-example.com' === $sub['domain'] && $sub['expires'] > time() );
+			$none = Reputation::expiry( 'clean-example.org' );
+			check( 'a registry without an expiry date says so', 0 === $none['expires'] && '' !== $none['error'] );
+
+			Network::delete_option( Reputation::KEY );
+			$home = static function () {
+				return 'https://clean-example.org';
+			};
+			remove_all_filters( 'pre_option_home' );
+			add_filter( 'pre_option_home', $home );
+			$state = Reputation::check();
+			check( 'a clean site passes every list, and Safe Browsing is skipped without a key', ! isset( $state['lists']['safe_browsing'] ) && 'clean' === $state['lists']['spamhaus_dbl']['status'] && 'clean' === $state['lists']['spamhaus_zen']['status'] );
+		} finally {
+			remove_filter( 'cshield_dns_lookup', $lookup, 10 );
+			remove_all_filters( 'pre_option_home' );
+			Network::delete_option( Reputation::KEY );
+			Network::delete_option( Reputation::OPTION );
+			update_site_option( 'sst_http_mock', $mock );
+		}
+
+		// Country rules for single pages.
+		$rules = Geo::parse_page_rules( "/Members/ allow us, ca\n/contact block CN\nnot a rule\n/x block" );
+		check( 'page rules are cleaned and bad lines are reported', array( '/members allow US,CA', '/contact block CN' ) === $rules['valid'] && array( 'not a rule', '/x block' ) === $rules['invalid'] );
+		$set = function ( array $changes ) {
+			Network::update_option( Settings::OPTION, array_merge( Settings::all(), $changes ) );
+			Settings::forget();
+		};
+		$set( array( 'country_pages' => $rules['valid'] ) );
+		check( 'a rule covers its page and the pages below it', '/members allow US,CA' === implode( ' ', array( Geo::page_rule( '/members/cart' )['path'], Geo::page_rule( '/members/cart' )['mode'], implode( ',', Geo::page_rule( '/members/cart' )['countries'] ) ) ) && null === Geo::page_rule( '/membership' ) && null === Geo::page_rule( '/' ) );
+		$set(
+			array(
+				'country_block'  => true,
+				'country_source' => 'server',
+				'country_list'   => array(),
+				'country_pages'  => $rules['valid'],
+			)
+		);
+		$cc = function ( $path, $code ) {
+			return http( 'GET', $path, ip(), array( 'headers' => array( 'X-Country-Code' => $code ) ) )['status'];
+		};
+		try {
+			check( 'an allowed country reaches the page', 403 !== $cc( '/members/cart/', 'US' ) );
+			check( 'another country is kept off the page', 403 === $cc( '/members/cart/', 'DE' ) );
+			check( 'the rest of the site stays open to it', 403 !== $cc( '/about-us/', 'DE' ) );
+			check( 'a block rule keeps its country off its page only', 403 === $cc( '/contact/', 'CN' ) && 403 !== $cc( '/members/', 'CA' ) && 403 !== $cc( '/contact/', 'US' ) );
 		} finally {
 			Network::update_option( Settings::OPTION, $before );
 			Settings::forget();
